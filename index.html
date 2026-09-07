@@ -1105,6 +1105,75 @@
           <i data-lucide="lock" class="w-4 h-4"></i> Autenticar no Sistema
         </button>
       </form>
+
+      <!-- Guia Rápido de Acesso dos Tribunais (TREs Municipais e Estaduais) -->
+      <div class="border-t border-brand-border/60 pt-4">
+        <details class="group">
+          <summary class="flex items-center justify-between text-xs font-bold text-slate-400 cursor-pointer hover:text-brand-gold transition select-none">
+            <span class="flex items-center gap-1.5">
+              <i data-lucide="key" class="w-3.5 h-3.5 text-brand-gold"></i> Credenciais Rápidas dos TREs Municipais
+            </span>
+            <span class="text-[10px] bg-brand-deep border border-brand-border px-2 py-0.5 rounded text-slate-400 group-open:rotate-180 transition-transform">▼</span>
+          </summary>
+
+          <div class="mt-3 space-y-2 max-h-52 overflow-y-auto pr-1 text-left text-xs">
+            <p class="text-[11px] text-slate-400">Clique em qualquer tribunal municipal abaixo para preencher o login e a senha automaticamente:</p>
+            
+            <div class="grid grid-cols-2 gap-1.5 pt-1">
+              <!-- Brookhaven -->
+              <button type="button" onclick="quickFillLogin('TRE_CidadeEleitoral@2026', 'TRE.cidadeeleitoral')" class="p-2 rounded-xl bg-brand-navy/80 hover:bg-brand-blue/30 border border-brand-border hover:border-brand-electric text-left transition group/btn">
+                <span class="font-bold text-white block truncate text-[11px]">TRE Cidade Eleitoral</span>
+                <span class="text-[10px] text-slate-400 block font-mono">TRE.cidadeeleitoral</span>
+              </button>
+
+              <button type="button" onclick="quickFillLogin('TRE_Braviland@2026', 'TRE.braviland')" class="p-2 rounded-xl bg-brand-navy/80 hover:bg-brand-blue/30 border border-brand-border hover:border-brand-electric text-left transition group/btn">
+                <span class="font-bold text-white block truncate text-[11px]">TRE Braviland</span>
+                <span class="text-[10px] text-slate-400 block font-mono">TRE.braviland</span>
+              </button>
+
+              <!-- Florêmix -->
+              <button type="button" onclick="quickFillLogin('TRE_Florápolis@2026', 'TRE.florapolis')" class="p-2 rounded-xl bg-brand-navy/80 hover:bg-brand-blue/30 border border-brand-border hover:border-brand-electric text-left transition group/btn">
+                <span class="font-bold text-white block truncate text-[11px]">TRE Florápolis</span>
+                <span class="text-[10px] text-slate-400 block font-mono">TRE.florapolis</span>
+              </button>
+
+              <button type="button" onclick="quickFillLogin('TRE_Riomarina@2026', 'TRE.riomarina')" class="p-2 rounded-xl bg-brand-navy/80 hover:bg-brand-blue/30 border border-brand-border hover:border-brand-electric text-left transition group/btn">
+                <span class="font-bold text-white block truncate text-[11px]">TRE Riomarina</span>
+                <span class="text-[10px] text-slate-400 block font-mono">TRE.riomarina</span>
+              </button>
+
+              <!-- Fortemega -->
+              <button type="button" onclick="quickFillLogin('TRE_PortoRubi@2026', 'TRE.portorubi')" class="p-2 rounded-xl bg-brand-navy/80 hover:bg-brand-blue/30 border border-brand-border hover:border-brand-electric text-left transition group/btn">
+                <span class="font-bold text-white block truncate text-[11px]">TRE Porto Rubi</span>
+                <span class="text-[10px] text-slate-400 block font-mono">TRE.portorubi</span>
+              </button>
+
+              <button type="button" onclick="quickFillLogin('TRE_Fortelume@2026', 'TRE.fortelume')" class="p-2 rounded-xl bg-brand-navy/80 hover:bg-brand-blue/30 border border-brand-border hover:border-brand-electric text-left transition group/btn">
+                <span class="font-bold text-white block truncate text-[11px]">TRE Fortelume</span>
+                <span class="text-[10px] text-slate-400 block font-mono">TRE.fortelume</span>
+              </button>
+
+              <!-- Novacore -->
+              <button type="button" onclick="quickFillLogin('TRE_Nápolis@2026', 'TRE.napolis')" class="p-2 rounded-xl bg-brand-navy/80 hover:bg-brand-blue/30 border border-brand-border hover:border-brand-electric text-left transition group/btn">
+                <span class="font-bold text-white block truncate text-[11px]">TRE Nápolis</span>
+                <span class="text-[10px] text-slate-400 block font-mono">TRE.napolis</span>
+              </button>
+
+              <button type="button" onclick="quickFillLogin('TRE_Catarinía@2026', 'TRE.catarinia')" class="p-2 rounded-xl bg-brand-navy/80 hover:bg-brand-blue/30 border border-brand-border hover:border-brand-electric text-left transition group/btn">
+                <span class="font-bold text-white block truncate text-[11px]">TRE Catarinía</span>
+                <span class="text-[10px] text-slate-400 block font-mono">TRE.catarinia</span>
+              </button>
+            </div>
+
+            <div class="pt-2 border-t border-brand-border/40 flex items-center justify-between text-[10px] text-slate-500">
+              <button type="button" onclick="quickFillLogin('TSE_Brookasil@2026', 'ARTHUR@1971')" class="hover:text-brand-gold font-bold transition">
+                ⚡ Usar TSE Nacional
+              </button>
+              <span>RP Brookasil 2026</span>
+            </div>
+          </div>
+        </details>
+      </div>
     </div>
   </div>
 

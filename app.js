@@ -37,14 +37,14 @@ const ADMIN_CREDENTIALS = [
   { login: "TRE_Fortemega@2026", pass: "TRE@FORTEMEGA", role: "tre_estadual", name: "TRE Fortemega", state: "fortemega", city: "ALL" },
   { login: "TRE_Novacore@2026", pass: "TRE@NOVACORE", role: "tre_estadual", name: "TRE Novacore", state: "novacore", city: "ALL" },
   // TREs Municipais
-  { login: "TRE_CidadeEleitoral@2026", pass: "TRE.CIDADEELEITORAL", role: "tre_municipal", name: "TRE Cidade Eleitoral", state: "brookhaven", city: "cidade_eleitoral" },
-  { login: "TRE_Braviland@2026", pass: "TRE.BRAVILAND", role: "tre_municipal", name: "TRE Braviland", state: "brookhaven", city: "braviland" },
-  { login: "TRE_Florápolis@2026", pass: "TRE.FLORÁPOLIS", role: "tre_municipal", name: "TRE Florápolis", state: "floremix", city: "florapolis" },
-  { login: "TRE_Riomarina@2026", pass: "TRE.RIOMARINA", role: "tre_municipal", name: "TRE Riomarina", state: "floremix", city: "riomarina" },
-  { login: "TRE_PortoRubi@2026", pass: "TRE.PORTORUBI", role: "tre_municipal", name: "TRE Porto Rubi", state: "fortemega", city: "porto_rubi" },
-  { login: "TRE_Fortelume@2026", pass: "TRE.FORTELUME", role: "tre_municipal", name: "TRE Fortelume", state: "fortemega", city: "fortelume" },
-  { login: "TRE_Nápolis@2026", pass: "TRE.NÁPOLIS", role: "tre_municipal", name: "TRE Nápolis", state: "novacore", city: "napolis" },
-  { login: "TRE_Catarinía@2026", pass: "TRE.CATARINÍA", role: "tre_municipal", name: "TRE Catarinía", state: "novacore", city: "catarinia" }
+  { login: "TRE_CidadeEleitoral@2026", pass: "TRE.cidadeeleitoral", role: "tre_municipal", name: "TRE Cidade Eleitoral", state: "brookhaven", city: "cidade_eleitoral", aliases: ["TRE_CidadeEleitoral@2026"] },
+  { login: "TRE_Braviland@2026", pass: "TRE.braviland", role: "tre_municipal", name: "TRE Braviland", state: "brookhaven", city: "braviland", aliases: ["TRE_Braviland@2026"] },
+  { login: "TRE_Florápolis@2026", pass: "TRE.florapolis", role: "tre_municipal", name: "TRE Florápolis", state: "floremix", city: "florapolis", aliases: ["TRE_Florapolis@2026"] },
+  { login: "TRE_Riomarina@2026", pass: "TRE.riomarina", role: "tre_municipal", name: "TRE Riomarina", state: "floremix", city: "riomarina", aliases: ["TRE_Riomarina@2026"] },
+  { login: "TRE_PortoRubi@2026", pass: "TRE.portorubi", role: "tre_municipal", name: "TRE Porto Rubi", state: "fortemega", city: "porto_rubi", aliases: ["TRE_PortoRubi@2026"] },
+  { login: "TRE_Fortelume@2026", pass: "TRE.fortelume", role: "tre_municipal", name: "TRE Fortelume", state: "fortemega", city: "fortelume", aliases: ["TRE_Fortelume@2026"] },
+  { login: "TRE_Nápolis@2026", pass: "TRE.napolis", role: "tre_municipal", name: "TRE Nápolis", state: "novacore", city: "napolis", aliases: ["TRE_Napolis@2026"] },
+  { login: "TRE_Catarinía@2026", pass: "TRE.catarinia", role: "tre_municipal", name: "TRE Catarinía", state: "novacore", city: "catarinia", aliases: ["TRE_Catarinia@2026"] }
 ];
 
 // 3. ESTRUTURA GEOGRÁFICA DE BROOKASIL
@@ -1427,12 +1427,37 @@ function closeLoginModal() {
   document.getElementById('login-modal').classList.add('hidden');
 }
 
+function normalizeCredString(str) {
+  return String(str || '')
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
 function handleLoginSubmit(e) {
   e.preventDefault();
   const loginInput = document.getElementById('login-username').value.trim();
   const passInput = document.getElementById('login-password').value.trim();
 
-  const matched = ADMIN_CREDENTIALS.find(acc => acc.login === loginInput && acc.pass === passInput);
+  // 1. Busca exata ou por alias
+  let matched = ADMIN_CREDENTIALS.find(acc => {
+    const isLoginMatch = acc.login === loginInput || (acc.aliases && acc.aliases.includes(loginInput));
+    return isLoginMatch && acc.pass === passInput;
+  });
+
+  // 2. Busca tolerante a caixa alta/baixa e acentos (ex: Florápolis vs Florapolis, TRE.cidadeeleitoral vs TRE.CIDADEELEITORAL)
+  if (!matched) {
+    const normLogin = normalizeCredString(loginInput);
+    const normPass = normalizeCredString(passInput);
+
+    matched = ADMIN_CREDENTIALS.find(acc => {
+      const normAccLogin = normalizeCredString(acc.login);
+      const normAccPass = normalizeCredString(acc.pass);
+      const aliasMatch = acc.aliases && acc.aliases.some(al => normalizeCredString(al) === normLogin);
+      return (normAccLogin === normLogin || aliasMatch) && normAccPass === normPass;
+    });
+  }
 
   if (matched) {
     currentUser = { ...matched };
@@ -1443,6 +1468,17 @@ function handleLoginSubmit(e) {
     navigateTo('admin');
   } else {
     showToast('error', 'Credenciais inválidas. Acesso restrito a magistrados do TSE e TREs.');
+  }
+}
+
+function quickFillLogin(login, pass) {
+  const loginEl = document.getElementById('login-username');
+  const passEl = document.getElementById('login-password');
+  if (loginEl && passEl) {
+    loginEl.value = login;
+    passEl.value = pass;
+    loginEl.focus();
+    showToast('info', `Credencial do ${login.split('@')[0]} preenchida!`);
   }
 }
 

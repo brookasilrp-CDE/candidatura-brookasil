@@ -51,14 +51,14 @@ cities/                 -> 8 Cidades vinculadas aos seus respectivos estados
 | **TRE Florêmix** | `TRE_Florêmix@2026` | `TRE@FLORÊMIX` | Estadual (Florêmix) |
 | **TRE Fortemega** | `TRE_Fortemega@2026` | `TRE@FORTEMEGA` | Estadual (Fortemega) |
 | **TRE Novacore** | `TRE_Novacore@2026` | `TRE@NOVACORE` | Estadual (Novacore) |
-| **TRE Cidade Eleitoral** | `TRE_CidadeEleitoral@2026` | `TRE.CIDADEELEITORAL` | Municipal (Brookhaven - Cidade Eleitoral) |
-| **TRE Braviland** | `TRE_Braviland@2026` | `TRE.BRAVILAND` | Municipal (Brookhaven - Braviland) |
-| **TRE Florápolis** | `TRE_Florápolis@2026` | `TRE.FLORÁPOLIS` | Municipal (Florêmix - Florápolis) |
-| **TRE Riomarina** | `TRE_Riomarina@2026` | `TRE.RIOMARINA` | Municipal (Florêmix - Riomarina) |
-| **TRE Porto Rubi** | `TRE_PortoRubi@2026` | `TRE.PORTORUBI` | Municipal (Fortemega - Porto Rubi) |
-| **TRE Fortelume** | `TRE_Fortelume@2026` | `TRE.FORTELUME` | Municipal (Fortemega - Fortelume) |
-| **TRE Nápolis** | `TRE_Nápolis@2026` | `TRE.NÁPOLIS` | Municipal (Novacore - Nápolis) |
-| **TRE Catarinía** | `TRE_Catarinía@2026` | `TRE.CATARINÍA` | Municipal (Novacore - Catarinía) |
+| **TRE Cidade Eleitoral** | `TRE_CidadeEleitoral@2026` | `TRE.cidadeeleitoral` | Municipal (Brookhaven - Cidade Eleitoral) |
+| **TRE Braviland** | `TRE_Braviland@2026` | `TRE.braviland` | Municipal (Brookhaven - Braviland) |
+| **TRE Florápolis** | `TRE_Florápolis@2026` | `TRE.florapolis` | Municipal (Florêmix - Florápolis) |
+| **TRE Riomarina** | `TRE_Riomarina@2026` | `TRE.riomarina` | Municipal (Florêmix - Riomarina) |
+| **TRE Porto Rubi** | `TRE_PortoRubi@2026` | `TRE.portorubi` | Municipal (Fortemega - Porto Rubi) |
+| **TRE Fortelume** | `TRE_Fortelume@2026` | `TRE.fortelume` | Municipal (Fortemega - Fortelume) |
+| **TRE Nápolis** | `TRE_Nápolis@2026` | `TRE.napolis` | Municipal (Novacore - Nápolis) |
+| **TRE Catarinía** | `TRE_Catarinía@2026` | `TRE.catarinia` | Municipal (Novacore - Catarinía) |
 
 ---
 
