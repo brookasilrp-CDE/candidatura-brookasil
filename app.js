@@ -211,7 +211,19 @@ async function bootstrapFirebaseData() {
   // Escuta Candidaturas em tempo real
   db.ref('candidates').on('value', (snap) => {
     const data = snap.val();
-    candidaciesList = data ? Object.entries(data).map(([id, val]) => ({ id, ...val })) : [];
+    if (data) {
+      if (Array.isArray(data)) {
+        candidaciesList = data
+          .map((val, idx) => (val && typeof val === 'object') ? ({ id: val.id !== undefined ? val.id : String(idx), ...val }) : null)
+          .filter(Boolean);
+      } else {
+        candidaciesList = Object.entries(data)
+          .map(([id, val]) => (val && typeof val === 'object') ? ({ id: val.id !== undefined ? val.id : id, ...val }) : null)
+          .filter(Boolean);
+      }
+    } else {
+      candidaciesList = [];
+    }
     updateGlobalStats();
     renderConfirmedCandidates();
     if (currentUser) {
@@ -941,7 +953,9 @@ async function handleCandidacySubmit(e) {
       electionTitle: currentElection.title,
       office: officeId,
       stateId: stateId,
+      state: stateId,
       cityId: cityId,
+      city: cityId,
       partyId: selectedParty.id,
       partyName: selectedParty.name,
       partyAcronym: selectedParty.acronym,
@@ -966,6 +980,21 @@ async function handleCandidacySubmit(e) {
     // Gravação no Realtime Database
     const newCandRef = db.ref('candidates').push();
     await newCandRef.set(candidateData);
+
+    // Atualização otimista imediata da lista local
+    const savedCand = { id: newCandRef.key, ...candidateData };
+    const existingIdx = candidaciesList.findIndex(c => c.id === newCandRef.key);
+    if (existingIdx >= 0) {
+      candidaciesList[existingIdx] = savedCand;
+    } else {
+      candidaciesList.unshift(savedCand);
+    }
+    updateGlobalStats();
+    renderConfirmedCandidates();
+    if (currentUser) {
+      renderAdminCandidacies();
+      updateAdminCharts();
+    }
 
     // Registro da reserva de número na circunscrição
     const jurisdictionKey = isMunicipalOffice(officeId)
@@ -995,7 +1024,8 @@ async function handleCandidacySubmit(e) {
       window.confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
     }
 
-    // Abre Modal de Sucesso
+    // Abre Modal de Sucesso com o protocolo atual
+    window.lastSubmittedProtocol = protocol;
     document.getElementById('success-protocol-text').textContent = protocol;
     document.getElementById('success-name-text').textContent = candidateData.ballotName;
     document.getElementById('success-office-text').textContent = `${officeId} • Número ${finalNumber} (${selectedParty.acronym}) ${circInfo}`;
@@ -1023,6 +1053,21 @@ function closeSuccessModal() {
   navigateTo('home');
 }
 
+function viewSubmittedCandidacyInPublicList() {
+  document.getElementById('success-modal').classList.add('hidden');
+  navigateTo('candidatos');
+  const searchInput = document.getElementById('filter-search');
+  if (searchInput && window.lastSubmittedProtocol) {
+    searchInput.value = window.lastSubmittedProtocol;
+  }
+  const statusSelect = document.getElementById('filter-status');
+  if (statusSelect) {
+    statusSelect.value = 'ALL';
+  }
+  renderConfirmedCandidates();
+  showToast('info', 'Localizamos o seu pedido de candidatura! Status: Em Análise.');
+}
+
 // ========================================================
 // CONSULTA PÚBLICA DE CANDIDATOS (STATUS === 'DEFERIDA')
 // ========================================================
@@ -1033,53 +1078,77 @@ function renderConfirmedCandidates() {
   const cargoFilter = document.getElementById('filter-cargo')?.value || 'ALL';
   const estadoFilter = document.getElementById('filter-estado')?.value || 'ALL';
   const partidoFilter = document.getElementById('filter-partido')?.value || 'ALL';
+  const statusFilter = document.getElementById('filter-status')?.value || 'deferida';
   const searchInput = document.getElementById('filter-search');
   const searchFilter = (searchInput && searchInput.value ? searchInput.value : '').toLowerCase().trim();
 
-  // Regra Estrita: Apenas candidatos DEFERIDOS são públicos
   const filtered = candidaciesList.filter(c => {
     if (!c) return false;
-    if (c.status !== 'deferida') return false;
-    if (cargoFilter !== 'ALL' && c.office !== cargoFilter) return false;
-    if (estadoFilter !== 'ALL' && c.stateId !== estadoFilter) return false;
-    if (partidoFilter !== 'ALL' && String(c.partyId) !== String(partidoFilter)) return false;
+    if (c.status === 'excluida') return false;
+
+    // Se o usuário digitou uma busca por nome, número ou sigla,
+    // busca em todas as candidaturas (deferidas e pendentes) para que quem acabou de submeter veja seu registro!
     if (searchFilter) {
       const bName = String(c.ballotName || '').toLowerCase();
       const fName = String(c.fullName || '').toLowerCase();
       const num = String(c.number !== undefined && c.number !== null ? c.number : '');
       const pAcronym = String(c.partyAcronym || '').toLowerCase();
-      if (!bName.includes(searchFilter) && !fName.includes(searchFilter) && !num.includes(searchFilter) && !pAcronym.includes(searchFilter)) {
-        return false;
-      }
+      const prot = String(c.protocol || '').toLowerCase();
+      const matchesSearch = bName.includes(searchFilter) || fName.includes(searchFilter) || num.includes(searchFilter) || pAcronym.includes(searchFilter) || prot.includes(searchFilter);
+      if (!matchesSearch) return false;
+    } else {
+      if (statusFilter !== 'ALL' && c.status !== statusFilter) return false;
     }
+
+    if (cargoFilter !== 'ALL' && c.office !== cargoFilter) return false;
+    if (estadoFilter !== 'ALL' && String(c.stateId || '').toLowerCase() !== estadoFilter.toLowerCase()) return false;
+    if (partidoFilter !== 'ALL' && String(c.partyId) !== String(partidoFilter)) return false;
+
     return true;
   });
 
   const badge = document.getElementById('confirmed-count-badge');
-  if (badge) badge.textContent = `${filtered.length} Candidatos Homologados`;
+  if (badge) {
+    const deferidasCount = filtered.filter(c => c.status === 'deferida').length;
+    const pendentesCount = filtered.filter(c => c.status === 'pendente').length;
+    if (statusFilter === 'deferida' && !searchFilter) {
+      badge.textContent = `${deferidasCount} Candidato${deferidasCount === 1 ? '' : 's'} Homologado${deferidasCount === 1 ? '' : 's'}`;
+    } else {
+      badge.textContent = `${filtered.length} Candidatura${filtered.length === 1 ? '' : 's'} (${deferidasCount} Apta${deferidasCount === 1 ? '' : 's'}${pendentesCount > 0 ? `, ${pendentesCount} em Análise` : ''})`;
+    }
+  }
 
   if (filtered.length === 0) {
     grid.innerHTML = `
       <div class="col-span-full py-16 text-center text-slate-500">
         <i data-lucide="users" class="w-12 h-12 mx-auto text-slate-600 mb-3"></i>
-        <p class="font-bold text-base text-slate-400">Nenhum candidato deferido localizado.</p>
-        <p class="text-xs text-slate-500 mt-1">Candidaturas em análise ou pendentes aguardam homologação dos Tribunais.</p>
+        <p class="font-bold text-base text-slate-400">Nenhuma candidatura localizada com os filtros selecionados.</p>
+        <p class="text-xs text-slate-500 mt-1">Candidaturas submetidas recentemente podem ser consultadas selecionando o filtro "Todos os Status" ou "Em Análise".</p>
       </div>
     `;
     initIcons();
     return;
   }
 
-  grid.innerHTML = filtered.map(c => `
-    <div class="glass-panel rounded-3xl border border-brand-border/70 hover:border-brand-electric/50 transition-all p-5 flex flex-col justify-between group">
+  grid.innerHTML = filtered.map(c => {
+    const isPendente = c.status === 'pendente';
+    const isIndeferida = c.status === 'indeferida';
+    const isDeferida = c.status === 'deferida';
+
+    return `
+    <div class="glass-panel rounded-3xl border ${isPendente ? 'border-amber-500/40 hover:border-amber-400/80 bg-amber-950/10' : 'border-brand-border/70 hover:border-brand-electric/50'} transition-all p-5 flex flex-col justify-between group">
       <div>
         <div class="relative h-48 rounded-2xl overflow-hidden mb-4 bg-brand-deep">
           <img src="${c.photo}" alt="${c.ballotName}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
           <div class="absolute top-3 right-3 px-3 py-1 rounded-xl bg-brand-navy/90 backdrop-blur-md border border-brand-border text-brand-gold font-mono font-bold text-sm shadow-md">
             ${c.number}
           </div>
-          <div class="absolute bottom-3 left-3 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-500/90 text-slate-950">
-            Homologado
+          <div class="absolute bottom-3 left-3 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+            isDeferida ? 'bg-emerald-500/90 text-slate-950' :
+            isPendente ? 'bg-amber-500/95 text-slate-950 flex items-center gap-1 shadow-md' :
+            'bg-red-500/90 text-white'
+          }">
+            ${isPendente ? '<span class="w-1.5 h-1.5 rounded-full bg-slate-950 animate-ping inline-block"></span> Em Análise' : (isDeferida ? 'Homologado' : 'Indeferido')}
           </div>
         </div>
 
@@ -1103,6 +1172,10 @@ function renderConfirmedCandidates() {
               <strong class="text-slate-200 truncate max-w-[130px]">${c.viceName}</strong>
             </div>
           ` : ''}
+          <div class="flex justify-between items-center text-[10px] text-slate-500 font-mono pt-1">
+            <span>Protocolo:</span>
+            <strong class="text-brand-electric">${c.protocol || 'N/D'}</strong>
+          </div>
         </div>
       </div>
 
@@ -1117,7 +1190,8 @@ function renderConfirmedCandidates() {
         ` : ''}
       </div>
     </div>
-  `).join('');
+    `;
+  }).join('');
   initIcons();
 }
 
@@ -1385,17 +1459,34 @@ function setupAdminView() {
 
   document.getElementById('admin-user-name').textContent = currentUser.name;
   document.getElementById('admin-user-badge').textContent = currentUser.role.toUpperCase();
-  document.getElementById('admin-user-jurisdiction').textContent = `Jurisdição: ${currentUser.state === 'ALL' ? 'Nacional (Plena)' : currentUser.city === 'ALL' ? 'Estadual (' + currentUser.state + ')' : 'Municipal (' + currentUser.city + ')'}`;
 
-  // Controle de permissões (Apenas TSE pode gerenciar eleições e partidos)
-  const isTse = currentUser.role === 'tse';
+  const isTse = currentUser.role === 'tse' || currentUser.state === 'ALL';
+  const isTreEstadual = currentUser.role === 'tre_estadual';
+  const isTreMunicipal = currentUser.role === 'tre_municipal';
+
+  let jurisText = '';
+  if (isTse) {
+    jurisText = 'Jurisdição Plena Nacional — Acesso a TODOS os candidatos do país';
+  } else if (isTreEstadual) {
+    jurisText = `Jurisdição Estadual — Candidaturas do Estado de ${getStateDisplayName(currentUser.state)}`;
+  } else if (isTreMunicipal) {
+    jurisText = `Jurisdição Municipal — Candidaturas de ${getCityDisplayName(currentUser.state, currentUser.city)} (${getStateDisplayName(currentUser.state)})`;
+  } else {
+    jurisText = `Jurisdição: ${currentUser.state || 'Nacional'}`;
+  }
+
+  document.getElementById('admin-user-jurisdiction').textContent = jurisText;
+
+  // Controle de permissões (Apenas TSE pode gerenciar eleições, partidos e filtro por estado)
   const elecBtn = document.getElementById('admin-tab-eleicoes-btn');
   const partBtn = document.getElementById('admin-tab-partidos-btn');
   const partyFilter = document.getElementById('admin-filter-partido');
+  const stateFilter = document.getElementById('admin-filter-estado');
 
   if (elecBtn) elecBtn.style.display = isTse ? 'inline-flex' : 'none';
   if (partBtn) partBtn.style.display = isTse ? 'inline-flex' : 'none';
   if (partyFilter) partyFilter.style.display = isTse ? 'block' : 'none';
+  if (stateFilter) stateFilter.style.display = isTse ? 'block' : 'none';
 
   renderAdminCandidacies();
 }
@@ -2063,6 +2154,75 @@ function setAdminStatusFilter(status) {
 // ========================================================
 // JULGAMENTO JUDICIAL COM JURISDIÇÃO ESTRITA
 // ========================================================
+function isCandidateInJurisdiction(c, user) {
+  if (!user || !c) return false;
+
+  // 1. TSE NACIONAL: Vê rigorosamente TODOS os candidatos de todo o país
+  if (user.role === 'tse' || user.state === 'ALL') {
+    return true;
+  }
+
+  const candState = String(c.stateId || c.state || '').toLowerCase().trim();
+  const candCity = String(c.cityId || c.city || '').toLowerCase().trim();
+  const userState = String(user.state || '').toLowerCase().trim();
+  const userCity = String(user.city || '').toLowerCase().trim();
+
+  const userStateConfig = BROOKASIL_GEO[userState];
+  const userStateName = userStateConfig?.name ? String(userStateConfig.name).toLowerCase().trim() : '';
+
+  const matchesState = (s) => {
+    if (!s) return false;
+    const lower = s.toLowerCase().trim();
+    return lower === userState || (userStateName && lower === userStateName);
+  };
+
+  const userCityName = (userStateConfig?.cities && userStateConfig.cities[userCity])
+    ? String(userStateConfig.cities[userCity]).toLowerCase().trim()
+    : '';
+
+  const matchesCity = (cit) => {
+    if (!cit || cit === 'all') return false;
+    const lower = cit.toLowerCase().trim();
+    return lower === userCity || (userCityName && lower === userCityName);
+  };
+
+  // 2. TRE ESTADUAL: Vê somente candidaturas do seu estado (estaduais e municipais do estado)
+  if (user.role === 'tre_estadual') {
+    // Não julga Presidente (âmbito federal/TSE Nacional)
+    if (c.office === 'Presidente') return false;
+
+    // Se o estado do candidato bater com o estado do TRE Estadual
+    if (matchesState(candState)) {
+      return true;
+    }
+
+    // Se a cidade do candidato pertencer a este estado
+    const stateCities = userStateConfig?.cities || {};
+    const cityKeys = Object.keys(stateCities).map(k => k.toLowerCase());
+    const cityNames = Object.values(stateCities).map(n => String(n).toLowerCase());
+    if (candCity && (cityKeys.includes(candCity) || cityNames.includes(candCity))) {
+      return true;
+    }
+
+    return false;
+  }
+
+  // 3. TRE MUNICIPAL: Vê estritamente as candidaturas da sua cidade/município
+  if (user.role === 'tre_municipal') {
+    // Só vê cargos municipais (Prefeito e Vereador)
+    if (!isMunicipalOffice(c.office)) return false;
+
+    // A cidade do candidato deve corresponder à cidade do TRE Municipal
+    if (matchesCity(candCity)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  return false;
+}
+
 function renderAdminCandidacies() {
   if (!currentUser) return;
 
@@ -2070,31 +2230,64 @@ function renderAdminCandidacies() {
   const emptyEl = document.getElementById('admin-table-empty');
   if (!tbody) return;
 
-  const statusFilter = document.getElementById('admin-filter-status').value;
-  const officeFilter = document.getElementById('admin-filter-cargo').value;
+  const statusFilter = document.getElementById('admin-filter-status')?.value || 'ALL';
+  const officeFilter = document.getElementById('admin-filter-cargo')?.value || 'ALL';
+  const stateFilterEl = document.getElementById('admin-filter-estado');
+  const stateFilter = (stateFilterEl && stateFilterEl.style.display !== 'none') ? stateFilterEl.value : 'ALL';
+  const partyFilterEl = document.getElementById('admin-filter-partido');
+  const partyFilter = (partyFilterEl && partyFilterEl.style.display !== 'none') ? partyFilterEl.value : 'ALL';
+  const searchFilter = (document.getElementById('admin-filter-search')?.value || '').toLowerCase().trim();
 
   // JURISDIÇÃO ESTRITA:
-  // TSE vê tudo
+  // TSE vê TODOS os candidatos de qualquer estado/cidade
   // TRE Estadual vê somente seu estado
   // TRE Municipal vê somente sua cidade
-  const jurisdictionList = candidaciesList.filter(c => {
-    if (currentUser.role === 'tre_estadual') {
-      return c.stateId === currentUser.state;
-    } else if (currentUser.role === 'tre_municipal') {
-      return c.cityId === currentUser.city;
-    }
-    return true; // TSE
-  });
+  const jurisdictionList = candidaciesList.filter(c => isCandidateInJurisdiction(c, currentUser));
 
-  // Atualiza KPIs
-  document.getElementById('admin-kpi-total').textContent = jurisdictionList.length;
-  document.getElementById('admin-kpi-pendentes').textContent = jurisdictionList.filter(c => c.status === 'pendente').length;
-  document.getElementById('admin-kpi-deferidas').textContent = jurisdictionList.filter(c => c.status === 'deferida').length;
-  document.getElementById('admin-kpi-indeferidas').textContent = jurisdictionList.filter(c => c.status === 'indeferida').length;
+  // Atualiza KPIs da jurisdição
+  const pendentesCount = jurisdictionList.filter(c => c.status === 'pendente').length;
+  const deferidasCount = jurisdictionList.filter(c => c.status === 'deferida').length;
+  const indeferidasCount = jurisdictionList.filter(c => c.status === 'indeferida').length;
+
+  const kpiTotal = document.getElementById('admin-kpi-total');
+  const kpiPend = document.getElementById('admin-kpi-pendentes');
+  const kpiDef = document.getElementById('admin-kpi-deferidas');
+  const kpiIndef = document.getElementById('admin-kpi-indeferidas');
+
+  if (kpiTotal) kpiTotal.textContent = jurisdictionList.length;
+  if (kpiPend) kpiPend.textContent = pendentesCount;
+  if (kpiDef) kpiDef.textContent = deferidasCount;
+  if (kpiIndef) kpiIndef.textContent = indeferidasCount;
+
+  // Banner dinâmico de alerta de pendências
+  const alertEl = document.getElementById('admin-pending-alert');
+  const alertTextEl = document.getElementById('admin-pending-alert-text');
+  if (alertEl && alertTextEl) {
+    if (pendentesCount > 0) {
+      alertTextEl.textContent = `Atenção: Há ${pendentesCount} candidatura${pendentesCount === 1 ? '' : 's'} com status PENDENTE aguardando julgamento sob sua jurisdição!`;
+      alertEl.classList.remove('hidden');
+    } else {
+      alertEl.classList.add('hidden');
+    }
+  }
 
   const filtered = jurisdictionList.filter(c => {
     if (statusFilter !== 'ALL' && c.status !== statusFilter) return false;
     if (officeFilter !== 'ALL' && c.office !== officeFilter) return false;
+    if (stateFilter !== 'ALL' && String(c.stateId || '').toLowerCase() !== stateFilter.toLowerCase()) return false;
+    if (partyFilter !== 'ALL' && String(c.partyId) !== String(partyFilter)) return false;
+
+    if (searchFilter) {
+      const bName = String(c.ballotName || '').toLowerCase();
+      const fName = String(c.fullName || '').toLowerCase();
+      const num = String(c.number !== undefined && c.number !== null ? c.number : '');
+      const pAcronym = String(c.partyAcronym || '').toLowerCase();
+      const prot = String(c.protocol || '').toLowerCase();
+      if (!bName.includes(searchFilter) && !fName.includes(searchFilter) && !num.includes(searchFilter) && !pAcronym.includes(searchFilter) && !prot.includes(searchFilter)) {
+        return false;
+      }
+    }
+
     return true;
   });
 
@@ -2106,13 +2299,17 @@ function renderAdminCandidacies() {
   emptyEl.classList.add('hidden');
 
   tbody.innerHTML = filtered.map(c => `
-    <tr class="hover:bg-white/5 transition">
+    <tr class="hover:bg-white/5 transition ${c.status === 'pendente' ? 'bg-amber-500/5' : ''}">
       <td class="px-6 py-4">
         <div class="flex items-center gap-3">
-          <img src="${c.photo}" alt="${c.ballotName}" class="w-10 h-12 rounded-lg object-cover bg-brand-deep">
+          <img src="${c.photo}" alt="${c.ballotName}" class="w-10 h-12 rounded-lg object-cover bg-brand-deep border border-brand-border">
           <div>
-            <span class="font-bold text-white block">${c.ballotName}</span>
-            <span class="text-[11px] text-slate-400">${c.fullName}</span>
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-white block">${c.ballotName}</span>
+              ${c.status === 'pendente' ? '<span class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-400/20 text-amber-300 border border-amber-400/40 animate-pulse">NOVO</span>' : ''}
+            </div>
+            <span class="text-[11px] text-slate-400 block">${c.fullName}</span>
+            <span class="text-[10px] text-slate-500 font-mono block mt-0.5">Prot: ${c.protocol || 'N/D'}</span>
           </div>
         </div>
       </td>
@@ -2121,20 +2318,23 @@ function renderAdminCandidacies() {
         <span class="text-[11px] text-slate-400">${c.cityId && c.cityId !== 'ALL' ? (getCityDisplayName(c.stateId, c.cityId) + ' (' + getStateDisplayName(c.stateId) + ')') : getStateDisplayName(c.stateId)}</span>
       </td>
       <td class="px-6 py-4">
-        <span class="text-xs font-bold text-white block">${c.partyAcronym}</span>
+        <span class="text-xs font-bold text-white block" style="color: ${c.partyColor || '#fff'}">${c.partyAcronym}</span>
         <span class="font-mono text-xs font-bold text-brand-gold">${c.number}</span>
       </td>
       <td class="px-6 py-4">
-        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${
+        <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase inline-flex items-center gap-1.5 ${
           c.status === 'deferida' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
           c.status === 'indeferida' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
           c.status === 'excluida' ? 'bg-slate-700 text-slate-300' :
-          'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-        }">${c.status}</span>
+          'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+        }">
+          ${c.status === 'pendente' ? '<span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>' : ''}
+          ${c.status}
+        </span>
       </td>
       <td class="px-6 py-4 text-right">
-        <button onclick="openJudgmentModal('${c.id}')" class="px-3.5 py-1.5 rounded-xl bg-brand-blue hover:bg-blue-500 text-white text-xs font-bold transition shadow-sm">
-          Julgar Processo
+        <button onclick="openJudgmentModal('${c.id}')" class="px-3.5 py-1.5 rounded-xl ${c.status === 'pendente' ? 'bg-brand-gold text-slate-950 hover:bg-yellow-400 font-extrabold' : 'bg-brand-blue hover:bg-blue-500 text-white font-bold'} text-xs transition shadow-sm">
+          ${c.status === 'pendente' ? 'Julgar Agora' : 'Reavaliar'}
         </button>
       </td>
     </tr>
@@ -2333,7 +2533,30 @@ function refreshAdminData() {
   showToast('info', 'Sincronizando com o Firebase...');
   if (db) {
     db.ref('candidates').once('value', (snap) => {
-      showToast('success', 'Base de dados atualizada!');
+      const data = snap.val();
+      if (data) {
+        if (Array.isArray(data)) {
+          candidaciesList = data
+            .map((val, idx) => (val && typeof val === 'object') ? ({ id: val.id !== undefined ? val.id : String(idx), ...val }) : null)
+            .filter(Boolean);
+        } else {
+          candidaciesList = Object.entries(data)
+            .map(([id, val]) => (val && typeof val === 'object') ? ({ id: val.id !== undefined ? val.id : id, ...val }) : null)
+            .filter(Boolean);
+        }
+      } else {
+        candidaciesList = [];
+      }
+      updateGlobalStats();
+      renderConfirmedCandidates();
+      if (currentUser) {
+        renderAdminCandidacies();
+        updateAdminCharts();
+      }
+      showToast('success', `${candidaciesList.length} candidaturas sincronizadas em tempo real!`);
+    }, (err) => {
+      console.error('Erro na sincronização:', err);
+      showToast('error', 'Falha na sincronização com o banco.');
     });
   }
 }

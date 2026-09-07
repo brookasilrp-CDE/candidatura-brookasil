@@ -619,6 +619,12 @@
       <!-- Filters Bar -->
       <div class="glass-panel p-4 rounded-2xl border border-brand-border/60 flex flex-wrap gap-4 items-center justify-between">
         <div class="flex flex-wrap gap-3 flex-1 min-w-[280px]">
+          <select id="filter-status" onchange="renderConfirmedCandidates()" class="bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-xs text-white outline-none">
+            <option value="ALL">Todos os Status (Homologadas & Em Análise)</option>
+            <option value="deferida" selected>Homologadas (Aptas)</option>
+            <option value="pendente">Em Análise (Aguardando Tribunal)</option>
+            <option value="indeferida">Indeferidas</option>
+          </select>
           <select id="filter-cargo" onchange="renderConfirmedCandidates()" class="bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-xs text-white outline-none">
             <option value="ALL">Todos os Cargos</option>
             <option value="Presidente">Presidente</option>
@@ -643,7 +649,7 @@
         </div>
         <div class="relative w-full sm:w-64">
           <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
-          <input type="text" id="filter-search" oninput="renderConfirmedCandidates()" placeholder="Buscar por nome ou número..." class="w-full bg-brand-navy border border-brand-border rounded-xl pl-9 pr-3 py-2 text-xs text-white outline-none focus:border-brand-electric">
+          <input type="text" id="filter-search" oninput="renderConfirmedCandidates()" placeholder="Buscar por nome, número ou sigla..." class="w-full bg-brand-navy border border-brand-border rounded-xl pl-9 pr-3 py-2 text-xs text-white outline-none focus:border-brand-electric">
         </div>
       </div>
 
@@ -866,12 +872,26 @@
           </div>
         </div>
 
+        <!-- Alerta Dinâmico de Candidaturas Pendentes -->
+        <div id="admin-pending-alert" class="hidden glass-panel p-4 rounded-2xl border border-amber-500/40 bg-amber-500/10 text-amber-200 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5">
+            <span class="relative flex h-3 w-3">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+            </span>
+            <span id="admin-pending-alert-text" class="font-bold">Há candidaturas novas aguardando julgamento!</span>
+          </div>
+          <button onclick="setAdminStatusFilter('pendente')" class="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition">
+            Filtrar Apenas Pendentes
+          </button>
+        </div>
+
         <!-- Filter bar for Admin Judgments -->
         <div class="glass-panel p-4 rounded-2xl border border-brand-border flex flex-wrap gap-4 items-center justify-between">
           <div class="flex flex-wrap gap-3 flex-1 min-w-[280px]">
             <select id="admin-filter-status" onchange="renderAdminCandidacies()" class="bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-xs text-white outline-none">
               <option value="ALL">Todos os Status</option>
-              <option value="pendente">Pendentes</option>
+              <option value="pendente">Pendentes (Aguardando Decisão)</option>
               <option value="deferida">Deferidas</option>
               <option value="indeferida">Indeferidas</option>
               <option value="excluida">Excluídas</option>
@@ -886,10 +906,22 @@
               <option value="Prefeito">Prefeito</option>
               <option value="Vereador">Vereador</option>
             </select>
+            <!-- Only TSE sees state filter -->
+            <select id="admin-filter-estado" onchange="renderAdminCandidacies()" class="bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-xs text-white outline-none">
+              <option value="ALL">Todos os Estados</option>
+              <option value="brookhaven">Brookhaven</option>
+              <option value="floremix">Florêmix</option>
+              <option value="fortemega">Fortemega</option>
+              <option value="novacore">Novacore</option>
+            </select>
             <!-- Only TSE sees party filter as per rules -->
             <select id="admin-filter-partido" onchange="renderAdminCandidacies()" class="bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-xs text-white outline-none">
               <option value="ALL">Todos os Partidos</option>
             </select>
+          </div>
+          <div class="relative w-full sm:w-64">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+            <input type="text" id="admin-filter-search" oninput="renderAdminCandidacies()" placeholder="Buscar nome, número ou protocolo..." class="w-full bg-brand-navy border border-brand-border rounded-xl pl-9 pr-3 py-2 text-xs text-white outline-none focus:border-brand-electric">
           </div>
         </div>
 
@@ -1145,7 +1177,7 @@
       <div class="space-y-2">
         <span class="text-xs uppercase font-bold tracking-widest text-brand-gold">Submissão Confirmada</span>
         <h3 class="text-2xl font-cinzel font-bold text-white">Candidatura Registrada com Sucesso!</h3>
-        <p class="text-xs text-slate-300">Seu pedido foi protocolado no Tribunal Eleitoral de Brookasil sob status <strong class="text-amber-400">Pendente</strong> e aguarda análise dos magistrados.</p>
+        <p class="text-xs text-slate-300">Seu pedido foi protocolado com sucesso no Tribunal Eleitoral de Brookasil sob status <strong class="text-amber-400">Em Análise (Pendente)</strong> e já está disponível para visualização e julgamento.</p>
       </div>
 
       <div class="bg-brand-navy/90 p-4 rounded-2xl border border-brand-border text-left space-y-2">
@@ -1163,9 +1195,14 @@
         </div>
       </div>
 
-      <button onclick="closeSuccessModal()" class="w-full py-3.5 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-brand-gold to-yellow-500 hover:to-brand-gold transition text-sm">
-        Concluir e Voltar ao Início
-      </button>
+      <div class="flex flex-col sm:flex-row items-center gap-3 pt-2">
+        <button onclick="viewSubmittedCandidacyInPublicList()" class="w-full sm:flex-1 py-3 rounded-xl font-extrabold text-slate-950 bg-gradient-to-r from-brand-gold to-yellow-500 hover:to-brand-gold transition text-xs flex items-center justify-center gap-2 shadow-glow-gold">
+          <i data-lucide="search" class="w-4 h-4"></i> Acompanhar Candidatura
+        </button>
+        <button onclick="closeSuccessModal()" class="w-full sm:w-auto px-5 py-3 rounded-xl font-bold text-slate-300 bg-white/5 hover:bg-white/10 transition text-xs">
+          Voltar ao Início
+        </button>
+      </div>
     </div>
   </div>
 
