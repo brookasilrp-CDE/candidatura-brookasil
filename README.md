@@ -1,11 +1,83 @@
-<div align="center">
+# 🗳️ CANDIDATURAS | BROOKASIL RP 🇬🇦
+### Sistema Oficial de Registro e Consulta de Candidaturas da Justiça Eleitoral de Brookasil
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+Sistema web completo, interativo, responsivo e futurista integrado ao **Firebase Realtime Database** para gerenciamento de eleições, registro de candidaturas, julgamento de processos eleitorais (TSE e TREs) e consulta pública de candidatos confirmados.
 
-  <h1>Built with AI Studio</h2>
+---
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+## 🏛️ Visão Geral & Tecnologias
+- **Frontend**: HTML5, CSS3, Tailwind CSS (via CDN), JavaScript Vanilla (ES6+ modular).
+- **Banco de Dados**: Firebase Realtime Database (`https://candidatura-cde-default-rtdb.firebaseio.com`).
+- **Hospedagem / Deploy**: Pronto para **GitHub Pages** como aplicação estática em arquivo único (`index.html`).
+- **Gráficos & Animações**: Chart.js, Lucide Icons, Canvas Confetti, Microinterações CSS e símbolo heráldico exclusivo: **Flor de 8 Pétalas de Brookasil**.
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+---
 
-</div>
+## 🚀 Publicação no GitHub Pages
+1. Crie ou acesse seu repositório no GitHub.
+2. Faça o upload dos arquivos `index.html`, `database.rules.json` e `README.md` na branch principal (`main` ou `master`).
+3. No GitHub, vá em **Settings** > **Pages**.
+4. Em **Build and deployment** > **Source**, selecione **Deploy from a branch**.
+5. Escolha a branch `main` e a pasta `/ (root)`.
+6. Clique em **Save**. Em instantes seu sistema estará no ar na URL do GitHub Pages!
+
+---
+
+## 🗄️ Estrutura do Firebase Realtime Database
+```text
+settings/               -> Parâmetros gerais da plataforma e bandeira do RP
+elections/{electionId}  -> Eleições cadastradas (Federal ou Municipal)
+parties/{partyId}       -> Partidos políticos (43 agremiações oficiais)
+candidates/{candId}     -> Processos de candidatura completos
+numberRegistry/         -> Reserva atômica de números de urna para evitar duplicidade
+tre/                    -> Registro dos tribunais (TSE, 4 Estaduais e 8 Municipais)
+admins/                 -> Registro de operadores do sistema (sem senhas)
+notifications/          -> Notificações em tempo real para os magistrados
+auditLogs/              -> Logs imutáveis de julgamento e exclusão
+states/                 -> 4 Estados: Brookhaven, Florêmix, Fortemega, Novacore
+cities/                 -> 8 Cidades vinculadas aos seus respectivos estados
+```
+
+---
+
+## 🔐 Credenciais Administrativas de Acesso
+
+> ⚠️ *Nota de RP*: Estas credenciais são propositalmente definidas no código para a simulação do universo fictício do Brookasil RP.
+
+| Tribunal | Login | Senha | Função / Jurisdição |
+| :--- | :--- | :--- | :--- |
+| **TSE Nacional** | `TSE_Brookasil@2026` | `ARTHUR@1971` | Nacional Pleno (Todos os Estados e Cidades) |
+| **TRE Brookhaven** | `TRE_Brookhaven@2026` | `TRE@BROOKHAVEN` | Estadual (Brookhaven) |
+| **TRE Florêmix** | `TRE_Florêmix@2026` | `TRE@FLORÊMIX` | Estadual (Florêmix) |
+| **TRE Fortemega** | `TRE_Fortemega@2026` | `TRE@FORTEMEGA` | Estadual (Fortemega) |
+| **TRE Novacore** | `TRE_Novacore@2026` | `TRE@NOVACORE` | Estadual (Novacore) |
+| **TRE Cidade Eleitoral** | `TRE_CidadeEleitoral@2026` | `TRE.CIDADEELEITORAL` | Municipal (Brookhaven - Cidade Eleitoral) |
+| **TRE Braviland** | `TRE_Braviland@2026` | `TRE.BRAVILAND` | Municipal (Brookhaven - Braviland) |
+| **TRE Florápolis** | `TRE_Florápolis@2026` | `TRE.FLORÁPOLIS` | Municipal (Florêmix - Florápolis) |
+| **TRE Riomarina** | `TRE_Riomarina@2026` | `TRE.RIOMARINA` | Municipal (Florêmix - Riomarina) |
+| **TRE Porto Rubi** | `TRE_PortoRubi@2026` | `TRE.PORTORUBI` | Municipal (Fortemega - Porto Rubi) |
+| **TRE Fortelume** | `TRE_Fortelume@2026` | `TRE.FORTELUME` | Municipal (Fortemega - Fortelume) |
+| **TRE Nápolis** | `TRE_Nápolis@2026` | `TRE.NÁPOLIS` | Municipal (Novacore - Nápolis) |
+| **TRE Catarinía** | `TRE_Catarinía@2026` | `TRE.CATARINÍA` | Municipal (Novacore - Catarinía) |
+
+---
+
+## ⚖️ Regras Eleitorais de Brookasil
+1. **Unicidade de Eleição**: Apenas UMA eleição pode estar aberta por vez (Federal OU Municipal).
+2. **Número de Urna Obrigatório**:
+   - **Majoritários** (*Presidente, Governador, Prefeito*): Exatamente os 2 dígitos do partido.
+   - **Senador**: 3 dígitos (2 do partido + 1 do candidato).
+   - **Deputado Federal**: 4 dígitos (2 do partido + 2 do candidato).
+   - **Deputado Estadual / Vereador**: 5 dígitos (2 do partido + 3 do candidato).
+   - O prefixo partidário é travado e não pode ser apagado.
+3. **Mídia e Propostas**:
+   - Foto obrigatória com compressão e conversão local no navegador em Base64 (sem necessidade de Firebase Storage).
+   - Perfil TikTok obrigatório (@usuario ou link direto).
+   - Plano de governo em PDF obrigatório para Presidente, Governador e Prefeito.
+4. **Julgamento Jurisdicional**:
+   - Status: `Pendente` ➔ `Em Análise` ➔ `Deferida` ou `Indeferida` ou `Excluída`.
+   - Somente candidaturas com status **Deferida** são exibidas na consulta pública.
+   - Exclusão de candidatura libera imediatamente o número de urna no `numberRegistry` para reaproveitamento.
+
+---
+*Sistema fictício integrante do Brookasil RP. Todos os direitos reservados à República de Brookasil.*

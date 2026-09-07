@@ -1,0 +1,543 @@
+{
+  "parties": [
+    {
+      "id": 1,
+      "name": "Partido Liberal",
+      "acronym": "PL",
+      "number": 22,
+      "group": "Direita",
+      "color": "#1E3A8A",
+      "active": true
+    },
+    {
+      "id": 2,
+      "name": "Partido Progressista",
+      "acronym": "PP",
+      "number": 11,
+      "group": "Direita",
+      "color": "#0284C7",
+      "active": true
+    },
+    {
+      "id": 3,
+      "name": "Republicanos",
+      "acronym": "REP",
+      "number": 10,
+      "group": "Direita",
+      "color": "#0D9488",
+      "active": true
+    },
+    {
+      "id": 4,
+      "name": "NOVO",
+      "acronym": "NOVO",
+      "number": 30,
+      "group": "Direita",
+      "color": "#EA580C",
+      "active": true
+    },
+    {
+      "id": 5,
+      "name": "Democracia Cristã",
+      "acronym": "DC",
+      "number": 27,
+      "group": "Direita",
+      "color": "#2563EB",
+      "active": true
+    },
+    {
+      "id": 6,
+      "name": "Agir",
+      "acronym": "AGIR",
+      "number": 36,
+      "group": "Direita",
+      "color": "#4F46E5",
+      "active": true
+    },
+    {
+      "id": 7,
+      "name": "Democratas",
+      "acronym": "DEM",
+      "number": 35,
+      "group": "Direita",
+      "color": "#0369A1",
+      "active": true
+    },
+    {
+      "id": 8,
+      "name": "Patriota",
+      "acronym": "PATRIOTA",
+      "number": 51,
+      "group": "Direita",
+      "color": "#15803D",
+      "active": true
+    },
+    {
+      "id": 9,
+      "name": "Partido Renovador Trabalhista Brookasileiro",
+      "acronym": "PRTB",
+      "number": 28,
+      "group": "Direita",
+      "color": "#B45309",
+      "active": true
+    },
+    {
+      "id": 10,
+      "name": "Partido Nacional Trabalhista Brookasileiro",
+      "acronym": "PNTB",
+      "number": 75,
+      "group": "Direita",
+      "color": "#4338CA",
+      "active": true
+    },
+    {
+      "id": 11,
+      "name": "Partido da Ordem e Liberdade",
+      "acronym": "POL",
+      "number": 81,
+      "group": "Direita",
+      "color": "#1E293B",
+      "active": true
+    },
+    {
+      "id": 12,
+      "name": "Aliança Cristã Nacional",
+      "acronym": "ACN",
+      "number": 84,
+      "group": "Direita",
+      "color": "#6B21A8",
+      "active": true
+    },
+    {
+      "id": 13,
+      "name": "Partido da Reedificação da Ordem Nacional",
+      "acronym": "PRONA",
+      "number": 57,
+      "group": "Direita",
+      "color": "#312E81",
+      "active": true
+    },
+    {
+      "id": 14,
+      "name": "Partido da Liberdade Nacional",
+      "acronym": "PLN",
+      "number": 17,
+      "group": "Direita",
+      "color": "#065F46",
+      "active": true
+    },
+    {
+      "id": 15,
+      "name": "Partido da Esperança",
+      "acronym": "PESP",
+      "number": 48,
+      "group": "Direita",
+      "color": "#047857",
+      "active": true
+    },
+    {
+      "id": 16,
+      "name": "Partido Militar Nacionalista",
+      "acronym": "PMNL",
+      "number": 86,
+      "group": "Direita",
+      "color": "#292524",
+      "active": true
+    },
+    {
+      "id": 17,
+      "name": "Partido Revolucionário Inconstitucional",
+      "acronym": "PRI",
+      "number": 26,
+      "group": "Direita",
+      "color": "#7C2D12",
+      "active": true
+    },
+    {
+      "id": 18,
+      "name": "Partido da Unidade e Liberdade Nacional",
+      "acronym": "PULN",
+      "number": 24,
+      "group": "Direita",
+      "color": "#164E63",
+      "active": true
+    },
+    {
+      "id": 19,
+      "name": "Movimento Democrático Brookasileiro",
+      "acronym": "MDB",
+      "number": 15,
+      "group": "Centro",
+      "color": "#059669",
+      "active": true
+    },
+    {
+      "id": 20,
+      "name": "União Brookasil",
+      "acronym": "UNIÃO",
+      "number": 44,
+      "group": "Centro",
+      "color": "#2563EB",
+      "active": true
+    },
+    {
+      "id": 21,
+      "name": "Partido Social Democrático",
+      "acronym": "PSD",
+      "number": 55,
+      "group": "Centro",
+      "color": "#D97706",
+      "active": true
+    },
+    {
+      "id": 22,
+      "name": "Podemos",
+      "acronym": "PODEMOS",
+      "number": 20,
+      "group": "Centro",
+      "color": "#0284C7",
+      "active": true
+    },
+    {
+      "id": 23,
+      "name": "Partido da Social Democracia Brookasileira",
+      "acronym": "PSDB",
+      "number": 45,
+      "group": "Centro",
+      "color": "#1D4ED8",
+      "active": true
+    },
+    {
+      "id": 24,
+      "name": "Cidadania",
+      "acronym": "CIDADANIA",
+      "number": 23,
+      "group": "Centro",
+      "color": "#E11D48",
+      "active": true
+    },
+    {
+      "id": 25,
+      "name": "Solidariedade",
+      "acronym": "SOLIDARIEDADE",
+      "number": 77,
+      "group": "Centro",
+      "color": "#EA580C",
+      "active": true
+    },
+    {
+      "id": 26,
+      "name": "Avante",
+      "acronym": "AVANTE",
+      "number": 70,
+      "group": "Centro",
+      "color": "#D97706",
+      "active": true
+    },
+    {
+      "id": 27,
+      "name": "Partido da Reconstrução Nacional Brookasileira",
+      "acronym": "PRNB",
+      "number": 67,
+      "group": "Centro",
+      "color": "#4F46E5",
+      "active": true
+    },
+    {
+      "id": 28,
+      "name": "Partido Mobilização Nacional",
+      "acronym": "PMN",
+      "number": 33,
+      "group": "Centro",
+      "color": "#9333EA",
+      "active": true
+    },
+    {
+      "id": 29,
+      "name": "Partido dos Trabalhadores",
+      "acronym": "PT",
+      "number": 13,
+      "group": "Esquerda",
+      "color": "#DC2626",
+      "active": true
+    },
+    {
+      "id": 30,
+      "name": "Partido Socialismo e Liberdade",
+      "acronym": "PSOL",
+      "number": 50,
+      "group": "Esquerda",
+      "color": "#E11D48",
+      "active": true
+    },
+    {
+      "id": 31,
+      "name": "Partido Comunista de Brookasil",
+      "acronym": "PCdoB",
+      "number": 65,
+      "group": "Esquerda",
+      "color": "#B91C1C",
+      "active": true
+    },
+    {
+      "id": 32,
+      "name": "REDE",
+      "acronym": "REDE",
+      "number": 18,
+      "group": "Esquerda",
+      "color": "#059669",
+      "active": true
+    },
+    {
+      "id": 33,
+      "name": "Partido Democrático Trabalhista",
+      "acronym": "PDT",
+      "number": 12,
+      "group": "Esquerda",
+      "color": "#C2410C",
+      "active": true
+    },
+    {
+      "id": 34,
+      "name": "Unidade Popular",
+      "acronym": "UP",
+      "number": 80,
+      "group": "Esquerda",
+      "color": "#991B1B",
+      "active": true
+    },
+    {
+      "id": 35,
+      "name": "Partido da Causa Operária",
+      "acronym": "PCO",
+      "number": 29,
+      "group": "Esquerda",
+      "color": "#7F1D1D",
+      "active": true
+    },
+    {
+      "id": 36,
+      "name": "Partido Comunista Brookasileiro",
+      "acronym": "PCB",
+      "number": 21,
+      "group": "Esquerda",
+      "color": "#991B1B",
+      "active": true
+    },
+    {
+      "id": 37,
+      "name": "Partido Socialista dos Trabalhadores Unificado",
+      "acronym": "PSTU",
+      "number": 16,
+      "group": "Esquerda",
+      "color": "#DC2626",
+      "active": true
+    },
+    {
+      "id": 38,
+      "name": "Partido Pátria Livre",
+      "acronym": "PPL",
+      "number": 54,
+      "group": "Esquerda",
+      "color": "#B45309",
+      "active": true
+    },
+    {
+      "id": 39,
+      "name": "Partido Socialista Brookasileiro",
+      "acronym": "PSB",
+      "number": 40,
+      "group": "Esquerda",
+      "color": "#F59E0B",
+      "active": true
+    },
+    {
+      "id": 40,
+      "name": "Partido da Frente Socialista",
+      "acronym": "PFS",
+      "number": 60,
+      "group": "Esquerda",
+      "color": "#EF4444",
+      "active": true
+    },
+    {
+      "id": 41,
+      "name": "Partido Socialista",
+      "acronym": "PS",
+      "number": 56,
+      "group": "Esquerda",
+      "color": "#E11D48",
+      "active": true
+    },
+    {
+      "id": 42,
+      "name": "Partido Social Trabalhista Nacional",
+      "acronym": "PSTN",
+      "number": 31,
+      "group": "Esquerda",
+      "color": "#0D9488",
+      "active": true
+    }
+  ],
+  "candidacies": [
+    {
+      "id": "cand-1788809129477-cqbq6",
+      "protocol": "BRK-2026-766278",
+      "full_name": "Juliana Silveira Peixoto",
+      "ballot_name": "Juliana Peixoto",
+      "photo": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80",
+      "state": "Novacore",
+      "position": "Senador",
+      "party": {
+        "id": 1,
+        "name": "Partido Liberal",
+        "acronym": "PL",
+        "number": 22,
+        "color": "#1E3A8A"
+      },
+      "number": "222",
+      "biography": "Engenheira ambiental e ativista pela sustentabilidade hídrica com atuação no Vale de Novacore.",
+      "proposals": "1. Modernização do saneamento regional.\n2. Incentivo fiscal a usinas solares comunitárias.",
+      "status": "INDEFERIDA",
+      "created_at": "2026-09-07T19:25:29.477Z",
+      "updated_at": "2026-09-07T19:25:42.381Z",
+      "reviewed_by": "tre.novacore",
+      "rejection_reason": "Falta de certidão negativa eleitoral."
+    },
+    {
+      "id": "cand-001",
+      "protocol": "BRK-2026-948201",
+      "full_name": "Arthur Mendonça Silveira",
+      "ballot_name": "Arthur Silveira",
+      "photo": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80",
+      "state": "Brookhaven",
+      "position": "Governador",
+      "party": {
+        "id": 1,
+        "name": "Partido Liberal",
+        "acronym": "PL",
+        "number": 22,
+        "color": "#1E3A8A"
+      },
+      "number": "22",
+      "biography": "Advogado e servidor público com mais de 15 anos de atuação na gestão metropolitana de Brookhaven.",
+      "proposals": "1. Modernização do sistema de transporte público urbano.\n2. Programa de incentivo à indústria tecnológica em Brookhaven.\n3. Fortalecimento da segurança pública integrada.",
+      "status": "DEFERIDA",
+      "created_at": "2026-08-10T14:30:00.000Z",
+      "updated_at": "2026-08-12T09:15:00.000Z",
+      "reviewed_by": "tre.brookhaven"
+    },
+    {
+      "id": "cand-002",
+      "protocol": "BRK-2026-312948",
+      "full_name": "Helena Duarte Fontes",
+      "ballot_name": "Helena Fontes",
+      "photo": "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80",
+      "state": "Brookhaven",
+      "position": "Senador",
+      "party": {
+        "id": 29,
+        "name": "Partido dos Trabalhadores",
+        "acronym": "PT",
+        "number": 13,
+        "color": "#DC2626"
+      },
+      "number": "131",
+      "biography": "Professora universitária, socióloga e defensora dos direitos sociais e trabalhistas em Brookasil.",
+      "proposals": "1. Expansão dos investimentos federais na educação básica.\n2. Reforma tributária solidária e fomento à economia cooperativa.\n3. Plano emergencial de sustentabilidade hídrica.",
+      "status": "PENDENTE",
+      "created_at": "2026-08-15T11:20:00.000Z",
+      "updated_at": "2026-08-15T11:20:00.000Z"
+    },
+    {
+      "id": "cand-003",
+      "protocol": "BRK-2026-784019",
+      "full_name": "Marcos Vinícius de Alencar",
+      "ballot_name": "Marcos Alencar",
+      "photo": "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80",
+      "state": "Novacore",
+      "position": "Deputado Federal",
+      "party": {
+        "id": 20,
+        "name": "União Brookasil",
+        "acronym": "UNIÃO",
+        "number": 44,
+        "color": "#2563EB"
+      },
+      "number": "4450",
+      "biography": "Engenheiro de automação e empresário do pólo digital de Novacore, focado em inovação legislativa.",
+      "proposals": "1. Desregulamentação e incentivo a startups no Congresso.\n2. Conectividade 5G em 100% das escolas públicas de Novacore.\n3. Transparência algorítmica nos gastos governamentais.",
+      "status": "PENDENTE",
+      "created_at": "2026-08-18T16:45:00.000Z",
+      "updated_at": "2026-08-18T16:45:00.000Z"
+    },
+    {
+      "id": "cand-004",
+      "protocol": "BRK-2026-551902",
+      "full_name": "Beatriz Vasconcelos Ramos",
+      "ballot_name": "Bia Vasconcelos",
+      "photo": "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&q=80",
+      "state": "Fortemega",
+      "position": "Governador",
+      "party": {
+        "id": 4,
+        "name": "NOVO",
+        "acronym": "NOVO",
+        "number": 30,
+        "color": "#EA580C"
+      },
+      "number": "30",
+      "biography": "Economista com especialização em finanças públicas e desestatização, ex-secretária de planejamento de Fortemega.",
+      "proposals": "1. Corte de gastos públicos supérfluos e enxugamento de secretarias.\n2. Descentralização orçamentária para municípios do interior.\n3. Parcerias público-privadas em infraestrutura rodoviária.",
+      "status": "PENDENTE",
+      "created_at": "2026-08-20T10:10:00.000Z",
+      "updated_at": "2026-08-20T10:10:00.000Z"
+    },
+    {
+      "id": "cand-005",
+      "protocol": "BRK-2026-102947",
+      "full_name": "Carlos Eduardo Nogueira",
+      "ballot_name": "Delegado Nogueira",
+      "photo": "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=400&q=80",
+      "state": "Florêmix",
+      "position": "Deputado Estadual",
+      "party": {
+        "id": 3,
+        "name": "Republicanos",
+        "acronym": "REP",
+        "number": 10,
+        "color": "#0D9488"
+      },
+      "number": "10123",
+      "biography": "Delegado de polícia há 18 anos, atuando na linha de frente do combate ao crime organizado em Florêmix.",
+      "proposals": "1. Reestruturação salarial e equipamentos de última geração para as forças policiais.\n2. Rondas ostensivas nas zonas rurais de Florêmix.\n3. Endurecimento do código disciplinar penitenciário.",
+      "status": "PENDENTE",
+      "created_at": "2026-08-22T08:50:00.000Z",
+      "updated_at": "2026-08-22T08:50:00.000Z"
+    },
+    {
+      "id": "cand-006",
+      "protocol": "BRK-2026-883710",
+      "full_name": "Valdemar Antunes Correa",
+      "ballot_name": "Valdemar do Povo",
+      "photo": "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=400&q=80",
+      "state": "Brookhaven",
+      "position": "Prefeito",
+      "party": {
+        "id": 19,
+        "name": "Movimento Democrático Brookasileiro",
+        "acronym": "MDB",
+        "number": 15,
+        "color": "#059669"
+      },
+      "number": "15",
+      "biography": "Comerciante local e líder comunitário atuante no centro histórico de Brookhaven há 25 anos.",
+      "proposals": "1. Revitalização do centro histórico e calçadões comerciais.\n2. Postos de saúde com atendimento 24h e farmácia popular local.\n3. Isenção de taxas para microempreendedores individuais.",
+      "status": "INDEFERIDA",
+      "rejection_reason": "Inconformidade na documentação de quitação eleitoral e ausência de certidão criminal negativa.",
+      "created_at": "2026-08-05T13:00:00.000Z",
+      "updated_at": "2026-08-07T11:40:00.000Z",
+      "reviewed_by": "tre.brookhaven"
+    }
+  ]
+}

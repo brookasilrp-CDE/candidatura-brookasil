@@ -1,0 +1,6 @@
+{
+  "name": "Candidaturas | Brookasil RP 🇬🇦",
+  "description": "Sistema de Registro e Consulta de Candidaturas do Brookasil RP integrado ao Firebase Realtime Database.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

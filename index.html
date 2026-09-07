@@ -1,0 +1,1385 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Candidaturas | Brookasil RP 🇬🇦</title>
+  <meta name="description" content="Sistema Oficial de Registro e Consulta de Candidaturas da Justiça Eleitoral de Brookasil RP.">
+  <meta property="og:title" content="Candidaturas | Brookasil RP 🇬🇦">
+  <meta property="og:description" content="Sistema Oficial de Registro e Consulta de Candidaturas da Justiça Eleitoral de Brookasil RP.">
+  <meta property="og:type" content="website">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              navy: '#050c1e',
+              deep: '#0a142c',
+              card: '#0f1f42',
+              border: '#1e3568',
+              blue: '#2563eb',
+              electric: '#38bdf8',
+              gold: '#fbbf24',
+              goldHover: '#f59e0b',
+              emerald: '#10b981',
+              ruby: '#ef4444'
+            }
+          },
+          fontFamily: {
+            cinzel: ['Cinzel', 'serif'],
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            display: ['Outfit', 'sans-serif']
+          },
+          boxShadow: {
+            'glow-blue': '0 0 25px -5px rgba(56, 189, 248, 0.4)',
+            'glow-gold': '0 0 25px -5px rgba(251, 191, 36, 0.4)',
+            'glow-emerald': '0 0 25px -5px rgba(16, 185, 129, 0.4)'
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Canvas Confetti CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+
+  <!-- Firebase App & Database Compat CDN -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+
+  <style>
+    /* Custom Glow & Futuristic Animations */
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 0.6; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.04); }
+    }
+    .animate-pulse-glow { animation: pulse-glow 4s ease-in-out infinite; }
+
+    @keyframes float-slow {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-6px); }
+    }
+    .animate-float { animation: float-slow 3s ease-in-out infinite; }
+
+    /* Glassmorphism */
+    .glass-panel {
+      background: rgba(15, 31, 66, 0.75);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+    }
+    .light .glass-panel {
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(37, 99, 235, 0.2);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: #050c1e; }
+    ::-webkit-scrollbar-thumb { background: #1e3568; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
+
+    /* Hide elements with class */
+    .view-section { display: none; }
+    .view-section.active { display: block; }
+  </style>
+</head>
+<body class="bg-brand-navy text-slate-100 font-sans min-h-screen flex flex-col transition-colors duration-300 selection:bg-brand-electric selection:text-brand-navy">
+
+  <!-- Background decorative glowing orbs -->
+  <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
+    <div class="absolute -top-40 -left-40 w-96 h-96 bg-blue-600/15 rounded-full blur-3xl animate-pulse-glow"></div>
+    <div class="absolute top-1/3 -right-40 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl animate-pulse-glow" style="animation-delay: 2s;"></div>
+    <div class="absolute -bottom-40 left-1/3 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl animate-pulse-glow" style="animation-delay: 1s;"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(#1e3568_1px,transparent_1px)] [background-size:24px_24px] opacity-25"></div>
+  </div>
+
+  <!-- Connection Status Banner -->
+  <div id="offline-banner" class="hidden bg-amber-500 text-slate-950 font-semibold text-center text-xs py-1 px-4 z-50 shadow-md">
+    ⚠️ Conexão perdida com o Firebase. Verifique sua internet. Algumas atualizações podem ser sincronizadas ao reconectar.
+  </div>
+
+  <!-- HEADER / NAVBAR -->
+  <header class="sticky top-0 z-40 glass-panel border-b border-brand-border/60">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <a href="#home" onclick="navigateTo('home'); return false;" class="flex items-center gap-3.5 group cursor-pointer">
+        <!-- Flor de 8 pétalas SVG -->
+        <div class="relative w-12 h-12 flex items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-900 border border-brand-electric/40 shadow-glow-blue transition-transform group-hover:scale-105">
+          <svg class="w-8 h-8 text-white animate-float" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <g transform="translate(50,50)">
+              <!-- 8 Pétalas Matemáticas -->
+              <ellipse cx="0" cy="-28" rx="8" ry="18" fill="white" opacity="0.95" />
+              <ellipse cx="0" cy="-28" rx="8" ry="18" fill="white" opacity="0.95" transform="rotate(45)" />
+              <ellipse cx="0" cy="-28" rx="8" ry="18" fill="white" opacity="0.95" transform="rotate(90)" />
+              <ellipse cx="0" cy="-28" rx="8" ry="18" fill="white" opacity="0.95" transform="rotate(135)" />
+              <ellipse cx="0" cy="-28" rx="8" ry="18" fill="white" opacity="0.95" transform="rotate(180)" />
+              <ellipse cx="0" cy="-28" rx="8" ry="18" fill="white" opacity="0.95" transform="rotate(225)" />
+              <ellipse cx="0" cy="-28" rx="8" ry="18" fill="white" opacity="0.95" transform="rotate(270)" />
+              <ellipse cx="0" cy="-28" rx="8" ry="18" fill="white" opacity="0.95" transform="rotate(315)" />
+              <!-- Miolo Ouro -->
+              <circle cx="0" cy="0" r="10" fill="#fbbf24" stroke="#d97706" stroke-width="2" />
+              <!-- Símbolo de Urna central -->
+              <circle cx="0" cy="0" r="4" fill="#0a142c" />
+            </g>
+          </svg>
+          <span class="absolute -bottom-1 -right-1 flex h-3.5 w-3.5">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-brand-electric opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-brand-electric"></span>
+          </span>
+        </div>
+
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-cinzel font-bold text-lg tracking-wider text-white group-hover:text-brand-electric transition-colors">TSE BROOKASIL</span>
+            <span class="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-brand-blue/30 text-brand-electric border border-brand-electric/30">RP 🇬🇦</span>
+          </div>
+          <p class="text-xs text-slate-400 font-medium">Tribunal Superior Eleitoral</p>
+        </div>
+      </a>
+
+      <!-- Desktop Navigation Menu -->
+      <nav class="hidden lg:flex items-center gap-1.5 font-medium text-sm">
+        <button onclick="navigateTo('home')" class="nav-btn px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 transition flex items-center gap-1.5" data-view="home">
+          <i data-lucide="home" class="w-4 h-4"></i> Início
+        </button>
+        <button onclick="navigateTo('candidaturas')" class="nav-btn px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 transition flex items-center gap-1.5" data-view="candidaturas">
+          <i data-lucide="file-signature" class="w-4 h-4 text-brand-gold"></i> Candidatar-se
+        </button>
+        <button onclick="navigateTo('candidatos')" class="nav-btn px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 transition flex items-center gap-1.5" data-view="candidatos">
+          <i data-lucide="users" class="w-4 h-4"></i> Candidatos
+        </button>
+        <button onclick="navigateTo('partidos')" class="nav-btn px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 transition flex items-center gap-1.5" data-view="partidos">
+          <i data-lucide="flag" class="w-4 h-4"></i> Partidos
+        </button>
+        <button onclick="navigateTo('eleicoes')" class="nav-btn px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 transition flex items-center gap-1.5" data-view="eleicoes">
+          <i data-lucide="vote" class="w-4 h-4 text-brand-emerald"></i> Eleições
+        </button>
+        <button onclick="navigateTo('consultar')" class="nav-btn px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 transition flex items-center gap-1.5" data-view="consultar">
+          <i data-lucide="search" class="w-4 h-4"></i> Consultar
+        </button>
+        <button onclick="navigateTo('informacoes')" class="nav-btn px-3 py-2 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 transition flex items-center gap-1.5" data-view="informacoes">
+          <i data-lucide="info" class="w-4 h-4"></i> Guia
+        </button>
+      </nav>
+
+      <!-- Right Header Actions -->
+      <div class="flex items-center gap-3">
+        <!-- Theme Toggle -->
+        <button id="theme-toggle-btn" onclick="toggleTheme()" class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition" title="Alternar Modo Escuro / Claro">
+          <i data-lucide="sun" class="w-5 h-5 hidden dark:block text-brand-gold"></i>
+          <i data-lucide="moon" class="w-5 h-5 block dark:hidden text-brand-blue"></i>
+        </button>
+
+        <!-- Admin Area Trigger -->
+        <div id="auth-buttons-container">
+          <!-- Populated by JS (Login button or Admin Badge + Logout) -->
+        </div>
+
+        <!-- Mobile Menu Toggle -->
+        <button onclick="toggleMobileMenu()" class="lg:hidden p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5">
+          <i data-lucide="menu" class="w-6 h-6"></i>
+        </button>
+      </div>
+
+    </div>
+
+    <!-- Mobile Drawer Menu -->
+    <div id="mobile-menu" class="hidden lg:hidden border-t border-brand-border/60 bg-brand-deep/95 backdrop-blur-xl px-4 py-3 space-y-1">
+      <button onclick="navigateTo('home'); toggleMobileMenu();" class="w-full text-left px-3 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 flex items-center gap-2">
+        <i data-lucide="home" class="w-4 h-4"></i> Início
+      </button>
+      <button onclick="navigateTo('candidaturas'); toggleMobileMenu();" class="w-full text-left px-3 py-2.5 rounded-lg text-brand-gold hover:bg-white/5 flex items-center gap-2 font-semibold">
+        <i data-lucide="file-signature" class="w-4 h-4"></i> Registrar Candidatura
+      </button>
+      <button onclick="navigateTo('candidatos'); toggleMobileMenu();" class="w-full text-left px-3 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 flex items-center gap-2">
+        <i data-lucide="users" class="w-4 h-4"></i> Candidatos Confirmados
+      </button>
+      <button onclick="navigateTo('partidos'); toggleMobileMenu();" class="w-full text-left px-3 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 flex items-center gap-2">
+        <i data-lucide="flag" class="w-4 h-4"></i> Partidos Políticos (43)
+      </button>
+      <button onclick="navigateTo('eleicoes'); toggleMobileMenu();" class="w-full text-left px-3 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 flex items-center gap-2">
+        <i data-lucide="vote" class="w-4 h-4"></i> Eleições & Vagas
+      </button>
+      <button onclick="navigateTo('consultar'); toggleMobileMenu();" class="w-full text-left px-3 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 flex items-center gap-2">
+        <i data-lucide="search" class="w-4 h-4"></i> Consultar Número / Protocolo
+      </button>
+      <button onclick="navigateTo('informacoes'); toggleMobileMenu();" class="w-full text-left px-3 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 flex items-center gap-2">
+        <i data-lucide="info" class="w-4 h-4"></i> Guia Oficial
+      </button>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT CONTAINER (View Routing Target) -->
+  <main id="app-main" class="flex-grow relative z-10 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <!-- ============================================== -->
+    <!-- VIEW 1: HOME (PÁGINA INICIAL)                   -->
+    <!-- ============================================== -->
+    <section id="view-home" class="view-section active space-y-12">
+      <!-- Hero Banner -->
+      <div class="relative rounded-3xl overflow-hidden glass-panel border border-brand-border/60 p-8 sm:p-12 lg:p-16 text-center shadow-2xl">
+        <div class="absolute inset-0 bg-gradient-to-b from-blue-900/30 via-transparent to-brand-navy/60 pointer-events-none"></div>
+
+        <!-- Republic Badge & Flower Icon -->
+        <div class="relative inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-brand-blue/20 border border-brand-electric/40 text-brand-electric text-xs font-bold tracking-widest uppercase mb-6 shadow-glow-blue">
+          <!-- Mini 8-Petal Flower -->
+          <svg class="w-4 h-4 text-white" viewBox="0 0 100 100" fill="none">
+            <g transform="translate(50,50)">
+              <ellipse cx="0" cy="-28" rx="8" ry="18" fill="white" />
+              <ellipse cx="0" cy="-28" rx="8" ry="18" fill="white" transform="rotate(45)" />
+              <ellipse cx="0" cy="-28" rx="8" ry="18" fill="white" transform="rotate(90)" />
+              <ellipse cx="0" cy="-28" rx="8" ry="18" fill="white" transform="rotate(135)" />
+              <ellipse cx="0" cy="-28" rx="8" ry="18" fill="white" transform="rotate(180)" />
+              <ellipse cx="0" cy="-28" rx="8" ry="18" fill="white" transform="rotate(225)" />
+              <ellipse cx="0" cy="-28" rx="8" ry="18" fill="white" transform="rotate(270)" />
+              <ellipse cx="0" cy="-28" rx="8" ry="18" fill="white" transform="rotate(315)" />
+              <circle cx="0" cy="0" r="10" fill="#fbbf24" />
+            </g>
+          </svg>
+          REPÚBLICA DE BROOKASIL • JUSTIÇA ELEITORAL
+        </div>
+
+        <h1 class="relative font-cinzel text-3xl sm:text-5xl lg:text-6xl font-extrabold text-white tracking-tight max-w-4xl mx-auto leading-tight">
+          Sistema de Registro e Consulta de <span class="text-transparent bg-clip-text bg-gradient-to-r from-brand-electric via-white to-brand-gold">Candidaturas</span>
+        </h1>
+        <p class="relative mt-4 text-base sm:text-lg text-slate-300 max-w-2xl mx-auto font-normal">
+          Plataforma oficial do Tribunal Superior Eleitoral e Tribunais Regionais Eleitorais para as eleições de 2026 do Brookasil RP.
+        </p>
+
+        <!-- CTAs -->
+        <div class="relative mt-8 flex flex-wrap items-center justify-center gap-4">
+          <button onclick="navigateTo('candidaturas')" class="px-8 py-4 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-brand-gold via-amber-400 to-yellow-500 hover:from-amber-300 hover:to-brand-gold transition-all duration-300 transform hover:scale-105 shadow-glow-gold flex items-center gap-3 text-base">
+            <i data-lucide="file-signature" class="w-5 h-5"></i> Registrar Minha Candidatura
+          </button>
+          <button onclick="navigateTo('candidatos')" class="px-8 py-4 rounded-xl font-bold text-white bg-brand-deep/80 hover:bg-brand-deep border border-brand-border hover:border-brand-electric transition-all duration-300 flex items-center gap-3 text-base">
+            <i data-lucide="users" class="w-5 h-5 text-brand-electric"></i> Candidatos Confirmados
+          </button>
+          <button onclick="openLoginModal()" class="px-6 py-4 rounded-xl font-semibold text-slate-300 hover:text-white bg-white/5 hover:bg-white/10 border border-white/10 transition-all duration-300 flex items-center gap-2 text-sm">
+            <i data-lucide="shield-check" class="w-4 h-4 text-brand-emerald"></i> Painel Administrativo
+          </button>
+        </div>
+
+        <!-- Live Election Countdown Box -->
+        <div id="home-election-status-box" class="relative mt-12 max-w-3xl mx-auto p-6 rounded-2xl bg-brand-deep/90 border border-brand-border shadow-inner text-left">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+              <span class="text-xs uppercase font-bold tracking-widest text-brand-electric flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Eleição Ativa
+              </span>
+              <h3 id="home-election-title" class="text-xl font-bold text-white mt-1">Carregando dados eleitorais...</h3>
+              <p id="home-election-dates" class="text-xs text-slate-400">Sincronizando com o Firebase Realtime Database...</p>
+            </div>
+            <!-- Countdown Timer Blocks -->
+            <div class="flex items-center gap-2">
+              <div class="bg-brand-navy/90 border border-brand-border px-3 py-2 rounded-lg text-center min-w-[54px]">
+                <span id="timer-days" class="font-mono text-xl font-bold text-brand-gold">00</span>
+                <span class="block text-[9px] uppercase tracking-wider text-slate-400">Dias</span>
+              </div>
+              <span class="text-slate-500 font-bold">:</span>
+              <div class="bg-brand-navy/90 border border-brand-border px-3 py-2 rounded-lg text-center min-w-[54px]">
+                <span id="timer-hours" class="font-mono text-xl font-bold text-brand-gold">00</span>
+                <span class="block text-[9px] uppercase tracking-wider text-slate-400">Horas</span>
+              </div>
+              <span class="text-slate-500 font-bold">:</span>
+              <div class="bg-brand-navy/90 border border-brand-border px-3 py-2 rounded-lg text-center min-w-[54px]">
+                <span id="timer-minutes" class="font-mono text-xl font-bold text-brand-gold">00</span>
+                <span class="block text-[9px] uppercase tracking-wider text-slate-400">Min</span>
+              </div>
+              <span class="text-slate-500 font-bold">:</span>
+              <div class="bg-brand-navy/90 border border-brand-border px-3 py-2 rounded-lg text-center min-w-[54px]">
+                <span id="timer-seconds" class="font-mono text-xl font-bold text-brand-gold">00</span>
+                <span class="block text-[9px] uppercase tracking-wider text-slate-400">Seg</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Stats Grid -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div class="glass-panel p-6 rounded-2xl border border-brand-border/60 hover:border-brand-electric/50 transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Candidaturas</span>
+            <i data-lucide="file-text" class="w-5 h-5 text-brand-electric"></i>
+          </div>
+          <p id="stat-total-candidacies" class="text-3xl font-extrabold text-white mt-2">--</p>
+          <p class="text-xs text-slate-400 mt-1">Registradas no sistema</p>
+        </div>
+
+        <div class="glass-panel p-6 rounded-2xl border border-brand-border/60 hover:border-brand-emerald/50 transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Deferidas</span>
+            <i data-lucide="check-circle-2" class="w-5 h-5 text-brand-emerald"></i>
+          </div>
+          <p id="stat-deferidas" class="text-3xl font-extrabold text-brand-emerald mt-2">--</p>
+          <p class="text-xs text-slate-400 mt-1">Aptas para disputa</p>
+        </div>
+
+        <div class="glass-panel p-6 rounded-2xl border border-brand-border/60 hover:border-brand-gold/50 transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Partidos</span>
+            <i data-lucide="flag" class="w-5 h-5 text-brand-gold"></i>
+          </div>
+          <p id="stat-parties" class="text-3xl font-extrabold text-brand-gold mt-2">43</p>
+          <p class="text-xs text-slate-400 mt-1">Legendas registradas</p>
+        </div>
+
+        <div class="glass-panel p-6 rounded-2xl border border-brand-border/60 hover:border-blue-400/50 transition-all">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Estados</span>
+            <i data-lucide="map-pin" class="w-5 h-5 text-blue-400"></i>
+          </div>
+          <p class="text-3xl font-extrabold text-white mt-2">4</p>
+          <p class="text-xs text-slate-400 mt-1">8 Cidades com TRE</p>
+        </div>
+      </div>
+
+      <!-- Feature Highlight Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div onclick="navigateTo('candidaturas')" class="glass-panel p-6 rounded-2xl border border-brand-border hover:border-brand-gold cursor-pointer transition-all group">
+          <div class="w-12 h-12 rounded-xl bg-brand-gold/10 border border-brand-gold/30 flex items-center justify-center text-brand-gold mb-4 group-hover:scale-110 transition-transform">
+            <i data-lucide="award" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-lg font-bold text-white group-hover:text-brand-gold transition-colors">Registro Oficial de Candidatura</h3>
+          <p class="text-sm text-slate-400 mt-2">Formulário passo a passo com validação de número de urna, envio de foto, TikTok e proposta de governo em PDF.</p>
+        </div>
+
+        <div onclick="navigateTo('candidatos')" class="glass-panel p-6 rounded-2xl border border-brand-border hover:border-brand-electric cursor-pointer transition-all group">
+          <div class="w-12 h-12 rounded-xl bg-brand-electric/10 border border-brand-electric/30 flex items-center justify-center text-brand-electric mb-4 group-hover:scale-110 transition-transform">
+            <i data-lucide="search-check" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-lg font-bold text-white group-hover:text-brand-electric transition-colors">Consulta Pública Transparente</h3>
+          <p class="text-sm text-slate-400 mt-2">Filtre candidatos confirmados por cargo, estado, cidade e partido. Acesso instantâneo a propostas e redes.</p>
+        </div>
+
+        <div onclick="navigateTo('partidos')" class="glass-panel p-6 rounded-2xl border border-brand-border hover:border-brand-emerald cursor-pointer transition-all group">
+          <div class="w-12 h-12 rounded-xl bg-brand-emerald/10 border border-brand-emerald/30 flex items-center justify-center text-brand-emerald mb-4 group-hover:scale-110 transition-transform">
+            <i data-lucide="pie-chart" class="w-6 h-6"></i>
+          </div>
+          <h3 class="text-lg font-bold text-white group-hover:text-brand-emerald transition-colors">Panorama Partidário</h3>
+          <p class="text-sm text-slate-400 mt-2">Veja os 43 partidos divididos em Direita, Centro e Esquerda, seus números e quantos candidatos já possuem deferidos.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- VIEW 2: REGISTRO DE CANDIDATURA (WIZARD)       -->
+    <!-- ============================================== -->
+    <section id="view-candidaturas" class="view-section space-y-8">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-border pb-6">
+        <div>
+          <span class="text-xs uppercase font-bold tracking-widest text-brand-gold">Formulário Oficial</span>
+          <h2 class="text-3xl font-cinzel font-bold text-white">Registro de Candidatura Eleitoral</h2>
+          <p class="text-sm text-slate-400">Preencha todos os requisitos para submeter seu pedido ao Tribunal Eleitoral competente.</p>
+        </div>
+        <div id="candidacy-period-badge" class="px-4 py-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> Inscrições Abertas
+        </div>
+      </div>
+
+      <!-- Closed warning if outside period -->
+      <div id="candidacy-closed-alert" class="hidden p-6 rounded-2xl bg-red-500/20 border border-red-500/50 text-red-200">
+        <div class="flex items-start gap-4">
+          <i data-lucide="alert-triangle" class="w-6 h-6 text-red-400 flex-shrink-0 mt-0.5"></i>
+          <div>
+            <h4 class="font-bold text-base text-white">PERÍODO DE INSCRIÇÃO ENCERRADO</h4>
+            <p class="text-sm text-red-300 mt-1">O período regulamentar de submissão de candidaturas para esta eleição não está ativo no momento. Aguarde deliberação oficial do TSE.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Candidacy Form Container -->
+      <form id="candidacy-form" onsubmit="handleCandidacySubmit(event)" class="glass-panel p-6 sm:p-10 rounded-3xl border border-brand-border/60 space-y-8">
+        
+        <!-- Step 1: Eleição & Cargo -->
+        <div class="space-y-4">
+          <h3 class="text-lg font-bold text-white flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-brand-blue text-white text-xs flex items-center justify-center font-bold">1</span>
+            Eleição & Cargo Pretendido
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Eleição Ativa *</label>
+              <select id="form-election-select" onchange="onElectionChange()" required class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-3 text-white focus:border-brand-electric focus:ring-1 focus:ring-brand-electric outline-none">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Cargo Eletivo *</label>
+              <select id="form-office-select" onchange="onOfficeChange()" required class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-3 text-white focus:border-brand-electric focus:ring-1 focus:ring-brand-electric outline-none">
+                <!-- Populated dynamically based on election type -->
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 2: Jurisdição (Estado e Cidade) -->
+        <div class="space-y-4 pt-4 border-t border-brand-border/40">
+          <h3 class="text-lg font-bold text-white flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-brand-blue text-white text-xs flex items-center justify-center font-bold">2</span>
+            Circunscrição Eleitoral
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div id="form-state-container">
+              <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Estado *</label>
+              <select id="form-state-select" onchange="onStateChange()" required class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-3 text-white focus:border-brand-electric focus:ring-1 focus:ring-brand-electric outline-none">
+                <option value="">Selecione o Estado</option>
+                <option value="brookhaven">Brookhaven</option>
+                <option value="floremix">Florêmix</option>
+                <option value="fortemega">Fortemega</option>
+                <option value="novacore">Novacore</option>
+              </select>
+            </div>
+            <div id="form-city-container" class="hidden">
+              <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Município / Cidade *</label>
+              <select id="form-city-select" class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-3 text-white focus:border-brand-electric focus:ring-1 focus:ring-brand-electric outline-none">
+                <option value="">Selecione a Cidade</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 3: Partido Político & Número de Urna -->
+        <div class="space-y-4 pt-4 border-t border-brand-border/40">
+          <h3 class="text-lg font-bold text-white flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-brand-blue text-white text-xs flex items-center justify-center font-bold">3</span>
+            Filiação Partidária & Número de Urna
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Partido Político (43 legendas) *</label>
+              <select id="form-party-select" onchange="onPartyChange()" required class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-3 text-white focus:border-brand-electric focus:ring-1 focus:ring-brand-electric outline-none">
+                <option value="">Selecione o Partido</option>
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+
+            <!-- Número com Prefixo Partidário Travado -->
+            <div>
+              <div class="flex items-center justify-between mb-2">
+                <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider">Número de Urna *</label>
+                <button type="button" onclick="generateAutoNumber()" class="text-xs text-brand-electric hover:underline flex items-center gap-1 font-semibold">
+                  <i data-lucide="sparkles" class="w-3.5 h-3.5"></i> Gerar livre automaticamente
+                </button>
+              </div>
+              <div class="flex items-center">
+                <!-- Prefixo travado (2 dígitos do partido) -->
+                <span id="form-party-prefix" class="px-4 py-3 bg-brand-deep text-brand-gold font-mono font-bold text-lg border border-r-0 border-brand-border rounded-l-xl select-none">--</span>
+                <!-- Sufixo editável pelo candidato (ou disabled se majoritário) -->
+                <input type="text" id="form-number-suffix" oninput="validateNumberSuffix()" placeholder="" maxlength="3" class="w-full bg-brand-navy border border-brand-border rounded-r-xl px-4 py-3 text-white font-mono font-bold text-lg focus:border-brand-electric outline-none" required>
+              </div>
+              <p id="form-number-help" class="text-xs text-slate-400 mt-1.5 flex items-center gap-1">
+                <i data-lucide="info" class="w-3.5 h-3.5"></i> Selecione o cargo e partido para configurar os dígitos.
+              </p>
+              <p id="form-number-status" class="text-xs font-semibold mt-1"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 4: Dados Pessoais & Redes Sociais -->
+        <div class="space-y-4 pt-4 border-t border-brand-border/40">
+          <h3 class="text-lg font-bold text-white flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-brand-blue text-white text-xs flex items-center justify-center font-bold">4</span>
+            Identificação do Candidato
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Nome Completo Oficial *</label>
+              <input type="text" id="form-full-name" required placeholder="Ex: Arthur Pendelton Brook" class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-3 text-white focus:border-brand-electric outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Nome de Urna (Como aparecerá aos eleitores) *</label>
+              <input type="text" id="form-ballot-name" required placeholder="Ex: ARTHUR DE BROOKASIL" class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-3 text-white focus:border-brand-electric outline-none font-bold uppercase">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Data de Nascimento *</label>
+              <input type="date" id="form-birth-date" required class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-3 text-white focus:border-brand-electric outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">TikTok Oficial do Candidato (@ ou link) *</label>
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 text-sm">🎵</span>
+                <input type="text" id="form-tiktok" required placeholder="@arthur_brookasil ou https://tiktok.com/@..." class="w-full bg-brand-navy border border-brand-border rounded-xl pl-10 pr-4 py-3 text-white focus:border-brand-electric outline-none">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 5: Vice & Coligação (Obrigatório para Presidente, Governador, Prefeito) -->
+        <div id="form-vice-container" class="space-y-4 pt-4 border-t border-brand-border/40">
+          <h3 class="text-lg font-bold text-white flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-brand-blue text-white text-xs flex items-center justify-center font-bold">5</span>
+            Chapa Majoritária & Vice
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Nome Completo do Vice *</label>
+              <input type="text" id="form-vice-name" placeholder="Ex: Clara Menezes da Silva" class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-3 text-white focus:border-brand-electric outline-none">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Coligação Partidária (Opcional)</label>
+              <input type="text" id="form-coalition" placeholder="Ex: União por Brookasil (PL / PP / MDB)" class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-3 text-white focus:border-brand-electric outline-none">
+            </div>
+          </div>
+        </div>
+
+        <!-- Step 6: Mídias (Foto 3x4 e Plano de Governo PDF) -->
+        <div class="space-y-4 pt-4 border-t border-brand-border/40">
+          <h3 class="text-lg font-bold text-white flex items-center gap-2">
+            <span class="w-7 h-7 rounded-lg bg-brand-blue text-white text-xs flex items-center justify-center font-bold">6</span>
+            Documentos & Foto Oficial
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- Foto de Rosto com Compressão Local Canvas -->
+            <div>
+              <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Foto Oficial do Candidato (3x4) *</label>
+              <div class="flex items-center gap-4">
+                <div id="photo-preview-box" class="w-24 h-28 rounded-xl bg-brand-deep border-2 border-dashed border-brand-border flex items-center justify-center overflow-hidden flex-shrink-0 relative">
+                  <img id="photo-preview-img" class="w-full h-full object-cover hidden" alt="Foto">
+                  <span id="photo-placeholder" class="text-slate-500 text-xs text-center p-2">Sem foto</span>
+                </div>
+                <div class="flex-1 space-y-2">
+                  <input type="file" id="form-photo-input" accept="image/*" onchange="handlePhotoUpload(event)" class="hidden" required>
+                  <button type="button" onclick="document.getElementById('form-photo-input').click()" class="px-4 py-2.5 rounded-xl bg-brand-deep hover:bg-brand-deep/80 border border-brand-border text-white text-xs font-semibold flex items-center gap-2">
+                    <i data-lucide="upload" class="w-4 h-4 text-brand-electric"></i> Escolher Foto
+                  </button>
+                  <p class="text-[11px] text-slate-400">Processada e comprimida localmente no navegador (PNG/JPEG).</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Proposta / Plano de Governo -->
+            <div>
+              <label id="form-proposal-label" class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Plano de Governo em PDF *</label>
+              <div class="space-y-2">
+                <input type="file" id="form-pdf-input" accept="application/pdf" onchange="handlePdfUpload(event)" class="hidden">
+                <button type="button" onclick="document.getElementById('form-pdf-input').click()" class="px-4 py-2.5 rounded-xl bg-brand-deep hover:bg-brand-deep/80 border border-brand-border text-white text-xs font-semibold flex items-center gap-2">
+                  <i data-lucide="file-text" class="w-4 h-4 text-brand-gold"></i> Anexar PDF do Plano de Governo
+                </button>
+                <div id="pdf-status-badge" class="text-xs text-slate-400 flex items-center gap-1.5">
+                  <i data-lucide="info" class="w-3.5 h-3.5"></i> Nenhum arquivo selecionado
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Síntese de Propostas em Texto -->
+          <div class="mt-4">
+            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Resumo das Principais Propostas para a População *</label>
+            <textarea id="form-proposals-text" rows="3" required placeholder="Descreva brevemente suas principais metas e compromissos com a República de Brookasil..." class="w-full bg-brand-navy border border-brand-border rounded-xl p-4 text-white focus:border-brand-electric outline-none text-sm"></textarea>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="pt-6 border-t border-brand-border flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div class="text-xs text-slate-400 flex items-center gap-2">
+            <i data-lucide="shield" class="w-4 h-4 text-brand-emerald"></i>
+            Ao submeter, você declara a veracidade de todas as informações sob as leis do Brookasil RP.
+          </div>
+          <button type="submit" id="btn-submit-candidacy" class="w-full sm:w-auto px-8 py-4 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-brand-gold via-amber-400 to-yellow-500 hover:from-amber-300 hover:to-brand-gold transition-all duration-300 shadow-glow-gold flex items-center justify-center gap-3 text-base">
+            <i data-lucide="send" class="w-5 h-5"></i> Submeter Candidatura Oficial
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- VIEW 3: CANDIDATOS CONFIRMADOS (DEFERIDOS)     -->
+    <!-- ============================================== -->
+    <section id="view-candidatos" class="view-section space-y-8">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-border pb-6">
+        <div>
+          <span class="text-xs uppercase font-bold tracking-widest text-brand-emerald">Consulta Pública</span>
+          <h2 class="text-3xl font-cinzel font-bold text-white">Candidatos Confirmados</h2>
+          <p class="text-sm text-slate-400">Relação oficial de candidaturas deferidas e aptas para as eleições de 2026.</p>
+        </div>
+        <span id="confirmed-count-badge" class="px-4 py-2 rounded-xl bg-brand-deep text-brand-electric border border-brand-border text-xs font-bold">
+          0 Candidatos Homologados
+        </span>
+      </div>
+
+      <!-- Filters Bar -->
+      <div class="glass-panel p-4 rounded-2xl border border-brand-border/60 flex flex-wrap gap-4 items-center justify-between">
+        <div class="flex flex-wrap gap-3 flex-1 min-w-[280px]">
+          <select id="filter-cargo" onchange="renderConfirmedCandidates()" class="bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-xs text-white outline-none">
+            <option value="ALL">Todos os Cargos</option>
+            <option value="Presidente">Presidente</option>
+            <option value="Governador">Governador</option>
+            <option value="Senador">Senador</option>
+            <option value="Deputado Federal">Deputado Federal</option>
+            <option value="Deputado Estadual">Deputado Estadual</option>
+            <option value="Prefeito">Prefeito</option>
+            <option value="Vereador">Vereador</option>
+          </select>
+          <select id="filter-estado" onchange="renderConfirmedCandidates()" class="bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-xs text-white outline-none">
+            <option value="ALL">Todos os Estados</option>
+            <option value="brookhaven">Brookhaven</option>
+            <option value="floremix">Florêmix</option>
+            <option value="fortemega">Fortemega</option>
+            <option value="novacore">Novacore</option>
+          </select>
+          <select id="filter-partido" onchange="renderConfirmedCandidates()" class="bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-xs text-white outline-none">
+            <option value="ALL">Todos os Partidos</option>
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+        <div class="relative w-full sm:w-64">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
+          <input type="text" id="filter-search" oninput="renderConfirmedCandidates()" placeholder="Buscar por nome ou número..." class="w-full bg-brand-navy border border-brand-border rounded-xl pl-9 pr-3 py-2 text-xs text-white outline-none focus:border-brand-electric">
+        </div>
+      </div>
+
+      <!-- Candidates Grid -->
+      <div id="confirmed-candidates-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- VIEW 4: PARTIDOS POLÍTICOS (43 LEGENDAS)       -->
+    <!-- ============================================== -->
+    <section id="view-partidos" class="view-section space-y-8">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-border pb-6">
+        <div>
+          <span class="text-xs uppercase font-bold tracking-widest text-brand-gold">Quadro Político</span>
+          <h2 class="text-3xl font-cinzel font-bold text-white">Partidos Políticos de Brookasil</h2>
+          <p class="text-sm text-slate-400">43 legendas registradas no Tribunal Superior Eleitoral, divididas por espectro ideológico.</p>
+        </div>
+        <div class="flex items-center gap-2 text-xs">
+          <span class="px-3 py-1.5 rounded-lg bg-blue-500/20 text-blue-400 font-bold border border-blue-500/30">Direita (19)</span>
+          <span class="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30">Centro (10)</span>
+          <span class="px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400 font-bold border border-red-500/30">Esquerda (14)</span>
+        </div>
+      </div>
+
+      <!-- Group Tabs -->
+      <div class="flex items-center gap-2 border-b border-brand-border pb-2">
+        <button onclick="setPartyGroupFilter('ALL')" class="party-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition bg-brand-blue text-white" data-group="ALL">Todos os 43 Partidos</button>
+        <button onclick="setPartyGroupFilter('Direita')" class="party-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition text-slate-300 hover:bg-white/5" data-group="Direita">Direita</button>
+        <button onclick="setPartyGroupFilter('Centro')" class="party-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition text-slate-300 hover:bg-white/5" data-group="Centro">Centro</button>
+        <button onclick="setPartyGroupFilter('Esquerda')" class="party-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition text-slate-300 hover:bg-white/5" data-group="Esquerda">Esquerda</button>
+      </div>
+
+      <!-- Parties Grid -->
+      <div id="parties-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- VIEW 5: ELEIÇÕES & VAGAS                       -->
+    <!-- ============================================== -->
+    <section id="view-eleicoes" class="view-section space-y-8">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-border pb-6">
+        <div>
+          <span class="text-xs uppercase font-bold tracking-widest text-brand-emerald">Calendário Oficial</span>
+          <h2 class="text-3xl font-cinzel font-bold text-white">Eleições & Quadro de Vagas</h2>
+          <p class="text-sm text-slate-400">Modalidades, prazos e quantidade de vagas em disputa regulamentadas pelo TSE.</p>
+        </div>
+      </div>
+
+      <!-- Current Election Card -->
+      <div id="election-detail-card" class="glass-panel p-8 rounded-3xl border border-brand-border/60">
+        <!-- Rendered by JS with live details -->
+      </div>
+
+      <!-- Vagas Grid -->
+      <div class="space-y-4">
+        <h3 class="text-lg font-bold text-white flex items-center gap-2">
+          <i data-lucide="layers" class="w-5 h-5 text-brand-gold"></i> Vagas em Disputa Por Cargo
+        </h3>
+        <div id="vagas-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- VIEW 6: CONSULTAR (BUSCA RÁPIDA)               -->
+    <!-- ============================================== -->
+    <section id="view-consultar" class="view-section space-y-8">
+      <div class="text-center max-w-2xl mx-auto space-y-4">
+        <span class="text-xs uppercase font-bold tracking-widest text-brand-electric">Busca Instantânea</span>
+        <h2 class="text-3xl sm:text-4xl font-cinzel font-bold text-white">Consultar Candidatura</h2>
+        <p class="text-sm text-slate-400">Consulte o status do seu pedido eleitoral por número de urna, nome de urna ou código de protocolo.</p>
+
+        <!-- Search Bar -->
+        <div class="relative mt-6">
+          <i data-lucide="search" class="w-6 h-6 text-brand-electric absolute left-4 top-4"></i>
+          <input type="text" id="quick-search-input" onkeyup="handleQuickSearch(event)" placeholder="Digite o protocolo (ex: CAND-2026-...) ou nome..." class="w-full bg-brand-deep border-2 border-brand-border focus:border-brand-electric rounded-2xl pl-14 pr-32 py-4 text-white placeholder-slate-500 font-semibold outline-none shadow-glow-blue transition">
+          <button onclick="executeQuickSearch()" class="absolute right-2.5 top-2.5 px-6 py-2.5 bg-brand-blue hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition">
+            Buscar
+          </button>
+        </div>
+      </div>
+
+      <!-- Search Result Display -->
+      <div id="search-results-container" class="max-w-3xl mx-auto space-y-4">
+        <!-- Rendered by JS -->
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- VIEW 7: GUIA & INFORMAÇÕES OFICIAIS            -->
+    <!-- ============================================== -->
+    <section id="view-informacoes" class="view-section space-y-8">
+      <div class="border-b border-brand-border pb-6">
+        <span class="text-xs uppercase font-bold tracking-widest text-brand-gold">Manual do Eleitor & Candidato</span>
+        <h2 class="text-3xl font-cinzel font-bold text-white">Guia Eleitoral do Brookasil RP</h2>
+        <p class="text-sm text-slate-400">Regras oficiais, regras de números partidários e competências dos Tribunais Eleitorais.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="glass-panel p-6 rounded-2xl border border-brand-border space-y-3">
+          <h3 class="font-bold text-lg text-white flex items-center gap-2">
+            <i data-lucide="hash" class="w-5 h-5 text-brand-gold"></i> Regras de Números de Urna
+          </h3>
+          <ul class="text-sm text-slate-300 space-y-2 list-disc list-inside">
+            <li><strong class="text-white">Presidente, Governador e Prefeito:</strong> Exatamente os 2 dígitos do partido.</li>
+            <li><strong class="text-white">Senador:</strong> 3 dígitos (2 do partido + 1 do candidato).</li>
+            <li><strong class="text-white">Deputado Federal:</strong> 4 dígitos (2 do partido + 2 do candidato).</li>
+            <li><strong class="text-white">Deputado Estadual e Vereador:</strong> 5 dígitos (2 do partido + 3 do candidato).</li>
+            <li>O prefixo do partido é fixo e protegido contra modificação acidental.</li>
+          </ul>
+        </div>
+
+        <div class="glass-panel p-6 rounded-2xl border border-brand-border space-y-3">
+          <h3 class="font-bold text-lg text-white flex items-center gap-2">
+            <i data-lucide="scale" class="w-5 h-5 text-brand-electric"></i> Estrutura da Justiça Eleitoral
+          </h3>
+          <ul class="text-sm text-slate-300 space-y-2 list-disc list-inside">
+            <li><strong class="text-white">TSE Nacional:</strong> Jurisdição plenária sobre toda a República de Brookasil.</li>
+            <li><strong class="text-white">TREs Estaduais (4):</strong> Brookhaven, Florêmix, Fortemega, Novacore.</li>
+            <li><strong class="text-white">TREs Municipais (8):</strong> Cidade Eleitoral, Braviland, Florápolis, Riomarina, Porto Rubi, Fortelume, Nápolis, Catarinía.</li>
+            <li>Cada tribunal regional julga estritamente os processos sob sua circunscrição legal.</li>
+          </ul>
+        </div>
+
+        <div class="glass-panel p-6 rounded-2xl border border-brand-border space-y-3">
+          <h3 class="font-bold text-lg text-white flex items-center gap-2">
+            <i data-lucide="file-check" class="w-5 h-5 text-brand-emerald"></i> Requisitos de Admissibilidade
+          </h3>
+          <ul class="text-sm text-slate-300 space-y-2">
+            <li>✅ Filiação ativa a um dos 43 partidos registrados.</li>
+            <li>✅ Foto oficial de rosto sem acessórios que dificultem a identificação.</li>
+            <li>✅ Link ou arroba válido de TikTok oficial.</li>
+            <li>✅ Plano de governo detalhado em PDF (obrigatório para Presidente, Governador e Prefeito).</li>
+          </ul>
+        </div>
+
+        <div class="glass-panel p-6 rounded-2xl border border-brand-border space-y-3">
+          <h3 class="font-bold text-lg text-white flex items-center gap-2">
+            <i data-lucide="help-circle" class="w-5 h-5 text-purple-400"></i> Sobre o Brookasil RP
+          </h3>
+          <p class="text-sm text-slate-300 leading-relaxed">
+            O Brookasil RP é uma experiência imersiva de roleplay democrático e institucional. Todas as candidaturas são submetidas a julgamento de magistrados eleitorais e os candidatos deferidos participam dos debates e votações oficiais.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================== -->
+    <!-- VIEW 8: PAINEL ADMINISTRATIVO (TSE / TRE)      -->
+    <!-- ============================================== -->
+    <section id="view-admin" class="view-section space-y-8">
+      <!-- Admin Top Bar -->
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-panel p-6 rounded-3xl border border-brand-border">
+        <div class="flex items-center gap-4">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-blue to-indigo-900 border border-brand-electric/40 flex items-center justify-center text-white shadow-glow-blue flex-shrink-0">
+            <i data-lucide="shield-alert" class="w-7 h-7 text-brand-gold"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span id="admin-user-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase bg-brand-gold/20 text-brand-gold border border-brand-gold/30">TSE</span>
+              <span id="admin-user-jurisdiction" class="text-xs text-slate-400">Jurisdição: Nacional</span>
+            </div>
+            <h2 id="admin-user-name" class="text-2xl font-cinzel font-bold text-white mt-1">Tribunal Superior Eleitoral</h2>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <button onclick="refreshAdminData()" class="px-4 py-2.5 rounded-xl bg-brand-deep hover:bg-brand-deep/80 border border-brand-border text-xs font-semibold text-white flex items-center gap-2">
+            <i data-lucide="refresh-cw" class="w-4 h-4 text-brand-electric"></i> Atualizar Dados
+          </button>
+          <button onclick="handleAdminLogout()" class="px-4 py-2.5 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-xs font-semibold text-red-300 flex items-center gap-2">
+            <i data-lucide="log-out" class="w-4 h-4"></i> Encerrar Sessão
+          </button>
+        </div>
+      </div>
+
+      <!-- Admin Navigation Tabs -->
+      <div class="flex items-center gap-2 border-b border-brand-border pb-2 overflow-x-auto">
+        <button onclick="switchAdminTab('candidaturas')" class="admin-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition bg-brand-blue text-white whitespace-nowrap" data-tab="candidaturas">
+          <i data-lucide="inbox" class="w-3.5 h-3.5 inline mr-1"></i> Julgamento de Candidaturas
+        </button>
+        <button onclick="switchAdminTab('estatisticas')" class="admin-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition text-slate-300 hover:bg-white/5 whitespace-nowrap" data-tab="estatisticas">
+          <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 inline mr-1"></i> Gráficos & Estatísticas
+        </button>
+        <button id="admin-tab-eleicoes-btn" onclick="switchAdminTab('eleicoes')" class="admin-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition text-slate-300 hover:bg-white/5 whitespace-nowrap" data-tab="eleicoes">
+          <i data-lucide="settings-2" class="w-3.5 h-3.5 inline mr-1"></i> Gestão de Eleições (TSE)
+        </button>
+        <button id="admin-tab-partidos-btn" onclick="switchAdminTab('partidos')" class="admin-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition text-slate-300 hover:bg-white/5 whitespace-nowrap" data-tab="partidos">
+          <i data-lucide="flag" class="w-3.5 h-3.5 inline mr-1"></i> Gestão de Partidos (TSE)
+        </button>
+        <button onclick="switchAdminTab('auditoria')" class="admin-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition text-slate-300 hover:bg-white/5 whitespace-nowrap" data-tab="auditoria">
+          <i data-lucide="file-clock" class="w-3.5 h-3.5 inline mr-1"></i> Logs de Auditoria
+        </button>
+      </div>
+
+      <!-- TAB 1: JULGAMENTO DE CANDIDATURAS -->
+      <div id="admin-subview-candidaturas" class="admin-subview space-y-6">
+        <!-- Status KPI Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div onclick="setAdminStatusFilter('pendente')" class="glass-panel p-4 rounded-2xl border border-brand-border cursor-pointer hover:border-amber-400 transition">
+            <span class="text-xs font-bold text-amber-400 uppercase">Pendentes</span>
+            <p id="admin-kpi-pendentes" class="text-2xl font-extrabold text-white mt-1">0</p>
+          </div>
+          <div onclick="setAdminStatusFilter('deferida')" class="glass-panel p-4 rounded-2xl border border-brand-border cursor-pointer hover:border-emerald-400 transition">
+            <span class="text-xs font-bold text-emerald-400 uppercase">Deferidas</span>
+            <p id="admin-kpi-deferidas" class="text-2xl font-extrabold text-white mt-1">0</p>
+          </div>
+          <div onclick="setAdminStatusFilter('indeferida')" class="glass-panel p-4 rounded-2xl border border-brand-border cursor-pointer hover:border-red-400 transition">
+            <span class="text-xs font-bold text-red-400 uppercase">Indeferidas</span>
+            <p id="admin-kpi-indeferidas" class="text-2xl font-extrabold text-white mt-1">0</p>
+          </div>
+          <div onclick="setAdminStatusFilter('ALL')" class="glass-panel p-4 rounded-2xl border border-brand-border cursor-pointer hover:border-blue-400 transition">
+            <span class="text-xs font-bold text-blue-400 uppercase">Total Sob Jurisdição</span>
+            <p id="admin-kpi-total" class="text-2xl font-extrabold text-white mt-1">0</p>
+          </div>
+        </div>
+
+        <!-- Filter bar for Admin Judgments -->
+        <div class="glass-panel p-4 rounded-2xl border border-brand-border flex flex-wrap gap-4 items-center justify-between">
+          <div class="flex flex-wrap gap-3 flex-1 min-w-[280px]">
+            <select id="admin-filter-status" onchange="renderAdminCandidacies()" class="bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-xs text-white outline-none">
+              <option value="ALL">Todos os Status</option>
+              <option value="pendente">Pendentes</option>
+              <option value="deferida">Deferidas</option>
+              <option value="indeferida">Indeferidas</option>
+              <option value="excluida">Excluídas</option>
+            </select>
+            <select id="admin-filter-cargo" onchange="renderAdminCandidacies()" class="bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-xs text-white outline-none">
+              <option value="ALL">Todos os Cargos</option>
+              <option value="Presidente">Presidente</option>
+              <option value="Governador">Governador</option>
+              <option value="Senador">Senador</option>
+              <option value="Deputado Federal">Deputado Federal</option>
+              <option value="Deputado Estadual">Deputado Estadual</option>
+              <option value="Prefeito">Prefeito</option>
+              <option value="Vereador">Vereador</option>
+            </select>
+            <!-- Only TSE sees party filter as per rules -->
+            <select id="admin-filter-partido" onchange="renderAdminCandidacies()" class="bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-xs text-white outline-none">
+              <option value="ALL">Todos os Partidos</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Candidacies Table / List -->
+        <div class="glass-panel rounded-3xl border border-brand-border overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-300">
+              <thead class="bg-brand-deep text-xs uppercase text-slate-400 tracking-wider border-b border-brand-border">
+                <tr>
+                  <th class="px-6 py-4">Candidato / Urna</th>
+                  <th class="px-6 py-4">Cargo / Circunscrição</th>
+                  <th class="px-6 py-4">Partido / Número</th>
+                  <th class="px-6 py-4">Status Atual</th>
+                  <th class="px-6 py-4 text-right">Ações do Magistrado</th>
+                </tr>
+              </thead>
+              <tbody id="admin-candidacies-table-body" class="divide-y divide-brand-border/60">
+                <!-- Rendered by JS -->
+              </tbody>
+            </table>
+          </div>
+          <div id="admin-table-empty" class="hidden p-12 text-center text-slate-500">
+            Nenhuma candidatura localizada com os filtros atuais sob sua jurisdição.
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: GRÁFICOS & ESTATÍSTICAS -->
+      <div id="admin-subview-estatisticas" class="admin-subview hidden space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="glass-panel p-6 rounded-3xl border border-brand-border">
+            <h3 class="text-base font-bold text-white mb-4">Distribuição por Cargo Eletivo</h3>
+            <div class="h-64 flex items-center justify-center">
+              <canvas id="chart-by-office"></canvas>
+            </div>
+          </div>
+          <div class="glass-panel p-6 rounded-3xl border border-brand-border">
+            <h3 class="text-base font-bold text-white mb-4">Julgamentos (Status)</h3>
+            <div class="h-64 flex items-center justify-center">
+              <canvas id="chart-by-status"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: GESTÃO DE ELEIÇÕES (TSE EXCLUSIVO) -->
+      <div id="admin-subview-eleicoes" class="admin-subview hidden space-y-6">
+        <div class="glass-panel p-8 rounded-3xl border border-brand-border space-y-6">
+          <div class="flex items-center justify-between border-b border-brand-border pb-4">
+            <div>
+              <h3 class="text-xl font-cinzel font-bold text-white">Configuração da Eleição Vigente</h3>
+              <p class="text-xs text-slate-400">Regra: Apenas uma eleição pode estar aberta por vez na República de Brookasil.</p>
+            </div>
+            <button onclick="openElectionModal()" class="px-4 py-2 rounded-xl bg-brand-gold text-slate-950 font-bold text-xs">
+              + Configurar Nova Eleição
+            </button>
+          </div>
+          <div id="admin-elections-list" class="space-y-4">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 4: GESTÃO DE PARTIDOS (TSE EXCLUSIVO) -->
+      <div id="admin-subview-partidos" class="admin-subview hidden space-y-6">
+        <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-brand-border space-y-6">
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-brand-border pb-4">
+            <div>
+              <div class="flex items-center gap-3">
+                <h3 class="text-xl font-cinzel font-bold text-white">Partidos Políticos Registrados</h3>
+                <span id="admin-parties-count-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-brand-blue/30 text-brand-electric border border-brand-electric/30">0</span>
+              </div>
+              <p class="text-xs text-slate-400 mt-0.5">Gerencie legendas, logos, siglas, números, lideranças e status no TSE.</p>
+            </div>
+            <button onclick="openPartyModal()" class="px-4 py-2.5 rounded-xl bg-brand-blue hover:bg-blue-500 text-white font-bold text-xs flex items-center gap-2 shadow-glow-blue transition">
+              <i data-lucide="plus-circle" class="w-4 h-4"></i>
+              <span>Novo Partido</span>
+            </button>
+          </div>
+
+          <!-- Filtros e Busca de Partidos no Admin -->
+          <div class="flex flex-col sm:flex-row items-center gap-3">
+            <div class="relative w-full sm:w-80">
+              <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-3"></i>
+              <input type="text" id="admin-parties-search" oninput="renderAdminParties()" placeholder="Buscar por sigla, nome ou número..." class="w-full bg-brand-navy border border-brand-border rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 outline-none focus:border-brand-electric">
+            </div>
+            <div class="flex items-center gap-2 w-full sm:w-auto">
+              <select id="admin-parties-group-filter" onchange="renderAdminParties()" class="bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-xs text-slate-300 outline-none focus:border-brand-electric">
+                <option value="ALL">Todos os Espectros</option>
+                <option value="Direita">Direita</option>
+                <option value="Centro">Centro</option>
+                <option value="Esquerda">Esquerda</option>
+              </select>
+              <select id="admin-parties-status-filter" onchange="renderAdminParties()" class="bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-xs text-slate-300 outline-none focus:border-brand-electric">
+                <option value="ALL">Todos os Status</option>
+                <option value="ativo">Ativos e Homologados</option>
+                <option value="suspenso">Suspensos</option>
+                <option value="formacao">Em Formação</option>
+              </select>
+            </div>
+          </div>
+
+          <div id="admin-parties-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 5: AUDITORIA -->
+      <div id="admin-subview-auditoria" class="admin-subview hidden space-y-6">
+        <div class="glass-panel p-8 rounded-3xl border border-brand-border space-y-6">
+          <div class="border-b border-brand-border pb-4">
+            <h3 class="text-xl font-cinzel font-bold text-white">Registro Imutável de Auditoria</h3>
+            <p class="text-xs text-slate-400">Histórico de todas as decisões judiciais, deferimentos, indeferimentos e exclusões registradas no Firebase.</p>
+          </div>
+          <div id="admin-audit-logs" class="space-y-3">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="glass-panel border-t border-brand-border/60 py-8 relative z-20 mt-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
+      <div class="flex items-center gap-2">
+        <!-- Mini Flower -->
+        <svg class="w-5 h-5 text-brand-gold" viewBox="0 0 100 100" fill="none">
+          <g transform="translate(50,50)">
+            <ellipse cx="0" cy="-28" rx="8" ry="18" fill="currentColor" />
+            <ellipse cx="0" cy="-28" rx="8" ry="18" fill="currentColor" transform="rotate(45)" />
+            <ellipse cx="0" cy="-28" rx="8" ry="18" fill="currentColor" transform="rotate(90)" />
+            <ellipse cx="0" cy="-28" rx="8" ry="18" fill="currentColor" transform="rotate(135)" />
+            <ellipse cx="0" cy="-28" rx="8" ry="18" fill="currentColor" transform="rotate(180)" />
+            <ellipse cx="0" cy="-28" rx="8" ry="18" fill="currentColor" transform="rotate(225)" />
+            <ellipse cx="0" cy="-28" rx="8" ry="18" fill="currentColor" transform="rotate(270)" />
+            <ellipse cx="0" cy="-28" rx="8" ry="18" fill="currentColor" transform="rotate(315)" />
+            <circle cx="0" cy="0" r="10" fill="#fbbf24" />
+          </g>
+        </svg>
+        <span class="font-bold text-white font-cinzel">Justiça Eleitoral de Brookasil</span> • Eleições 2026
+      </div>
+      <div>
+        Sistema Oficial Integrado com Firebase Realtime Database • Pronto para GitHub Pages
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============================================== -->
+  <!-- MODAIS (Login, Julgamento, Sucesso, PDF)       -->
+  <!-- ============================================== -->
+
+  <!-- Modal de Login Administrativo -->
+  <div id="login-modal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel max-w-md w-full rounded-3xl border border-brand-border p-8 space-y-6 shadow-2xl relative">
+      <button onclick="closeLoginModal()" class="absolute top-6 right-6 text-slate-400 hover:text-white">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="text-center space-y-2">
+        <div class="w-14 h-14 rounded-2xl bg-brand-deep border border-brand-electric/40 mx-auto flex items-center justify-center text-brand-gold shadow-glow-blue">
+          <i data-lucide="shield-check" class="w-7 h-7"></i>
+        </div>
+        <h3 class="text-2xl font-cinzel font-bold text-white">Acesso Administrativo</h3>
+        <p class="text-xs text-slate-400">Tribunal Superior Eleitoral & Tribunais Regionais</p>
+      </div>
+
+      <form onsubmit="handleLoginSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Identificador / Usuário</label>
+          <input type="text" id="login-username" required placeholder="Ex: TSE_Brookasil@2026 ou TRE_Brookhaven@2026" class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-3 text-white text-sm focus:border-brand-electric outline-none">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Chave de Acesso / Senha</label>
+          <input type="password" id="login-password" required placeholder="••••••••••••" class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-3 text-white text-sm focus:border-brand-electric outline-none">
+        </div>
+
+        <button type="submit" class="w-full py-3.5 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-brand-gold to-yellow-500 hover:to-brand-gold transition shadow-glow-gold text-sm flex items-center justify-center gap-2">
+          <i data-lucide="lock" class="w-4 h-4"></i> Autenticar no Sistema
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal de Julgamento Judicial (Deferir / Indeferir / Excluir) -->
+  <div id="judgment-modal" class="fixed inset-0 z-50 hidden bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel max-w-2xl w-full rounded-3xl border border-brand-border p-8 space-y-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <button onclick="closeJudgmentModal()" class="absolute top-6 right-6 text-slate-400 hover:text-white">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="flex items-center gap-4 border-b border-brand-border pb-4">
+        <img id="modal-cand-photo" class="w-16 h-20 rounded-xl object-cover border border-brand-border" src="" alt="Candidato">
+        <div>
+          <span id="modal-cand-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-brand-blue/30 text-brand-electric border border-brand-electric/30">Protocolo</span>
+          <h3 id="modal-cand-name" class="text-xl font-bold text-white mt-1">Nome do Candidato</h3>
+          <p id="modal-cand-sub" class="text-xs text-slate-400">Cargo • Partido • Local</p>
+        </div>
+      </div>
+
+      <!-- Detalhes Expandidos -->
+      <div class="grid grid-cols-2 gap-4 text-xs">
+        <div class="bg-brand-navy/60 p-3 rounded-xl border border-brand-border">
+          <span class="text-slate-400 block">Número de Urna</span>
+          <strong id="modal-cand-number" class="text-base text-brand-gold font-mono">--</strong>
+        </div>
+        <div class="bg-brand-navy/60 p-3 rounded-xl border border-brand-border">
+          <span class="text-slate-400 block">TikTok Oficial</span>
+          <a id="modal-cand-tiktok" href="#" target="_blank" rel="noopener noreferrer" class="text-brand-electric underline truncate block">--</a>
+        </div>
+        <div class="bg-brand-navy/60 p-3 rounded-xl border border-brand-border">
+          <span class="text-slate-400 block">Vice Candidato</span>
+          <strong id="modal-cand-vice" class="text-white block">Não aplicável</strong>
+        </div>
+        <div class="bg-brand-navy/60 p-3 rounded-xl border border-brand-border">
+          <span class="text-slate-400 block">Plano de Governo</span>
+          <button id="modal-cand-pdf-btn" onclick="viewCandidatePdf()" class="text-xs text-brand-gold underline font-semibold flex items-center gap-1 mt-1">
+            <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Visualizar PDF
+          </button>
+        </div>
+      </div>
+
+      <!-- Motivo / Justificativa (Obrigatório para indeferimento ou exclusão) -->
+      <div>
+        <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Despacho / Justificativa do Magistrado</label>
+        <textarea id="judgment-reason-text" rows="3" placeholder="Insira a fundamentação jurídica do julgamento eleitoral..." class="w-full bg-brand-navy border border-brand-border rounded-xl p-3 text-sm text-white focus:border-brand-electric outline-none"></textarea>
+      </div>
+
+      <!-- Ações Judiciais -->
+      <div class="flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-brand-border">
+        <button onclick="executeJudgment('excluida')" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold flex items-center gap-1.5">
+          <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i> Excluir Registro (Libera Número)
+        </button>
+        <button onclick="executeJudgment('indeferida')" class="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md">
+          <i data-lucide="x-circle" class="w-4 h-4"></i> Indeferir Candidatura
+        </button>
+        <button onclick="executeJudgment('deferida')" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-glow-emerald">
+          <i data-lucide="check-circle" class="w-4 h-4"></i> Deferir Candidatura (Publicar)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Sucesso com Protocolo e Confetes -->
+  <div id="success-modal" class="fixed inset-0 z-50 hidden bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel max-w-lg w-full rounded-3xl border border-brand-gold/40 p-8 space-y-6 shadow-2xl text-center">
+      <div class="w-20 h-20 rounded-full bg-emerald-500/20 border-2 border-emerald-400 mx-auto flex items-center justify-center text-emerald-400 shadow-glow-emerald">
+        <i data-lucide="check" class="w-10 h-10"></i>
+      </div>
+
+      <div class="space-y-2">
+        <span class="text-xs uppercase font-bold tracking-widest text-brand-gold">Submissão Confirmada</span>
+        <h3 class="text-2xl font-cinzel font-bold text-white">Candidatura Registrada com Sucesso!</h3>
+        <p class="text-xs text-slate-300">Seu pedido foi protocolado no Tribunal Eleitoral de Brookasil sob status <strong class="text-amber-400">Pendente</strong> e aguarda análise dos magistrados.</p>
+      </div>
+
+      <div class="bg-brand-navy/90 p-4 rounded-2xl border border-brand-border text-left space-y-2">
+        <div class="flex justify-between text-xs">
+          <span class="text-slate-400">Número de Protocolo:</span>
+          <span id="success-protocol-text" class="font-mono font-bold text-brand-gold">CAND-2026-XXXX</span>
+        </div>
+        <div class="flex justify-between text-xs">
+          <span class="text-slate-400">Nome de Urna:</span>
+          <span id="success-name-text" class="font-bold text-white">--</span>
+        </div>
+        <div class="flex justify-between text-xs">
+          <span class="text-slate-400">Cargo & Número:</span>
+          <span id="success-office-text" class="font-bold text-brand-electric">--</span>
+        </div>
+      </div>
+
+      <button onclick="closeSuccessModal()" class="w-full py-3.5 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-brand-gold to-yellow-500 hover:to-brand-gold transition text-sm">
+        Concluir e Voltar ao Início
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal de Configuração de Eleição (TSE) -->
+  <div id="election-modal" class="fixed inset-0 z-50 hidden bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel max-w-lg w-full rounded-3xl border border-brand-border p-8 space-y-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <button onclick="closeElectionModal()" class="absolute top-6 right-6 text-slate-400 hover:text-white">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="text-left space-y-1">
+        <span class="text-xs uppercase font-bold tracking-widest text-brand-gold">TSE Brookasil</span>
+        <h3 class="text-2xl font-cinzel font-bold text-white">Configurar Eleição</h3>
+        <p class="text-xs text-slate-400">Regra: Apenas uma eleição pode estar aberta por vez.</p>
+      </div>
+
+      <form onsubmit="handleSaveElection(event)" class="space-y-4 text-xs">
+        <div>
+          <label class="block font-bold text-slate-300 uppercase tracking-wider mb-1">Título da Eleição</label>
+          <input type="text" id="modal-election-title" required placeholder="Ex: Eleições Gerais 2026" class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-2.5 text-white text-sm outline-none focus:border-brand-electric">
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block font-bold text-slate-300 uppercase tracking-wider mb-1">Modalidade</label>
+            <select id="modal-election-type" class="w-full bg-brand-navy border border-brand-border rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-brand-electric">
+              <option value="Federal">Federal</option>
+              <option value="Municipal">Municipal</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-300 uppercase tracking-wider mb-1">Status</label>
+            <select id="modal-election-status" class="w-full bg-brand-navy border border-brand-border rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-brand-electric">
+              <option value="open">Aberta (Ativa)</option>
+              <option value="closed">Encerrada</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-300 uppercase tracking-wider mb-1">Início das Inscrições</label>
+          <input type="datetime-local" id="modal-election-start" required class="w-full bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-white outline-none focus:border-brand-electric">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-300 uppercase tracking-wider mb-1">Término das Inscrições</label>
+          <input type="datetime-local" id="modal-election-end" required class="w-full bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-white outline-none focus:border-brand-electric">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-300 uppercase tracking-wider mb-1">Data da Votação</label>
+          <input type="datetime-local" id="modal-election-date" required class="w-full bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-white outline-none focus:border-brand-electric">
+        </div>
+
+        <button type="submit" class="w-full py-3 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-brand-gold to-yellow-500 hover:to-brand-gold transition shadow-glow-gold text-sm mt-4">
+          Salvar Configuração no Firebase
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal de Gestão de Partido (TSE) -->
+  <div id="party-modal" class="fixed inset-0 z-50 hidden bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel max-w-xl w-full rounded-3xl border border-brand-border p-6 sm:p-8 space-y-5 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+      <button onclick="closePartyModal()" class="absolute top-6 right-6 text-slate-400 hover:text-white">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="text-left space-y-1">
+        <span class="text-xs uppercase font-bold tracking-widest text-brand-electric">TSE Brookasil • Registro Partidário</span>
+        <h3 id="modal-party-title" class="text-2xl font-cinzel font-bold text-white">Cadastrar Partido</h3>
+        <p class="text-xs text-slate-400">Configure registro oficial, logotipo da agremiação, liderança e diretrizes estatutárias.</p>
+      </div>
+
+      <form onsubmit="handleSaveParty(event)" class="space-y-4 text-xs">
+        <input type="hidden" id="modal-party-id" value="">
+        <input type="hidden" id="modal-party-logo-data" value="">
+
+        <!-- Logo do Partido (Upload Canvas Base64 ou URL) -->
+        <div class="p-4 rounded-2xl bg-brand-deep/80 border border-brand-border space-y-3">
+          <label class="block font-bold text-slate-300 uppercase tracking-wider text-[11px]">Símbolo / Logotipo Oficial da Legenda</label>
+          <div class="flex items-center gap-4">
+            <div id="modal-party-logo-preview-box" class="w-16 h-16 rounded-2xl bg-brand-navy border border-brand-border flex items-center justify-center overflow-hidden shrink-0 relative group">
+              <img id="modal-party-logo-preview-img" src="" alt="Logo" class="w-full h-full object-contain p-1 hidden">
+              <div id="modal-party-logo-placeholder" class="text-slate-500 flex flex-col items-center justify-center">
+                <i data-lucide="image" class="w-6 h-6 mb-0.5"></i>
+                <span class="text-[9px]">Sem Logo</span>
+              </div>
+            </div>
+            <div class="flex-1 space-y-2">
+              <div class="flex flex-wrap items-center gap-2">
+                <button type="button" onclick="document.getElementById('modal-party-logo-file').click()" class="px-3 py-1.5 rounded-xl bg-brand-navy hover:bg-white/10 border border-brand-border text-white text-xs font-semibold flex items-center gap-1.5 transition">
+                  <i data-lucide="upload" class="w-3.5 h-3.5 text-brand-electric"></i>
+                  <span>Carregar Imagem</span>
+                </button>
+                <button type="button" id="modal-party-logo-remove-btn" onclick="removePartyLogo()" class="px-3 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/30 text-red-400 text-xs font-semibold hidden transition">
+                  Remover Logo
+                </button>
+              </div>
+              <input type="file" id="modal-party-logo-file" accept="image/*" class="hidden" onchange="handlePartyLogoFile(event)">
+              <div class="flex items-center gap-2">
+                <span class="text-[10px] text-slate-400 whitespace-nowrap">Ou URL:</span>
+                <input type="url" id="modal-party-logo-url" oninput="handlePartyLogoUrlInput(event)" placeholder="https://exemplo.com/logo.png" class="flex-1 bg-brand-navy border border-brand-border rounded-lg px-2 py-1 text-[11px] text-white outline-none focus:border-brand-electric">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-300 uppercase tracking-wider mb-1">Nome Oficial da Agremiação</label>
+          <input type="text" id="modal-party-name" required placeholder="Ex: Partido Democrático de Brookasil" class="w-full bg-brand-navy border border-brand-border rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-brand-electric">
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block font-bold text-slate-300 uppercase tracking-wider mb-1">Sigla</label>
+            <input type="text" id="modal-party-acronym" required placeholder="Ex: PDB" class="w-full bg-brand-navy border border-brand-border rounded-xl px-3 py-2.5 text-white text-sm outline-none uppercase focus:border-brand-electric">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-300 uppercase tracking-wider mb-1">Número Eleitoral (2 dígitos)</label>
+            <input type="number" id="modal-party-number" required min="10" max="99" placeholder="Ex: 88" class="w-full bg-brand-navy border border-brand-border rounded-xl px-3 py-2.5 text-white text-sm font-mono outline-none focus:border-brand-electric">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block font-bold text-slate-300 uppercase tracking-wider mb-1">Espectro Político</label>
+            <select id="modal-party-group" class="w-full bg-brand-navy border border-brand-border rounded-xl px-3 py-2.5 text-white text-xs outline-none focus:border-brand-electric">
+              <option value="Direita">Direita</option>
+              <option value="Centro">Centro</option>
+              <option value="Esquerda">Esquerda</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-300 uppercase tracking-wider mb-1">Situação no TSE</label>
+            <select id="modal-party-status" class="w-full bg-brand-navy border border-brand-border rounded-xl px-3 py-2.5 text-white text-xs outline-none focus:border-brand-electric">
+              <option value="ativo">Ativo e Homologado</option>
+              <option value="suspenso">Suspenso Judicialmente</option>
+              <option value="formacao">Em Formação</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-300 uppercase tracking-wider mb-1">Cor da Legenda</label>
+            <input type="color" id="modal-party-color" value="#2563eb" class="w-full h-10 bg-brand-navy border border-brand-border rounded-xl px-1 py-1 cursor-pointer">
+          </div>
+        </div>
+
+        <!-- Campos adicionais: Presidente / Lema / Fundação / Site -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+          <div>
+            <label class="block font-bold text-slate-300 uppercase tracking-wider mb-1">Presidente Nacional / Líder</label>
+            <input type="text" id="modal-party-leader" placeholder="Ex: Dr. Carlos Mendonça" class="w-full bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-brand-electric">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-300 uppercase tracking-wider mb-1">Ano / Data de Fundação</label>
+            <input type="text" id="modal-party-foundation" placeholder="Ex: 1988 ou 15/03/1988" class="w-full bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-brand-electric">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-bold text-slate-300 uppercase tracking-wider mb-1">Slogan ou Lema</label>
+            <input type="text" id="modal-party-motto" placeholder="Ex: Pela Liberdade e Futuro" class="w-full bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-brand-electric">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-300 uppercase tracking-wider mb-1">Website Oficial / Rede</label>
+            <input type="text" id="modal-party-website" placeholder="Ex: https://partido.org.br" class="w-full bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-brand-electric">
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between gap-3 pt-3 border-t border-brand-border/60">
+          <button type="button" id="modal-party-delete-btn" onclick="handleDeletePartyFromModal()" class="px-4 py-2.5 rounded-xl border border-red-500/40 text-red-400 hover:bg-red-500/20 font-bold text-xs flex items-center gap-1.5 transition hidden">
+            <i data-lucide="trash-2" class="w-4 h-4"></i>
+            <span>Excluir Partido</span>
+          </button>
+          <div class="flex items-center gap-2 ml-auto">
+            <button type="button" onclick="closePartyModal()" class="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 font-bold text-xs transition">
+              Cancelar
+            </button>
+            <button type="submit" class="px-6 py-2.5 rounded-xl font-bold text-white bg-brand-blue hover:bg-blue-500 transition shadow-glow-blue text-xs flex items-center gap-1.5">
+              <i data-lucide="save" class="w-4 h-4"></i>
+              <span id="modal-party-submit-text">Salvar Partido no TSE</span>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal de Confirmação de Exclusão de Partido -->
+  <div id="confirm-party-delete-modal" class="fixed inset-0 z-50 hidden bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel max-w-md w-full rounded-3xl border border-red-500/30 p-6 sm:p-8 space-y-5 shadow-2xl relative text-center">
+      <div class="w-14 h-14 mx-auto rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 flex items-center justify-center">
+        <i data-lucide="alert-triangle" class="w-7 h-7"></i>
+      </div>
+      <div>
+        <h4 class="text-xl font-cinzel font-bold text-white mb-1">Excluir Partido Político?</h4>
+        <p id="confirm-delete-party-msg" class="text-xs text-slate-400 leading-relaxed">Esta ação removerá o registro oficial da legenda no TSE e no Firebase.</p>
+      </div>
+      <div id="confirm-delete-party-warning" class="hidden p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs text-left space-y-1">
+      </div>
+      <div class="flex items-center justify-center gap-3 pt-2">
+        <button type="button" onclick="closeConfirmDeletePartyModal()" class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-slate-300 font-bold text-xs transition">
+          Cancelar
+        </button>
+        <button type="button" id="confirm-delete-party-action-btn" class="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-glow-red transition">
+          <i data-lucide="trash-2" class="w-4 h-4"></i>
+          <span>Confirmar Exclusão</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Companion JavaScript Engine -->
+  <script src="./app.js"></script>
+</body>
+</html>

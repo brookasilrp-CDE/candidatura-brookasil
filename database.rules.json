@@ -1,0 +1,49 @@
+{
+  "rules": {
+    "settings": {
+      ".read": true,
+      ".write": true
+    },
+    "elections": {
+      ".read": true,
+      ".write": true,
+      ".indexOn": ["status", "type"]
+    },
+    "parties": {
+      ".read": true,
+      ".write": true,
+      ".indexOn": ["active", "number", "group"]
+    },
+    "candidates": {
+      ".read": true,
+      ".write": true,
+      ".indexOn": ["status", "electionId", "office", "stateId", "cityId", "partyId", "number"]
+    },
+    "numberRegistry": {
+      ".read": true,
+      ".write": true
+    },
+    "auditLogs": {
+      ".read": true,
+      ".write": true,
+      ".indexOn": ["timestamp", "electionId", "stateId"]
+    },
+    "notifications": {
+      ".read": true,
+      ".write": true,
+      ".indexOn": ["timestamp", "read", "target"]
+    },
+    "admins": {
+      ".read": true,
+      ".write": true
+    },
+    "states": {
+      ".read": true,
+      ".write": true
+    },
+    "cities": {
+      ".read": true,
+      ".write": true
+    }
+  }
+}
