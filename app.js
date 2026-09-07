@@ -455,6 +455,44 @@ function onOfficeChange() {
   updateNumberPrefixAndSuffixConfig();
 }
 
+function getCityDisplayName(stateId, cityId) {
+  if (stateId && cityId && BROOKASIL_GEO[stateId] && BROOKASIL_GEO[stateId].cities && BROOKASIL_GEO[stateId].cities[cityId]) {
+    return BROOKASIL_GEO[stateId].cities[cityId];
+  }
+  return cityId && cityId !== 'ALL' ? cityId : 'Município';
+}
+
+function getStateDisplayName(stateId) {
+  if (stateId && BROOKASIL_GEO[stateId] && BROOKASIL_GEO[stateId].name) {
+    return BROOKASIL_GEO[stateId].name;
+  }
+  return stateId && stateId !== 'ALL' ? stateId : 'Estado';
+}
+
+function getOfficeConfig(officeId) {
+  const type = currentElection ? currentElection.type : 'Federal';
+  const list = (OFFICES_CONFIG[type] || []).concat(OFFICES_CONFIG.Federal || [], OFFICES_CONFIG.Municipal || []);
+  return list.find(o => o.id === officeId) || { id: officeId, name: officeId, digits: 2, major: false };
+}
+
+function isMunicipalOffice(officeId) {
+  const type = currentElection ? currentElection.type : 'Federal';
+  return type === 'Municipal' || officeId === 'Prefeito' || officeId === 'Vereador';
+}
+
+function isStateOffice(officeId) {
+  return officeId === 'Governador' || officeId === 'Senador' || officeId === 'Deputado Federal' || officeId === 'Deputado Estadual';
+}
+
+function isNationalOffice(officeId) {
+  return officeId === 'Presidente';
+}
+
+function isMajorOffice(officeId) {
+  const off = getOfficeConfig(officeId);
+  return off.major === true || off.digits === 2 || officeId === 'Prefeito' || officeId === 'Governador' || officeId === 'Presidente';
+}
+
 function onStateChange() {
   const stateKey = document.getElementById('form-state-select').value;
   const citySelect = document.getElementById('form-city-select');
@@ -466,6 +504,12 @@ function onStateChange() {
   } else {
     citySelect.innerHTML = '<option value="">Selecione primeiro o Estado</option>';
   }
+
+  validateNumberSuffix();
+}
+
+function onCityChange() {
+  validateNumberSuffix();
 }
 
 function populatePartySelects() {
@@ -492,8 +536,7 @@ function updateNumberPrefixAndSuffixConfig() {
   prefixEl.textContent = partyNum;
 
   const officeId = document.getElementById('form-office-select').value;
-  const type = currentElection ? currentElection.type : 'Federal';
-  const office = (OFFICES_CONFIG[type] || []).find(o => o.id === officeId) || OFFICES_CONFIG.Federal[0];
+  const office = getOfficeConfig(officeId);
 
   if (office.digits === 2) {
     // Majoritário: exatamente 2 dígitos do partido!
@@ -518,18 +561,45 @@ function validateNumberSuffix() {
   const partyPrefix = document.getElementById('form-party-prefix').textContent;
   const suffixInput = document.getElementById('form-number-suffix');
   const statusEl = document.getElementById('form-number-status');
+  if (!statusEl) return false;
 
-  if (partyPrefix === '--') {
+  const partySelect = document.getElementById('form-party-select');
+  const selectedPartyId = partySelect ? partySelect.value : '';
+  const selectedParty = partiesList.find(p => String(p.id) === String(selectedPartyId));
+
+  if (partyPrefix === '--' || !selectedParty) {
     statusEl.textContent = "Selecione o partido primeiro.";
     statusEl.className = "text-xs text-amber-400 mt-1 font-semibold";
     return false;
   }
 
   const officeId = document.getElementById('form-office-select').value;
-  const type = currentElection ? currentElection.type : 'Federal';
-  const office = (OFFICES_CONFIG[type] || []).find(o => o.id === officeId) || OFFICES_CONFIG.Federal[0];
+  const office = getOfficeConfig(officeId);
+  const stateId = document.getElementById('form-state-select')?.value || '';
+  const citySelect = document.getElementById('form-city-select');
+  const cityId = citySelect?.value || '';
 
-  const fullNumber = office.digits === 2 ? partyPrefix : (partyPrefix + suffixInput.value.trim());
+  // Validação geográfica prévia para cargos municipais e estaduais
+  if (isMunicipalOffice(officeId)) {
+    if (!stateId) {
+      statusEl.textContent = "ℹ️ Selecione o Estado e o Município para verificar a disponibilidade de legenda e número.";
+      statusEl.className = "text-xs text-brand-gold mt-1 font-semibold";
+      return false;
+    }
+    if (!cityId) {
+      statusEl.textContent = "ℹ️ Selecione o Município para verificar a disponibilidade de vaga e número na sua cidade.";
+      statusEl.className = "text-xs text-brand-gold mt-1 font-semibold";
+      return false;
+    }
+  } else if (isStateOffice(officeId)) {
+    if (!stateId) {
+      statusEl.textContent = "ℹ️ Selecione o Estado para verificar a disponibilidade na circunscrição estadual.";
+      statusEl.className = "text-xs text-brand-gold mt-1 font-semibold";
+      return false;
+    }
+  }
+
+  const fullNumber = office.digits === 2 ? partyPrefix : (partyPrefix + (suffixInput ? suffixInput.value.trim() : ''));
 
   if (fullNumber.length !== office.digits) {
     statusEl.textContent = `O número precisa ter exatamente ${office.digits} dígitos.`;
@@ -537,20 +607,89 @@ function validateNumberSuffix() {
     return false;
   }
 
-  // Verifica se já está em uso para o mesmo cargo e eleição
-  const isTaken = candidaciesList.some(c =>
-    c.status !== 'excluida' &&
-    c.electionId === currentElection.id &&
-    c.office === officeId &&
-    String(c.number) === String(fullNumber)
-  );
+  // 1. REGRA MAJORITÁRIA: Proibir que candidatos da mesma circunscrição concorram pelo mesmo partido
+  // Em cidades diferentes, o partido PODE ter candidatos a Prefeito com o número do partido!
+  if (isMunicipalOffice(officeId) && isMajorOffice(officeId)) {
+    const existingPartyMajorCand = candidaciesList.find(c =>
+      c.status !== 'excluida' &&
+      c.electionId === currentElection.id &&
+      c.office === officeId &&
+      String(c.partyId) === String(selectedParty.id) &&
+      c.cityId === cityId
+    );
+
+    if (existingPartyMajorCand) {
+      const cityName = getCityDisplayName(stateId, cityId);
+      statusEl.textContent = `❌ Impedimento Eleitoral: O partido [${selectedParty.acronym}] já possui candidato a ${office.name} em ${cityName} (${existingPartyMajorCand.ballotName}). Pessoas da mesma cidade não podem concorrer ao cargo majoritário pela mesma legenda!`;
+      statusEl.className = "text-xs text-red-400 mt-1 font-bold";
+      return false;
+    }
+  } else if (isStateOffice(officeId) && isMajorOffice(officeId)) {
+    const existingPartyMajorState = candidaciesList.find(c =>
+      c.status !== 'excluida' &&
+      c.electionId === currentElection.id &&
+      c.office === officeId &&
+      String(c.partyId) === String(selectedParty.id) &&
+      c.stateId === stateId
+    );
+
+    if (existingPartyMajorState) {
+      const stateName = getStateDisplayName(stateId);
+      statusEl.textContent = `❌ Impedimento Eleitoral: O partido [${selectedParty.acronym}] já possui candidato a ${office.name} no estado de ${stateName} (${existingPartyMajorState.ballotName}).`;
+      statusEl.className = "text-xs text-red-400 mt-1 font-bold";
+      return false;
+    }
+  } else if (isNationalOffice(officeId) && isMajorOffice(officeId)) {
+    const existingPartyMajorPres = candidaciesList.find(c =>
+      c.status !== 'excluida' &&
+      c.electionId === currentElection.id &&
+      c.office === officeId &&
+      String(c.partyId) === String(selectedParty.id)
+    );
+
+    if (existingPartyMajorPres) {
+      statusEl.textContent = `❌ Impedimento Eleitoral: O partido [${selectedParty.acronym}] já possui candidato a Presidente (${existingPartyMajorPres.ballotName}).`;
+      statusEl.className = "text-xs text-red-400 mt-1 font-bold";
+      return false;
+    }
+  }
+
+  // 2. UNICIDADE DE NÚMERO POR CIRCUNSCRIÇÃO ELEITORAL
+  // Candidatos de cidades diferentes NÃO conflitam entre si no número de urna
+  const isTaken = candidaciesList.some(c => {
+    if (c.status === 'excluida') return false;
+    if (c.electionId !== currentElection.id) return false;
+    if (c.office !== officeId) return false;
+    if (String(c.number) !== String(fullNumber)) return false;
+
+    // Em eleições/cargos municipais: conflito apenas se for no MESMO MUNICÍPIO
+    if (isMunicipalOffice(officeId)) {
+      return c.cityId === cityId;
+    }
+
+    // Em cargos estaduais: conflito apenas se for no MESMO ESTADO
+    if (isStateOffice(officeId)) {
+      return c.stateId === stateId;
+    }
+
+    // Cargo nacional (Presidente): conflito em todo o país
+    return true;
+  });
 
   if (isTaken) {
-    statusEl.textContent = `❌ Número ${fullNumber} já está registrado por outro candidato neste cargo!`;
+    const circDesc = isMunicipalOffice(officeId)
+      ? `no município de ${getCityDisplayName(stateId, cityId)}`
+      : (isStateOffice(officeId) ? `no estado de ${getStateDisplayName(stateId)}` : 'nesta eleição');
+
+    statusEl.textContent = `❌ O número ${fullNumber} já está registrado por outro candidato ${circDesc}!`;
     statusEl.className = "text-xs text-red-400 mt-1 font-bold";
     return false;
   } else {
-    statusEl.textContent = `✅ Número ${fullNumber} disponível para uso!`;
+    const circDesc = isMunicipalOffice(officeId)
+      ? `em ${getCityDisplayName(stateId, cityId)} - ${getStateDisplayName(stateId)}`
+      : (isStateOffice(officeId) ? `em ${getStateDisplayName(stateId)}` : 'âmbito nacional');
+
+    statusEl.textContent = `✅ Número ${fullNumber} e legenda disponíveis para ${office.name} (${circDesc})!`;
     statusEl.className = "text-xs text-emerald-400 mt-1 font-bold";
     return true;
   }
@@ -558,18 +697,30 @@ function validateNumberSuffix() {
 
 function generateAutoNumber() {
   const partySelect = document.getElementById('form-party-select');
-  const selectedOpt = partySelect.options[partySelect.selectedIndex];
+  const selectedOpt = partySelect ? partySelect.options[partySelect.selectedIndex] : null;
   if (!selectedOpt || !selectedOpt.dataset.number) {
     showToast('error', 'Selecione um partido primeiro para gerar o número.');
     return;
   }
   const partyNum = selectedOpt.dataset.number;
   const officeId = document.getElementById('form-office-select').value;
-  const type = currentElection ? currentElection.type : 'Federal';
-  const office = (OFFICES_CONFIG[type] || []).find(o => o.id === officeId) || OFFICES_CONFIG.Federal[0];
+  const office = getOfficeConfig(officeId);
 
   if (office.digits === 2) {
     showToast('info', 'Cargos majoritários utilizam unicamente o número da legenda (' + partyNum + ').');
+    return;
+  }
+
+  const stateId = document.getElementById('form-state-select')?.value || '';
+  const cityId = document.getElementById('form-city-select')?.value || '';
+
+  if (isMunicipalOffice(officeId) && !cityId) {
+    showToast('error', 'Selecione a Cidade/Município primeiro para gerar um número vago na sua cidade.');
+    return;
+  }
+
+  if (isStateOffice(officeId) && !stateId) {
+    showToast('error', 'Selecione o Estado primeiro para gerar um número vago no seu estado.');
     return;
   }
 
@@ -579,12 +730,21 @@ function generateAutoNumber() {
   for (let i = 1; i <= maxSuffix; i++) {
     const candidateSuffix = String(i).padStart(suffixLength, '0');
     const testNumber = partyNum + candidateSuffix;
-    const isTaken = candidaciesList.some(c =>
-      c.status !== 'excluida' &&
-      c.electionId === currentElection.id &&
-      c.office === officeId &&
-      String(c.number) === String(testNumber)
-    );
+    const isTaken = candidaciesList.some(c => {
+      if (c.status === 'excluida') return false;
+      if (c.electionId !== currentElection.id) return false;
+      if (c.office !== officeId) return false;
+      if (String(c.number) !== String(testNumber)) return false;
+
+      if (isMunicipalOffice(officeId)) {
+        return c.cityId === cityId;
+      }
+      if (isStateOffice(officeId)) {
+        return c.stateId === stateId;
+      }
+      return true;
+    });
+
     if (!isTaken) {
       document.getElementById('form-number-suffix').value = candidateSuffix;
       validateNumberSuffix();
@@ -592,7 +752,7 @@ function generateAutoNumber() {
       return;
     }
   }
-  showToast('error', 'Nenhum número vago localizado para esta faixa partidária.');
+  showToast('error', 'Nenhum número vago localizado para esta faixa partidária nesta circunscrição.');
 }
 
 // ========================================================
@@ -688,8 +848,31 @@ async function handleCandidacySubmit(e) {
   submitBtn.innerHTML = '<span class="animate-spin inline-block mr-2">⟳</span> Enviando ao Tribunal...';
 
   try {
+    const partySelect = document.getElementById('form-party-select');
+    const selectedParty = partiesList.find(p => String(p.id) === String(partySelect.value));
+    if (!selectedParty) {
+      showToast('error', 'Selecione uma agremiação partidária válida.');
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i> Submeter Candidatura Oficial';
+      initIcons();
+      return;
+    }
+
+    const officeId = document.getElementById('form-office-select').value;
+    const office = getOfficeConfig(officeId);
+    const stateId = document.getElementById('form-state-select').value;
+    const cityId = document.getElementById('form-city-select').value || 'ALL';
+
+    if (isMunicipalOffice(officeId) && (!stateId || !cityId || cityId === 'ALL')) {
+      showToast('error', 'Selecione o Estado e a Cidade para candidaturas municipais.');
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i> Submeter Candidatura Oficial';
+      initIcons();
+      return;
+    }
+
     if (!validateNumberSuffix()) {
-      showToast('error', 'Corrija o número de urna antes de submeter.');
+      showToast('error', 'Corrija os impedimentos de número ou legenda antes de submeter.');
       submitBtn.disabled = false;
       submitBtn.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i> Submeter Candidatura Oficial';
       initIcons();
@@ -704,15 +887,51 @@ async function handleCandidacySubmit(e) {
       return;
     }
 
-    const partySelect = document.getElementById('form-party-select');
-    const selectedParty = partiesList.find(p => String(p.id) === String(partySelect.value));
-    const officeId = document.getElementById('form-office-select').value;
-    const type = currentElection ? currentElection.type : 'Federal';
-    const office = (OFFICES_CONFIG[type] || []).find(o => o.id === officeId) || OFFICES_CONFIG.Federal[0];
+    // Validação estrita: Proibir que candidatos da mesma cidade concorram ao cargo majoritário pelo mesmo partido
+    if (isMunicipalOffice(officeId) && isMajorOffice(officeId)) {
+      const existingMajor = candidaciesList.find(c =>
+        c.status !== 'excluida' &&
+        c.electionId === currentElection.id &&
+        c.office === officeId &&
+        String(c.partyId) === String(selectedParty.id) &&
+        c.cityId === cityId
+      );
+      if (existingMajor) {
+        showToast('error', `O partido ${selectedParty.acronym} já possui candidatura a Prefeito em ${getCityDisplayName(stateId, cityId)}. Pessoas da mesma cidade não podem concorrer pelo mesmo partido ao cargo majoritário.`);
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i> Submeter Candidatura Oficial';
+        initIcons();
+        return;
+      }
+    }
 
     const partyPrefix = document.getElementById('form-party-prefix').textContent;
     const suffix = document.getElementById('form-number-suffix').value.trim();
     const finalNumber = office.digits === 2 ? partyPrefix : (partyPrefix + suffix);
+
+    // Verificação de colisão de número de urna na circunscrição
+    const numberCollision = candidaciesList.find(c => {
+      if (c.status === 'excluida') return false;
+      if (c.electionId !== currentElection.id) return false;
+      if (c.office !== officeId) return false;
+      if (String(c.number) !== String(finalNumber)) return false;
+
+      if (isMunicipalOffice(officeId)) {
+        return c.cityId === cityId;
+      }
+      if (isStateOffice(officeId)) {
+        return c.stateId === stateId;
+      }
+      return true;
+    });
+
+    if (numberCollision) {
+      showToast('error', `O número de urna ${finalNumber} já está registrado nesta circunscrição.`);
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i> Submeter Candidatura Oficial';
+      initIcons();
+      return;
+    }
 
     const protocol = `CAND-2026-${Math.floor(100000 + Math.random() * 900000)}`;
 
@@ -721,8 +940,8 @@ async function handleCandidacySubmit(e) {
       electionId: currentElection.id,
       electionTitle: currentElection.title,
       office: officeId,
-      stateId: document.getElementById('form-state-select').value,
-      cityId: document.getElementById('form-city-select').value || 'ALL',
+      stateId: stateId,
+      cityId: cityId,
       partyId: selectedParty.id,
       partyName: selectedParty.name,
       partyAcronym: selectedParty.acronym,
@@ -748,17 +967,25 @@ async function handleCandidacySubmit(e) {
     const newCandRef = db.ref('candidates').push();
     await newCandRef.set(candidateData);
 
-    // Registro da reserva de número
-    await db.ref(`numberRegistry/${currentElection.id}/${officeId}/${finalNumber}`).set({
+    // Registro da reserva de número na circunscrição
+    const jurisdictionKey = isMunicipalOffice(officeId)
+      ? `${candidateData.stateId}_${candidateData.cityId}`
+      : (isStateOffice(officeId) ? candidateData.stateId : 'NACIONAL');
+
+    await db.ref(`numberRegistry/${currentElection.id}/${officeId}/${jurisdictionKey}/${finalNumber}`).set({
       candidateId: newCandRef.key,
       protocol: protocol,
       reservedAt: new Date().toISOString()
     });
 
+    const circInfo = isMunicipalOffice(officeId)
+      ? `em ${getCityDisplayName(stateId, cityId)}`
+      : (isStateOffice(officeId) ? `em ${getStateDisplayName(stateId)}` : '');
+
     // Cria notificação administrativa
     await db.ref('notifications').push({
       type: 'new_candidacy',
-      text: `Nova candidatura registrada: ${candidateData.ballotName} (${candidateData.partyAcronym} - ${finalNumber}) para ${officeId}`,
+      text: `Nova candidatura registrada: ${candidateData.ballotName} (${candidateData.partyAcronym} - ${finalNumber}) para ${officeId} ${circInfo}`,
       timestamp: new Date().toISOString(),
       read: false
     });
@@ -771,7 +998,7 @@ async function handleCandidacySubmit(e) {
     // Abre Modal de Sucesso
     document.getElementById('success-protocol-text').textContent = protocol;
     document.getElementById('success-name-text').textContent = candidateData.ballotName;
-    document.getElementById('success-office-text').textContent = `${officeId} • Número ${finalNumber} (${selectedParty.acronym})`;
+    document.getElementById('success-office-text').textContent = `${officeId} • Número ${finalNumber} (${selectedParty.acronym}) ${circInfo}`;
     document.getElementById('success-modal').classList.remove('hidden');
 
     // Reseta Formulário
@@ -868,7 +1095,7 @@ function renderConfirmedCandidates() {
         <div class="mt-4 pt-3 border-t border-brand-border/40 text-xs text-slate-400 space-y-1.5">
           <div class="flex justify-between">
             <span>Circunscrição:</span>
-            <strong class="text-slate-200 capitalize">${c.cityId && c.cityId !== 'ALL' ? c.cityId : c.stateId}</strong>
+            <strong class="text-slate-200">${c.cityId && c.cityId !== 'ALL' ? (getCityDisplayName(c.stateId, c.cityId) + ' (' + getStateDisplayName(c.stateId) + ')') : getStateDisplayName(c.stateId)}</strong>
           </div>
           ${c.viceName ? `
             <div class="flex justify-between">
@@ -1891,7 +2118,7 @@ function renderAdminCandidacies() {
       </td>
       <td class="px-6 py-4">
         <span class="text-xs font-semibold text-brand-electric block">${c.office}</span>
-        <span class="text-[11px] text-slate-400 capitalize">${c.cityId && c.cityId !== 'ALL' ? c.cityId : c.stateId}</span>
+        <span class="text-[11px] text-slate-400">${c.cityId && c.cityId !== 'ALL' ? (getCityDisplayName(c.stateId, c.cityId) + ' (' + getStateDisplayName(c.stateId) + ')') : getStateDisplayName(c.stateId)}</span>
       </td>
       <td class="px-6 py-4">
         <span class="text-xs font-bold text-white block">${c.partyAcronym}</span>
@@ -1921,7 +2148,8 @@ function openJudgmentModal(candId) {
   const c = selectedCandForJudgment;
   document.getElementById('modal-cand-photo').src = c.photo;
   document.getElementById('modal-cand-name').textContent = c.ballotName;
-  document.getElementById('modal-cand-sub').textContent = `${c.office} • ${c.partyAcronym} • ${c.stateId}`;
+  const circ = c.cityId && c.cityId !== 'ALL' ? `${getCityDisplayName(c.stateId, c.cityId)} - ${getStateDisplayName(c.stateId)}` : getStateDisplayName(c.stateId);
+  document.getElementById('modal-cand-sub').textContent = `${c.office} • ${c.partyAcronym} • ${circ}`;
   document.getElementById('modal-cand-number').textContent = c.number;
   document.getElementById('modal-cand-badge').textContent = c.protocol;
 
