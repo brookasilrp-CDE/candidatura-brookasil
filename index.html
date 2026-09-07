@@ -406,6 +406,28 @@
         </div>
       </div>
 
+      <!-- Banner de Confirmação de Envio -->
+      <div id="candidacy-success-banner" class="hidden p-6 rounded-2xl bg-emerald-500/20 border-2 border-emerald-400 text-emerald-100 shadow-glow-emerald">
+        <div class="flex items-start gap-4">
+          <div class="w-12 h-12 rounded-full bg-emerald-500/30 border border-emerald-400 flex items-center justify-center text-emerald-300 flex-shrink-0 shadow-lg">
+            <i data-lucide="check-circle-2" class="w-7 h-7"></i>
+          </div>
+          <div class="flex-1 space-y-1.5">
+            <span class="text-[11px] font-bold uppercase tracking-widest text-emerald-300">Confirmação de Protocolo</span>
+            <h4 class="font-bold text-xl text-white">Candidatura Enviada com Sucesso!</h4>
+            <p class="text-xs text-slate-200">Seu pedido foi protocolado sob o número <strong id="banner-protocol-text" class="text-brand-gold font-mono text-sm px-2 py-0.5 rounded bg-brand-deep/80 border border-brand-gold/40 font-extrabold">--</strong> e já está em análise pelos magistrados do Tribunal Eleitoral.</p>
+            <div class="pt-3 flex flex-wrap gap-2.5">
+              <button type="button" onclick="viewSubmittedCandidacyInPublicList()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-brand-gold to-yellow-500 hover:to-brand-gold text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md">
+                <i data-lucide="search" class="w-4 h-4"></i> Acompanhar na Consulta Pública
+              </button>
+              <button type="button" onclick="document.getElementById('candidacy-success-banner').classList.add('hidden')" class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-slate-300 text-xs font-semibold">
+                Dispensar Aviso
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Candidacy Form Container -->
       <form id="candidacy-form" onsubmit="handleCandidacySubmit(event)" class="glass-panel p-6 sm:p-10 rounded-3xl border border-brand-border/60 space-y-8">
         
@@ -1237,7 +1259,7 @@
   </div>
 
   <!-- Modal de Sucesso com Protocolo e Confetes -->
-  <div id="success-modal" class="fixed inset-0 z-50 hidden bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+  <div id="success-modal" class="fixed inset-0 z-[100] hidden bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-panel max-w-lg w-full rounded-3xl border border-brand-gold/40 p-8 space-y-6 shadow-2xl text-center">
       <div class="w-20 h-20 rounded-full bg-emerald-500/20 border-2 border-emerald-400 mx-auto flex items-center justify-center text-emerald-400 shadow-glow-emerald">
         <i data-lucide="check" class="w-10 h-10"></i>
@@ -1483,7 +1505,7 @@
   </div>
 
   <!-- Toast Notification Container -->
-  <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
+  <div id="toast-container" class="fixed bottom-6 right-6 z-[110] flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- Companion JavaScript Engine -->
   <script src="./app.js"></script>

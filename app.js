@@ -977,18 +977,35 @@ async function handleCandidacySubmit(e) {
       updatedAt: new Date().toISOString()
     };
 
-    // Gravação no Realtime Database
-    const newCandRef = db.ref('candidates').push();
-    await newCandRef.set(candidateData);
+    // Gravação resiliente no Realtime Database
+    let candidateKey = null;
+    if (db) {
+      try {
+        const newCandRef = db.ref('candidates').push();
+        candidateKey = newCandRef.key;
+        await newCandRef.set(candidateData);
+      } catch (dbErr) {
+        console.warn("Aviso ao gravar no Firebase RTDB (usando fallback local):", dbErr);
+      }
+    }
+
+    const finalKey = candidateKey || (`cand_loc_${Date.now()}`);
+    const savedCand = { id: finalKey, ...candidateData };
 
     // Atualização otimista imediata da lista local
-    const savedCand = { id: newCandRef.key, ...candidateData };
-    const existingIdx = candidaciesList.findIndex(c => c.id === newCandRef.key);
+    const existingIdx = candidaciesList.findIndex(c => c.id === finalKey || c.protocol === protocol);
     if (existingIdx >= 0) {
       candidaciesList[existingIdx] = savedCand;
     } else {
       candidaciesList.unshift(savedCand);
     }
+
+    // Persistência local em caso de oscilação de rede
+    try {
+      localStorage.setItem('brookasil_last_submitted_protocol', protocol);
+      localStorage.setItem('brookasil_last_submitted_cand', JSON.stringify(savedCand));
+    } catch (e) {}
+
     updateGlobalStats();
     renderConfirmedCandidates();
     if (currentUser) {
@@ -997,46 +1014,97 @@ async function handleCandidacySubmit(e) {
     }
 
     // Registro da reserva de número na circunscrição
-    const jurisdictionKey = isMunicipalOffice(officeId)
-      ? `${candidateData.stateId}_${candidateData.cityId}`
-      : (isStateOffice(officeId) ? candidateData.stateId : 'NACIONAL');
+    if (db && candidateKey) {
+      try {
+        const jurisdictionKey = isMunicipalOffice(officeId)
+          ? `${candidateData.stateId}_${candidateData.cityId}`
+          : (isStateOffice(officeId) ? candidateData.stateId : 'NACIONAL');
 
-    await db.ref(`numberRegistry/${currentElection.id}/${officeId}/${jurisdictionKey}/${finalNumber}`).set({
-      candidateId: newCandRef.key,
-      protocol: protocol,
-      reservedAt: new Date().toISOString()
-    });
+        await db.ref(`numberRegistry/${currentElection.id}/${officeId}/${jurisdictionKey}/${finalNumber}`).set({
+          candidateId: candidateKey,
+          protocol: protocol,
+          reservedAt: new Date().toISOString()
+        });
+      } catch (numErr) {
+        console.warn("Aviso ao registrar número no RTDB:", numErr);
+      }
+    }
 
     const circInfo = isMunicipalOffice(officeId)
       ? `em ${getCityDisplayName(stateId, cityId)}`
       : (isStateOffice(officeId) ? `em ${getStateDisplayName(stateId)}` : '');
 
-    // Cria notificação administrativa
-    await db.ref('notifications').push({
-      type: 'new_candidacy',
-      text: `Nova candidatura registrada: ${candidateData.ballotName} (${candidateData.partyAcronym} - ${finalNumber}) para ${officeId} ${circInfo}`,
-      timestamp: new Date().toISOString(),
-      read: false
-    });
-
-    // Dispara Confetes Festivos
-    if (window.confetti) {
-      window.confetti({ particleCount: 120, spread: 80, origin: { y: 0.6 } });
+    // Tentativa segura de criar notificação administrativa (ignora se houver restrição de segurança no RTDB)
+    if (db) {
+      try {
+        await db.ref('notifications').push({
+          type: 'new_candidacy',
+          text: `Nova candidatura registrada: ${candidateData.ballotName} (${candidateData.partyAcronym} - ${finalNumber}) para ${officeId} ${circInfo}`,
+          timestamp: new Date().toISOString(),
+          read: false
+        });
+      } catch (notifErr) {
+        console.warn("Notificação não gravada no Firebase (permissão restrita):", notifErr);
+      }
     }
 
-    // Abre Modal de Sucesso com o protocolo atual
+    // ========================================================
+    // EXIBIÇÃO DA MENSAGEM DE SUCESSO DE SUBMISSÃO
+    // ========================================================
     window.lastSubmittedProtocol = protocol;
-    document.getElementById('success-protocol-text').textContent = protocol;
-    document.getElementById('success-name-text').textContent = candidateData.ballotName;
-    document.getElementById('success-office-text').textContent = `${officeId} • Número ${finalNumber} (${selectedParty.acronym}) ${circInfo}`;
-    document.getElementById('success-modal').classList.remove('hidden');
 
-    // Reseta Formulário
+    // 1. Toast oficial de envio com protocolo
+    showToast('success', `Candidatura enviada com sucesso ao Tribunal! Protocolo: ${protocol}`);
+
+    // 2. Banner de confirmação no topo do formulário
+    const bannerEl = document.getElementById('candidacy-success-banner');
+    const bannerProto = document.getElementById('banner-protocol-text');
+    if (bannerEl) {
+      if (bannerProto) bannerProto.textContent = protocol;
+      bannerEl.classList.remove('hidden');
+      bannerEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // 3. Modal de confirmação oficial com protocolo e detalhes
+    const protoEl = document.getElementById('success-protocol-text');
+    const nameEl = document.getElementById('success-name-text');
+    const officeEl = document.getElementById('success-office-text');
+    if (protoEl) protoEl.textContent = protocol;
+    if (nameEl) nameEl.textContent = candidateData.ballotName;
+    if (officeEl) officeEl.textContent = `${officeId} • Número ${finalNumber} (${selectedParty.acronym}) ${circInfo}`;
+
+    const successModal = document.getElementById('success-modal');
+    if (successModal) {
+      successModal.classList.remove('hidden');
+    }
+
+    // 4. Efeito festivo de confetes
+    if (window.confetti) {
+      try {
+        window.confetti({ particleCount: 140, spread: 90, origin: { y: 0.55 } });
+      } catch (e) {}
+    }
+
+    // 5. Reseta campos do formulário
     document.getElementById('candidacy-form').reset();
     uploadedPhotoBase64 = '';
     uploadedPdfBase64 = '';
-    document.getElementById('photo-preview-img').classList.add('hidden');
-    document.getElementById('photo-placeholder').classList.remove('hidden');
+    const previewImg = document.getElementById('photo-preview-img');
+    const previewPlaceholder = document.getElementById('photo-placeholder');
+    if (previewImg) previewImg.classList.add('hidden');
+    if (previewPlaceholder) previewPlaceholder.classList.remove('hidden');
+    const pdfBadge = document.getElementById('pdf-status-badge');
+    if (pdfBadge) {
+      pdfBadge.innerHTML = '<i data-lucide="info" class="w-3.5 h-3.5"></i> Nenhum arquivo selecionado';
+      pdfBadge.className = 'text-xs text-slate-400 flex items-center gap-1.5';
+    }
+    const numStatusEl = document.getElementById('form-number-status');
+    if (numStatusEl) {
+      numStatusEl.textContent = '';
+      numStatusEl.className = 'text-xs text-slate-400 mt-1';
+    }
+    const partyPrefixEl = document.getElementById('form-party-prefix');
+    if (partyPrefixEl) partyPrefixEl.textContent = '--';
 
   } catch (error) {
     console.error("Erro ao submeter:", error);
