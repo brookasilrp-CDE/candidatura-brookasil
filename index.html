@@ -415,10 +415,10 @@
           <div class="flex-1 space-y-1.5">
             <span class="text-[11px] font-bold uppercase tracking-widest text-emerald-300">Confirmação de Protocolo</span>
             <h4 class="font-bold text-xl text-white">Candidatura Enviada com Sucesso!</h4>
-            <p class="text-xs text-slate-200">Seu pedido foi protocolado sob o número <strong id="banner-protocol-text" class="text-brand-gold font-mono text-sm px-2 py-0.5 rounded bg-brand-deep/80 border border-brand-gold/40 font-extrabold">--</strong> e já está em análise pelos magistrados do Tribunal Eleitoral.</p>
+            <p class="text-xs text-slate-200">Seu pedido foi protocolado sob o número <strong id="banner-protocol-text" class="text-brand-gold font-mono text-sm px-2 py-0.5 rounded bg-brand-deep/80 border border-brand-gold/40 font-extrabold">--</strong> com status <strong class="text-amber-300 font-bold">EM ANÁLISE</strong>. A candidatura <span class="text-red-300 font-bold underline">NÃO está homologada</span> até que o Tribunal Regional Eleitoral (TRE) competente julgue e defira oficialmente o registro.</p>
             <div class="pt-3 flex flex-wrap gap-2.5">
               <button type="button" onclick="viewSubmittedCandidacyInPublicList()" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-brand-gold to-yellow-500 hover:to-brand-gold text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md">
-                <i data-lucide="search" class="w-4 h-4"></i> Acompanhar na Consulta Pública
+                <i data-lucide="search" class="w-4 h-4"></i> Consultar Status da Candidatura
               </button>
               <button type="button" onclick="document.getElementById('candidacy-success-banner').classList.add('hidden')" class="px-4 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-slate-300 text-xs font-semibold">
                 Dispensar Aviso
@@ -642,10 +642,10 @@
       <div class="glass-panel p-4 rounded-2xl border border-brand-border/60 flex flex-wrap gap-4 items-center justify-between">
         <div class="flex flex-wrap gap-3 flex-1 min-w-[280px]">
           <select id="filter-status" onchange="renderConfirmedCandidates()" class="bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-xs text-white outline-none">
-            <option value="ALL">Todos os Status (Homologadas & Em Análise)</option>
-            <option value="deferida" selected>Homologadas (Aptas)</option>
-            <option value="pendente">Em Análise (Aguardando Tribunal)</option>
-            <option value="indeferida">Indeferidas</option>
+            <option value="deferida" selected>Apenas Homologadas (Aptas pelo TRE)</option>
+            <option value="pendente">Em Análise (Aguardando Decisão do TRE)</option>
+            <option value="indeferida">Indeferidas pelo Tribunal</option>
+            <option value="ALL">Todas as Candidaturas (Todos os Status)</option>
           </select>
           <select id="filter-cargo" onchange="renderConfirmedCandidates()" class="bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-xs text-white outline-none">
             <option value="ALL">Todos os Cargos</option>
@@ -1268,7 +1268,7 @@
       <div class="space-y-2">
         <span class="text-xs uppercase font-bold tracking-widest text-brand-gold">Submissão Confirmada</span>
         <h3 class="text-2xl font-cinzel font-bold text-white">Candidatura Registrada com Sucesso!</h3>
-        <p class="text-xs text-slate-300">Seu pedido foi protocolado com sucesso no Tribunal Eleitoral de Brookasil sob status <strong class="text-amber-400">Em Análise (Pendente)</strong> e já está disponível para visualização e julgamento.</p>
+        <p class="text-xs text-slate-300">Seu pedido foi protocolado sob o status <strong class="text-amber-400 font-bold">EM ANÁLISE (Pendente)</strong>. A candidatura <strong class="text-red-400 font-bold">NÃO está homologada</strong> até que o Tribunal Regional Eleitoral (TRE) competente aprecie e defira formalmente o pedido.</p>
       </div>
 
       <div class="bg-brand-navy/90 p-4 rounded-2xl border border-brand-border text-left space-y-2">
@@ -1284,11 +1284,15 @@
           <span class="text-slate-400">Cargo & Número:</span>
           <span id="success-office-text" class="font-bold text-brand-electric">--</span>
         </div>
+        <div class="flex justify-between text-xs border-t border-brand-border/40 pt-1.5">
+          <span class="text-slate-400">Situação Atual:</span>
+          <span class="font-bold text-amber-300 flex items-center gap-1"><span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span> Em Análise pelo TRE</span>
+        </div>
       </div>
 
       <div class="flex flex-col sm:flex-row items-center gap-3 pt-2">
         <button onclick="viewSubmittedCandidacyInPublicList()" class="w-full sm:flex-1 py-3 rounded-xl font-extrabold text-slate-950 bg-gradient-to-r from-brand-gold to-yellow-500 hover:to-brand-gold transition text-xs flex items-center justify-center gap-2 shadow-glow-gold">
-          <i data-lucide="search" class="w-4 h-4"></i> Acompanhar Candidatura
+          <i data-lucide="search" class="w-4 h-4"></i> Consultar Status no Tribunal
         </button>
         <button onclick="closeSuccessModal()" class="w-full sm:w-auto px-5 py-3 rounded-xl font-bold text-slate-300 bg-white/5 hover:bg-white/10 transition text-xs">
           Voltar ao Início

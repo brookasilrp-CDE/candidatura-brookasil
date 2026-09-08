@@ -1122,18 +1122,15 @@ function closeSuccessModal() {
 }
 
 function viewSubmittedCandidacyInPublicList() {
-  document.getElementById('success-modal').classList.add('hidden');
-  navigateTo('candidatos');
-  const searchInput = document.getElementById('filter-search');
+  const modal = document.getElementById('success-modal');
+  if (modal) modal.classList.add('hidden');
+  navigateTo('consultar');
+  const searchInput = document.getElementById('quick-search-input');
   if (searchInput && window.lastSubmittedProtocol) {
     searchInput.value = window.lastSubmittedProtocol;
   }
-  const statusSelect = document.getElementById('filter-status');
-  if (statusSelect) {
-    statusSelect.value = 'ALL';
-  }
-  renderConfirmedCandidates();
-  showToast('info', 'Localizamos o seu pedido de candidatura! Status: Em Análise.');
+  executeQuickSearch();
+  showToast('info', 'Protocolo localizado! Sua candidatura está EM ANÁLISE aguardando decisão do TRE.');
 }
 
 // ========================================================
@@ -1154,8 +1151,10 @@ function renderConfirmedCandidates() {
     if (!c) return false;
     if (c.status === 'excluida') return false;
 
-    // Se o usuário digitou uma busca por nome, número ou sigla,
-    // busca em todas as candidaturas (deferidas e pendentes) para que quem acabou de submeter veja seu registro!
+    // REGRA DE HOMOLOGAÇÃO: O status DEVE ser rigorosamente respeitado!
+    // Se o filtro for 'deferida' (padrão), NUNCA exibe pendentes, mesmo se houver busca de texto!
+    if (statusFilter !== 'ALL' && c.status !== statusFilter) return false;
+
     if (searchFilter) {
       const bName = String(c.ballotName || '').toLowerCase();
       const fName = String(c.fullName || '').toLowerCase();
@@ -1164,8 +1163,6 @@ function renderConfirmedCandidates() {
       const prot = String(c.protocol || '').toLowerCase();
       const matchesSearch = bName.includes(searchFilter) || fName.includes(searchFilter) || num.includes(searchFilter) || pAcronym.includes(searchFilter) || prot.includes(searchFilter);
       if (!matchesSearch) return false;
-    } else {
-      if (statusFilter !== 'ALL' && c.status !== statusFilter) return false;
     }
 
     if (cargoFilter !== 'ALL' && c.office !== cargoFilter) return false;
@@ -1177,21 +1174,26 @@ function renderConfirmedCandidates() {
 
   const badge = document.getElementById('confirmed-count-badge');
   if (badge) {
-    const deferidasCount = filtered.filter(c => c.status === 'deferida').length;
-    const pendentesCount = filtered.filter(c => c.status === 'pendente').length;
-    if (statusFilter === 'deferida' && !searchFilter) {
-      badge.textContent = `${deferidasCount} Candidato${deferidasCount === 1 ? '' : 's'} Homologado${deferidasCount === 1 ? '' : 's'}`;
+    const deferidasCount = candidaciesList.filter(c => c.status === 'deferida').length;
+    const pendentesCount = candidaciesList.filter(c => c.status === 'pendente').length;
+    if (statusFilter === 'deferida') {
+      badge.textContent = `${filtered.length} Candidato${filtered.length === 1 ? '' : 's'} Homologado${filtered.length === 1 ? '' : 's'} (Deferidos)`;
+    } else if (statusFilter === 'pendente') {
+      badge.textContent = `${filtered.length} Candidatura${filtered.length === 1 ? '' : 's'} em Análise (Aguardando Decisão do TRE)`;
+    } else if (statusFilter === 'indeferida') {
+      badge.textContent = `${filtered.length} Candidatura${filtered.length === 1 ? '' : 's'} Indeferida${filtered.length === 1 ? '' : 's'}`;
     } else {
-      badge.textContent = `${filtered.length} Candidatura${filtered.length === 1 ? '' : 's'} (${deferidasCount} Apta${deferidasCount === 1 ? '' : 's'}${pendentesCount > 0 ? `, ${pendentesCount} em Análise` : ''})`;
+      badge.textContent = `${filtered.length} Total (${deferidasCount} Homologadas, ${pendentesCount} em Análise)`;
     }
   }
 
   if (filtered.length === 0) {
+    const isPendenteFilter = statusFilter === 'pendente';
     grid.innerHTML = `
       <div class="col-span-full py-16 text-center text-slate-500">
-        <i data-lucide="users" class="w-12 h-12 mx-auto text-slate-600 mb-3"></i>
+        <i data-lucide="${isPendenteFilter ? 'clock' : 'users'}" class="w-12 h-12 mx-auto text-slate-600 mb-3"></i>
         <p class="font-bold text-base text-slate-400">Nenhuma candidatura localizada com os filtros selecionados.</p>
-        <p class="text-xs text-slate-500 mt-1">Candidaturas submetidas recentemente podem ser consultadas selecionando o filtro "Todos os Status" ou "Em Análise".</p>
+        <p class="text-xs text-slate-500 mt-1">${statusFilter === 'deferida' ? 'Apenas candidaturas homologadas pelo TRE são listadas nesta tela oficial. Candidaturas recém-enviadas estão em análise e podem ser consultadas no menu "Consultar".' : 'Tente alterar os termos de busca ou filtros.'}</p>
       </div>
     `;
     initIcons();
@@ -1204,19 +1206,36 @@ function renderConfirmedCandidates() {
     const isDeferida = c.status === 'deferida';
 
     return `
-    <div class="glass-panel rounded-3xl border ${isPendente ? 'border-amber-500/40 hover:border-amber-400/80 bg-amber-950/10' : 'border-brand-border/70 hover:border-brand-electric/50'} transition-all p-5 flex flex-col justify-between group">
+    <div class="glass-panel rounded-3xl border ${isPendente ? 'border-amber-500/60 bg-amber-950/20' : (isIndeferida ? 'border-red-500/60 bg-red-950/20' : 'border-brand-border/70 hover:border-brand-electric/50')} transition-all p-5 flex flex-col justify-between group">
       <div>
+        ${isPendente ? `
+          <div class="mb-3 px-3 py-1.5 rounded-xl bg-amber-500/20 border border-amber-500/50 text-[11px] text-amber-300 font-extrabold flex items-center gap-1.5">
+            <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-400 shrink-0"></i>
+            <span>⚠️ NÃO HOMOLOGADO • Aguarda Julgamento do TRE</span>
+          </div>
+        ` : (isIndeferida ? `
+          <div class="mb-3 px-3 py-1.5 rounded-xl bg-red-500/20 border border-red-500/50 text-[11px] text-red-300 font-extrabold flex items-center gap-1.5">
+            <i data-lucide="x-circle" class="w-3.5 h-3.5 text-red-400 shrink-0"></i>
+            <span>❌ INDEFERIDO • Rejeitado pelo Tribunal</span>
+          </div>
+        ` : `
+          <div class="mb-3 px-3 py-1.5 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-[11px] text-emerald-300 font-bold flex items-center gap-1.5">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400 shrink-0"></i>
+            <span>✅ HOMOLOGADO • Apto pelo TRE</span>
+          </div>
+        `)}
+
         <div class="relative h-48 rounded-2xl overflow-hidden mb-4 bg-brand-deep">
           <img src="${c.photo}" alt="${c.ballotName}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
           <div class="absolute top-3 right-3 px-3 py-1 rounded-xl bg-brand-navy/90 backdrop-blur-md border border-brand-border text-brand-gold font-mono font-bold text-sm shadow-md">
             ${c.number}
           </div>
-          <div class="absolute bottom-3 left-3 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-            isDeferida ? 'bg-emerald-500/90 text-slate-950' :
-            isPendente ? 'bg-amber-500/95 text-slate-950 flex items-center gap-1 shadow-md' :
-            'bg-red-500/90 text-white'
+          <div class="absolute bottom-3 left-3 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase ${
+            isDeferida ? 'bg-emerald-500 text-slate-950 shadow-md' :
+            isPendente ? 'bg-amber-500 text-slate-950 flex items-center gap-1 shadow-md border border-amber-300' :
+            'bg-red-500 text-white shadow-md'
           }">
-            ${isPendente ? '<span class="w-1.5 h-1.5 rounded-full bg-slate-950 animate-ping inline-block"></span> Em Análise' : (isDeferida ? 'Homologado' : 'Indeferido')}
+            ${isPendente ? '<span class="w-1.5 h-1.5 rounded-full bg-slate-950 animate-ping inline-block"></span> ⏳ Em Análise' : (isDeferida ? '✅ Homologado' : '❌ Indeferido')}
           </div>
         </div>
 
@@ -1243,6 +1262,12 @@ function renderConfirmedCandidates() {
           <div class="flex justify-between items-center text-[10px] text-slate-500 font-mono pt-1">
             <span>Protocolo:</span>
             <strong class="text-brand-electric">${c.protocol || 'N/D'}</strong>
+          </div>
+          <div class="flex justify-between items-center text-[10px] pt-1">
+            <span class="text-slate-400">Decisão TRE:</span>
+            <strong class="${isDeferida ? 'text-emerald-400' : (isPendente ? 'text-amber-400' : 'text-red-400')}">
+              ${isDeferida ? 'Homologado / Apto' : (isPendente ? 'Aguardando Julgamento' : 'Indeferido')}
+            </strong>
           </div>
         </div>
       </div>
@@ -1423,24 +1448,70 @@ function executeQuickSearch() {
     return;
   }
 
-  resultsContainer.innerHTML = matches.map(c => `
-    <div class="glass-panel p-6 rounded-3xl border border-brand-border flex flex-col sm:flex-row items-center gap-6">
-      <img src="${c.photo}" alt="${c.ballotName}" class="w-20 h-24 rounded-2xl object-cover border border-brand-border bg-brand-deep">
-      <div class="flex-1 text-center sm:text-left space-y-1">
-        <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-          <span class="font-mono text-xs font-bold text-brand-gold">${c.protocol}</span>
-          <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-            c.status === 'deferida' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
-            c.status === 'indeferida' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
-            'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-          }">${c.status}</span>
+  resultsContainer.innerHTML = matches.map(c => {
+    const isPendente = c.status === 'pendente';
+    const isDeferida = c.status === 'deferida';
+    const isIndeferida = c.status === 'indeferida';
+
+    return `
+    <div class="glass-panel p-6 rounded-3xl border ${isPendente ? 'border-amber-500/60 bg-amber-950/20' : (isIndeferida ? 'border-red-500/60 bg-red-950/20' : 'border-brand-border/80')} flex flex-col md:flex-row items-start md:items-center gap-6">
+      <img src="${c.photo}" alt="${c.ballotName}" class="w-24 h-28 rounded-2xl object-cover border border-brand-border bg-brand-deep shrink-0">
+      <div class="flex-1 space-y-2 w-full">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <span class="font-mono text-xs font-bold text-brand-gold bg-brand-navy px-2.5 py-1 rounded-lg border border-brand-border">${c.protocol}</span>
+            <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+              isDeferida ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' :
+              isIndeferida ? 'bg-red-500/20 text-red-300 border border-red-500/40' :
+              'bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center gap-1.5'
+            }">
+              ${isPendente ? '<span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span> ⏳ Em Análise (Não Homologado)' : (isDeferida ? '✅ Homologado (Deferido)' : '❌ Indeferido')}
+            </span>
+          </div>
+          <span class="text-xs text-slate-400 font-mono">Cadastrado em: ${c.createdAt ? new Date(c.createdAt).toLocaleDateString('pt-BR') : '--'}</span>
         </div>
-        <h4 class="text-xl font-bold text-white">${c.ballotName}</h4>
-        <p class="text-xs text-slate-400">${c.office} • ${c.partyAcronym} (${c.number}) • ${c.stateId}</p>
-        ${c.rejectionReason ? `<p class="text-xs text-red-300 mt-2 bg-red-950/40 p-2 rounded-lg">Motivo: ${c.rejectionReason}</p>` : ''}
+
+        <div>
+          <h4 class="text-2xl font-bold text-white">${c.ballotName}</h4>
+          <p class="text-xs text-slate-300">${c.fullName || ''} • <strong class="text-brand-electric font-mono text-sm">${c.number}</strong> (${c.partyAcronym})</p>
+          <p class="text-xs text-slate-400 mt-0.5">Cargo: <strong class="text-slate-200">${c.office}</strong> • Circunscrição: <strong class="text-slate-200">${c.cityId && c.cityId !== 'ALL' ? (getCityDisplayName(c.stateId, c.cityId) + ' - ' + getStateDisplayName(c.stateId)) : getStateDisplayName(c.stateId)}</strong></p>
+        </div>
+
+        ${isPendente ? `
+          <div class="p-3 rounded-2xl bg-amber-500/15 border border-amber-500/40 text-xs text-amber-200 space-y-1">
+            <div class="flex items-center gap-2 font-bold text-amber-300">
+              <i data-lucide="clock" class="w-4 h-4 text-amber-400 shrink-0"></i>
+              <span>CANDIDATURA NÃO HOMOLOGADA (AGUARDANDO DECISÃO DO TRE)</span>
+            </div>
+            <p class="text-[11px] text-slate-300">
+              O pedido foi protocolado com sucesso e está sob exame da Justiça Eleitoral. O candidato <strong>NÃO está apto para concorrer nem consta como homologado</strong> até que o Tribunal Eleitoral competente aprecie os documentos e profira a decisão de deferimento.
+            </p>
+          </div>
+        ` : (isDeferida ? `
+          <div class="p-3 rounded-2xl bg-emerald-500/15 border border-emerald-500/40 text-xs text-emerald-200 space-y-1">
+            <div class="flex items-center gap-2 font-bold text-emerald-300">
+              <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+              <span>CANDIDATURA HOMOLOGADA E DEFERIDA PELO TRIBUNAL</span>
+            </div>
+            <p class="text-[11px] text-slate-300">
+              Registro deferido por <strong>${c.judgedBy || 'Tribunal Eleitoral'}</strong>${c.judgedAt ? ` em ${new Date(c.judgedAt).toLocaleDateString('pt-BR')}` : ''}. O candidato está oficialmente apto para a disputa das eleições.
+            </p>
+          </div>
+        ` : `
+          <div class="p-3 rounded-2xl bg-red-500/15 border border-red-500/40 text-xs text-red-200 space-y-1">
+            <div class="flex items-center gap-2 font-bold text-red-300">
+              <i data-lucide="x-circle" class="w-4 h-4 text-red-400 shrink-0"></i>
+              <span>CANDIDATURA INDEFERIDA PELA JUSTIÇA ELEITORAL</span>
+            </div>
+            <p class="text-[11px] text-slate-300">
+              Motivo do indeferimento: <strong class="text-red-300">${c.rejectionReason || 'Não informado pelo Tribunal'}</strong>.
+            </p>
+          </div>
+        `)}
       </div>
     </div>
-  `).join('');
+    `;
+  }).join('');
   initIcons();
 }
 
