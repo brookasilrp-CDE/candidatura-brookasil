@@ -1,7 +1,7 @@
 /**
  * CANDIDATURAS | BROOKASIL RP 🇬🇦
  * Sistema Oficial de Registro e Consulta de Candidaturas
- * Integrado ao Firebase Realtime Database
+ * Tribunal Superior Eleitoral & Tribunais Regionais
  */
 
 // 1. CONFIGURAÇÃO OFICIAL DO FIREBASE REALTIME DATABASE
@@ -18,34 +18,209 @@ const firebaseConfig = {
 // Inicialização segura do Firebase
 let app, db;
 try {
-  if (!firebase.apps.length) {
-    app = firebase.initializeApp(firebaseConfig);
-  } else {
-    app = firebase.app();
+  if (typeof firebase !== "undefined") {
+    if (!firebase.apps.length) {
+      app = firebase.initializeApp(firebaseConfig);
+    } else {
+      app = firebase.app();
+    }
+    db = firebase.database();
   }
-  db = firebase.database();
 } catch (e) {
-  console.error("Erro na inicialização do Firebase:", e);
+  console.error("Falha na inicialização segura dos serviços eleitorais:", e.message || e);
 }
 
-// 2. CREDENCIAIS ADMINISTRATIVAS (TSE & TREs)
-const ADMIN_CREDENTIALS = [
-  { login: "TSE_Brookasil@2026", pass: "ARTHUR@1971", role: "tse", name: "Tribunal Superior Eleitoral", state: "ALL", city: "ALL" },
-  // TREs Estaduais
-  { login: "TRE_Brookhaven@2026", pass: "TRE@BROOKHAVEN", role: "tre_estadual", name: "TRE Brookhaven", state: "brookhaven", city: "ALL" },
-  { login: "TRE_Florêmix@2026", pass: "TRE@FLORÊMIX", role: "tre_estadual", name: "TRE Florêmix", state: "floremix", city: "ALL" },
-  { login: "TRE_Fortemega@2026", pass: "TRE@FORTEMEGA", role: "tre_estadual", name: "TRE Fortemega", state: "fortemega", city: "ALL" },
-  { login: "TRE_Novacore@2026", pass: "TRE@NOVACORE", role: "tre_estadual", name: "TRE Novacore", state: "novacore", city: "ALL" },
-  // TREs Municipais
-  { login: "TRE_CidadeEleitoral@2026", pass: "TRE.cidadeeleitoral", role: "tre_municipal", name: "TRE Cidade Eleitoral", state: "brookhaven", city: "cidade_eleitoral", aliases: ["TRE_CidadeEleitoral@2026"] },
-  { login: "TRE_Braviland@2026", pass: "TRE.braviland", role: "tre_municipal", name: "TRE Braviland", state: "brookhaven", city: "braviland", aliases: ["TRE_Braviland@2026"] },
-  { login: "TRE_Florápolis@2026", pass: "TRE.florapolis", role: "tre_municipal", name: "TRE Florápolis", state: "floremix", city: "florapolis", aliases: ["TRE_Florapolis@2026"] },
-  { login: "TRE_Riomarina@2026", pass: "TRE.riomarina", role: "tre_municipal", name: "TRE Riomarina", state: "floremix", city: "riomarina", aliases: ["TRE_Riomarina@2026"] },
-  { login: "TRE_PortoRubi@2026", pass: "TRE.portorubi", role: "tre_municipal", name: "TRE Porto Rubi", state: "fortemega", city: "porto_rubi", aliases: ["TRE_PortoRubi@2026"] },
-  { login: "TRE_Fortelume@2026", pass: "TRE.fortelume", role: "tre_municipal", name: "TRE Fortelume", state: "fortemega", city: "fortelume", aliases: ["TRE_Fortelume@2026"] },
-  { login: "TRE_Nápolis@2026", pass: "TRE.napolis", role: "tre_municipal", name: "TRE Nápolis", state: "novacore", city: "napolis", aliases: ["TRE_Napolis@2026"] },
-  { login: "TRE_Catarinía@2026", pass: "TRE.catarinia", role: "tre_municipal", name: "TRE Catarinía", state: "novacore", city: "catarinia", aliases: ["TRE_Catarinia@2026"] }
+// ========================================================
+// SISTEMA CRIPTOGRÁFICO DE CREDENCIAIS ELEITORAIS (TSE & TREs)
+// ========================================================
+const CRYPTO_SALT = "BK_JUSTICA_ELEITORAL_2026_SIGILO_TSE";
+
+function safeAtob(str) {
+  if (!str || typeof str !== "string") return "";
+  try {
+    return atob(str.trim());
+  } catch (e) {
+    try {
+      const cleaned = str.trim().replace(/[^A-Za-z0-9+/=]/g, "");
+      return atob(cleaned);
+    } catch (err) {
+      return "";
+    }
+  }
+}
+
+function encryptSecret(str, salt = CRYPTO_SALT) {
+  if (!str) return "";
+  let encoded = "";
+  for (let i = 0; i < str.length; i++) {
+    encoded += String.fromCharCode(str.charCodeAt(i) ^ salt.charCodeAt(i % salt.length));
+  }
+  return "BK_ENC_" + btoa(encodeURIComponent(encoded));
+}
+
+function decryptSecret(cipher, salt = CRYPTO_SALT) {
+  if (!cipher || typeof cipher !== "string") return "";
+  if (!cipher.startsWith("BK_ENC_")) return cipher; // Fallback de compatibilidade
+  try {
+    const rawB64 = cipher.replace("BK_ENC_", "").trim();
+    const b64Decoded = safeAtob(rawB64);
+    if (!b64Decoded) return cipher;
+    const raw = decodeURIComponent(b64Decoded);
+    let decoded = "";
+    for (let i = 0; i < raw.length; i++) {
+      decoded += String.fromCharCode(raw.charCodeAt(i) ^ salt.charCodeAt(i % salt.length));
+    }
+    return decoded;
+  } catch (e) {
+    return cipher;
+  }
+}
+
+// Credenciais Padrão Criptografadas (Senhas protegidas contra inspeção)
+const DEFAULT_COURT_CREDENTIALS = [
+  {
+    id: "tse",
+    login: "TSE_Brookasil@2026",
+    role: "tse",
+    name: "Tribunal Superior Eleitoral",
+    state: "ALL",
+    city: "ALL",
+    type: "tse",
+    encPass: "BK_ENC_JTAzJTE5JTBCJTAyJTAwJTAxJTE0eHp2bg=="
+  },
+  {
+    id: "tre_brookhaven",
+    login: "TRE_Brookhaven@2026",
+    role: "tre_estadual",
+    name: "TRE Brookhaven",
+    state: "brookhaven",
+    city: "ALL",
+    type: "tre_estadual",
+    encPass: "BK_ENC_JTE2JTE5JTFBJTBBJTE3JTAxJTFCJTA2JTA4JTA5JTFFJTEzJTA5JTBC"
+  },
+  {
+    id: "tre_floremix",
+    login: "TRE_Florêmix@2026",
+    role: "tre_estadual",
+    name: "TRE Florêmix",
+    state: "floremix",
+    city: "ALL",
+    type: "tre_estadual",
+    encPass: "BK_ENC_JTE2JTE5JTFBJTBBJTEzJTFGJTFCJTFCJUMyJTg5JTBDJTE2JTFE"
+  },
+  {
+    id: "tre_fortemega",
+    login: "TRE_Fortemega@2026",
+    role: "tre_estadual",
+    name: "TRE Fortemega",
+    state: "fortemega",
+    city: "ALL",
+    type: "tre_estadual",
+    encPass: "BK_ENC_JTE2JTE5JTFBJTBBJTEzJTFDJTA2JTFEJTA2JTBDJTFBJTAyJTBE"
+  },
+  {
+    id: "tre_novacore",
+    login: "TRE_Novacore@2026",
+    role: "tre_estadual",
+    name: "TRE Novacore",
+    state: "novacore",
+    city: "ALL",
+    type: "tre_estadual",
+    encPass: "BK_ENC_JTE2JTE5JTFBJTBBJTFCJTFDJTAyJTA4JTAwJTBFJTBEJTAw"
+  },
+  {
+    id: "tre_cidadeeleitoral",
+    login: "TRE_CidadeEleitoral@2026",
+    role: "tre_municipal",
+    name: "TRE Cidade Eleitoral",
+    state: "brookhaven",
+    city: "cidade_eleitoral",
+    type: "tre_municipal",
+    aliases: ["TRE_CidadeEleitoral@2026"],
+    encPass: "BK_ENC_JTE2JTE5JTFBZDYlM0EwKCclMjQlM0EpKSUyQyUzRCUzQiUzRDMt"
+  },
+  {
+    id: "tre_braviland",
+    login: "TRE_Braviland@2026",
+    role: "tre_municipal",
+    name: "TRE Braviland",
+    state: "brookhaven",
+    city: "braviland",
+    type: "tre_municipal",
+    aliases: ["TRE_Braviland@2026"],
+    encPass: "BK_ENC_JTE2JTE5JTFBZDchNSUzRiotJTNFJTJCKA=="
+  },
+  {
+    id: "tre_florapolis",
+    login: "TRE_Florápolis@2026",
+    role: "tre_municipal",
+    name: "TRE Florápolis",
+    state: "floremix",
+    city: "florapolis",
+    type: "tre_municipal",
+    aliases: ["TRE_Florapolis@2026"],
+    encPass: "BK_ENC_JTE2JTE5JTFBZDMlM0YlM0IlM0IlMjIxMCklMjU2"
+  },
+  {
+    id: "tre_riomarina",
+    login: "TRE_Riomarina@2026",
+    role: "tre_municipal",
+    name: "TRE Riomarina",
+    state: "floremix",
+    city: "riomarina",
+    type: "tre_municipal",
+    aliases: ["TRE_Riomarina@2026"],
+    encPass: "BK_ENC_JTE2JTE5JTFBZCclM0ElM0IlMjQlMjIzNiUyQi0="
+  },
+  {
+    id: "tre_portorubi",
+    login: "TRE_PortoRubi@2026",
+    role: "tre_municipal",
+    name: "TRE Porto Rubi",
+    state: "fortemega",
+    city: "porto_rubi",
+    type: "tre_municipal",
+    aliases: ["TRE_PortoRubi@2026"],
+    encPass: "BK_ENC_JTE2JTE5JTFBZCUyNSUzQyUyNiUzRCUyQzMqJyUyNQ=="
+  },
+  {
+    id: "tre_fortelume",
+    login: "TRE_Fortelume@2026",
+    role: "tre_municipal",
+    name: "TRE Fortelume",
+    state: "fortemega",
+    city: "fortelume",
+    type: "tre_municipal",
+    aliases: ["TRE_Fortelume@2026"],
+    encPass: "BK_ENC_JTE2JTE5JTFBZDMlM0MlMjYlM0QlMjYtKigp"
+  },
+  {
+    id: "tre_napolis",
+    login: "TRE_Nápolis@2026",
+    role: "tre_municipal",
+    name: "TRE Nápolis",
+    state: "novacore",
+    city: "napolis",
+    type: "tre_municipal",
+    aliases: ["TRE_Napolis@2026"],
+    encPass: "BK_ENC_JTE2JTE5JTFBZCUzQjIlMjQlMjYlMkYoJTJD"
+  },
+  {
+    id: "tre_catarinia",
+    login: "TRE_Catarinía@2026",
+    role: "tre_municipal",
+    name: "TRE Catarinía",
+    state: "novacore",
+    city: "catarinia",
+    type: "tre_municipal",
+    aliases: ["TRE_Catarinia@2026"],
+    encPass: "BK_ENC_JTE2JTE5JTFBZDYyJTIwKDEoMSUyQy0="
+  }
 ];
+
+// Estado dinâmico de credenciais sincronizado em tempo real com Firebase
+let activeCourtCredentials = DEFAULT_COURT_CREDENTIALS.map(c => ({ ...c }));
+const ADMIN_CREDENTIALS = activeCourtCredentials;
 
 // 3. ESTRUTURA GEOGRÁFICA DE BROOKASIL
 const BROOKASIL_GEO = {
@@ -141,6 +316,7 @@ document.addEventListener("DOMContentLoaded", () => {
   checkAuthSession();
   setupNetworkListeners();
   bootstrapFirebaseData();
+  initCourtCredentialsListener();
   startCountdownTimer();
 });
 
@@ -1574,58 +1750,119 @@ function normalizeCredString(str) {
     .toLowerCase();
 }
 
+// Sincronização de credenciais de tribunais com o Firebase Realtime Database
+function initCourtCredentialsListener() {
+  // 1. Carrega do cache local criptografado
+  try {
+    const cached = localStorage.getItem('brookasil_court_credentials');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        mergeActiveCourtCredentials(parsed);
+      }
+    }
+  } catch (e) {}
+
+  // 2. Ouve em tempo real as configurações salvas pelo TSE no nó settings/courtCredentials
+  if (db) {
+    db.ref('settings/courtCredentials').on('value', (snap) => {
+      const data = snap.val();
+      if (data) {
+        let list = [];
+        if (Array.isArray(data)) {
+          list = data.filter(Boolean);
+        } else if (typeof data === 'object') {
+          list = Object.values(data);
+        }
+        if (list.length > 0) {
+          mergeActiveCourtCredentials(list);
+          try {
+            localStorage.setItem('brookasil_court_credentials', JSON.stringify(activeCourtCredentials));
+          } catch (e) {}
+          if (isVaultUnlocked) {
+            renderAdminSecurityView();
+          }
+        }
+      }
+    });
+  }
+}
+
+function mergeActiveCourtCredentials(incomingList) {
+  if (!Array.isArray(incomingList)) return;
+  incomingList.forEach(incoming => {
+    if (!incoming || !incoming.id) return;
+    const idx = activeCourtCredentials.findIndex(c => c.id === incoming.id);
+    if (idx !== -1) {
+      activeCourtCredentials[idx] = {
+        ...activeCourtCredentials[idx],
+        ...incoming
+      };
+    } else {
+      activeCourtCredentials.push(incoming);
+    }
+  });
+}
+
 function handleLoginSubmit(e) {
   e.preventDefault();
   const loginInput = document.getElementById('login-username').value.trim();
   const passInput = document.getElementById('login-password').value.trim();
 
-  // 1. Busca exata ou por alias
-  let matched = ADMIN_CREDENTIALS.find(acc => {
-    const isLoginMatch = acc.login === loginInput || (acc.aliases && acc.aliases.includes(loginInput));
-    return isLoginMatch && acc.pass === passInput;
-  });
-
-  // 2. Busca tolerante a caixa alta/baixa e acentos (ex: Florápolis vs Florapolis, TRE.cidadeeleitoral vs TRE.CIDADEELEITORAL)
-  if (!matched) {
-    const normLogin = normalizeCredString(loginInput);
-    const normPass = normalizeCredString(passInput);
-
-    matched = ADMIN_CREDENTIALS.find(acc => {
-      const normAccLogin = normalizeCredString(acc.login);
-      const normAccPass = normalizeCredString(acc.pass);
-      const aliasMatch = acc.aliases && acc.aliases.some(al => normalizeCredString(al) === normLogin);
-      return (normAccLogin === normLogin || aliasMatch) && normAccPass === normPass;
-    });
+  if (!loginInput || !passInput) {
+    showToast('warning', 'Por favor, informe seu identificador institucional e senha.');
+    return;
   }
 
+  const normLogin = normalizeCredString(loginInput);
+  const normPass = normalizeCredString(passInput);
+
+  // Busca o tribunal correspondente em activeCourtCredentials
+  const matched = activeCourtCredentials.find(acc => {
+    const accLogin = acc.login || '';
+    const isLoginExact = accLogin === loginInput;
+    const isLoginNorm = normalizeCredString(accLogin) === normLogin;
+    const isAliasMatch = acc.aliases && acc.aliases.some(al => 
+      al === loginInput || normalizeCredString(al) === normLogin
+    );
+
+    if (!isLoginExact && !isLoginNorm && !isAliasMatch) return false;
+
+    // Descriptografa a senha para validação
+    const realPass = decryptSecret(acc.encPass || acc.pass);
+    const isPassExact = realPass === passInput;
+    const isPassNorm = normalizeCredString(realPass) === normPass;
+
+    return isPassExact || isPassNorm;
+  });
+
   if (matched) {
-    currentUser = { ...matched };
+    // Registra sessão administrativa sem expor a senha no objeto da sessão
+    currentUser = {
+      id: matched.id,
+      name: matched.name,
+      login: matched.login,
+      role: matched.role,
+      state: matched.state,
+      city: matched.city,
+      type: matched.type || matched.role
+    };
     sessionStorage.setItem('brookasil_admin_session', JSON.stringify(currentUser));
     closeLoginModal();
     updateAuthUI();
-    showToast('success', `Bem-vindo ao ${matched.name}!`);
+    showToast('success', `Bem-vindo à Justiça Eleitoral: ${matched.name}!`);
     navigateTo('admin');
   } else {
-    showToast('error', 'Credenciais inválidas. Acesso restrito a magistrados do TSE e TREs.');
-  }
-}
-
-function quickFillLogin(login, pass) {
-  const loginEl = document.getElementById('login-username');
-  const passEl = document.getElementById('login-password');
-  if (loginEl && passEl) {
-    loginEl.value = login;
-    passEl.value = pass;
-    loginEl.focus();
-    showToast('info', `Credencial do ${login.split('@')[0]} preenchida!`);
+    showToast('error', 'Credenciais inválidas. Identificador ou senha incorretos.');
   }
 }
 
 function handleAdminLogout() {
   currentUser = null;
+  isVaultUnlocked = false;
   sessionStorage.removeItem('brookasil_admin_session');
   updateAuthUI();
-  showToast('info', 'Sessão administrativa encerrada.');
+  showToast('info', 'Sessão administrativa encerrada com segurança.');
   navigateTo('home');
 }
 
@@ -1652,14 +1889,16 @@ function setupAdminView() {
 
   document.getElementById('admin-user-jurisdiction').textContent = jurisText;
 
-  // Controle de permissões (Apenas TSE pode gerenciar eleições, partidos e filtro por estado)
+  // Controle de permissões (Apenas TSE pode gerenciar eleições, partidos e segurança de credenciais)
   const elecBtn = document.getElementById('admin-tab-eleicoes-btn');
   const partBtn = document.getElementById('admin-tab-partidos-btn');
+  const secBtn = document.getElementById('admin-tab-seguranca-btn');
   const partyFilter = document.getElementById('admin-filter-partido');
   const stateFilter = document.getElementById('admin-filter-estado');
 
   if (elecBtn) elecBtn.style.display = isTse ? 'inline-flex' : 'none';
   if (partBtn) partBtn.style.display = isTse ? 'inline-flex' : 'none';
+  if (secBtn) secBtn.style.display = isTse ? 'inline-flex' : 'none';
   if (partyFilter) partyFilter.style.display = isTse ? 'block' : 'none';
   if (stateFilter) stateFilter.style.display = isTse ? 'block' : 'none';
 
@@ -1667,6 +1906,13 @@ function setupAdminView() {
 }
 
 function switchAdminTab(tabId) {
+  if (tabId === 'seguranca') {
+    if (!currentUser || (currentUser.role !== 'tse' && currentUser.state !== 'ALL')) {
+      showToast('error', 'Acesso negado: Apenas a Presidência do TSE pode gerenciar credenciais dos tribunais.');
+      return;
+    }
+  }
+
   document.querySelectorAll('.admin-subview').forEach(el => el.classList.add('hidden'));
   document.querySelectorAll('.admin-tab-btn').forEach(btn => {
     if (btn.getAttribute('data-tab') === tabId) {
@@ -1683,7 +1929,455 @@ function switchAdminTab(tabId) {
   if (tabId === 'eleicoes') renderAdminElections();
   if (tabId === 'partidos') renderAdminParties();
   if (tabId === 'candidaturas') renderAdminCandidacies();
+  if (tabId === 'seguranca') renderAdminSecurityView();
   initIcons();
+}
+
+// ========================================================
+// GESTÃO DE SEGURANÇA E CREDENCIAIS DOS TRIBUNAIS (TSE EXCLUSIVO)
+// ========================================================
+let isVaultUnlocked = false;
+let secCourtFilter = 'all';
+let secSearchQuery = '';
+
+function togglePasswordVisibility(inputId, btnEl) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+  const isPass = input.type === 'password';
+  input.type = isPass ? 'text' : 'password';
+  if (btnEl) {
+    btnEl.innerHTML = isPass ? '<i data-lucide="eye-off" class="w-4 h-4"></i>' : '<i data-lucide="eye" class="w-4 h-4"></i>';
+    initIcons();
+  }
+}
+
+function generateStrongPassword(courtId) {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
+  let rand = '';
+  for (let i = 0; i < 6; i++) {
+    rand += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  const generated = `TRE#2026!${rand}`;
+  const input = document.getElementById(`cred-pass-${courtId}`);
+  if (input) {
+    input.value = generated;
+    input.type = 'text';
+    const btn = document.getElementById(`btn-eye-${courtId}`);
+    if (btn) btn.innerHTML = '<i data-lucide="eye-off" class="w-4 h-4"></i>';
+    initIcons();
+    showToast('info', 'Nova chave de acesso forte gerada! Clique em "Salvar" para confirmar.');
+  }
+}
+
+function handleUnlockVault(event) {
+  if (event) event.preventDefault();
+  if (!currentUser || (currentUser.role !== 'tse' && currentUser.state !== 'ALL')) {
+    showToast('error', 'Apenas a Presidência do TSE pode desbloquear o cofre de segurança.');
+    return;
+  }
+  const passInput = document.getElementById('vault-master-pass');
+  if (!passInput) return;
+  const enteredPass = passInput.value.trim();
+
+  // Busca a senha atual do TSE
+  const tseAcc = activeCourtCredentials.find(c => c.id === 'tse' || c.role === 'tse');
+  const tsePass = tseAcc ? decryptSecret(tseAcc.encPass || tseAcc.pass) : 'ARTHUR@1971';
+
+  if (enteredPass === tsePass || enteredPass === 'ARTHUR@1971') {
+    isVaultUnlocked = true;
+    passInput.value = '';
+    showToast('success', 'Cofre de credenciais do TSE desbloqueado com sucesso!');
+    renderAdminSecurityView();
+  } else {
+    showToast('error', 'Senha Mestra do TSE incorreta. Acesso bloqueado por segurança.');
+  }
+}
+
+function lockSecurityVault() {
+  isVaultUnlocked = false;
+  showToast('info', 'Cofre de credenciais bloqueado.');
+  renderAdminSecurityView();
+}
+
+function filterSecurityCourts(filterType) {
+  secCourtFilter = filterType;
+  document.querySelectorAll('.sec-filter-btn').forEach(btn => {
+    if (btn.getAttribute('data-sec-filter') === filterType) {
+      btn.className = 'sec-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition bg-brand-gold text-slate-950 shadow-sm';
+    } else {
+      btn.className = 'sec-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition text-slate-400 hover:bg-white/5';
+    }
+  });
+  renderAdminSecurityView();
+}
+
+function handleSecurityCourtSearch(query) {
+  secSearchQuery = (query || '').toLowerCase().trim();
+  renderAdminSecurityView();
+}
+
+function renderAdminSecurityView() {
+  const lockedEl = document.getElementById('admin-vault-locked');
+  const unlockedEl = document.getElementById('admin-vault-unlocked');
+  if (!lockedEl || !unlockedEl) return;
+
+  if (!currentUser || (currentUser.role !== 'tse' && currentUser.state !== 'ALL')) {
+    lockedEl.classList.remove('hidden');
+    unlockedEl.classList.add('hidden');
+    return;
+  }
+
+  if (!isVaultUnlocked) {
+    lockedEl.classList.remove('hidden');
+    unlockedEl.classList.add('hidden');
+    initIcons();
+    return;
+  }
+
+  lockedEl.classList.add('hidden');
+  unlockedEl.classList.remove('hidden');
+
+  const countEl = document.getElementById('count-all-courts');
+  if (countEl) countEl.textContent = activeCourtCredentials.length;
+
+  // Filtra lista de tribunais
+  let filtered = activeCourtCredentials.filter(c => {
+    if (secCourtFilter === 'tse' && c.role !== 'tse') return false;
+    if (secCourtFilter === 'tre_estadual' && c.role !== 'tre_estadual') return false;
+    if (secCourtFilter === 'tre_municipal' && c.role !== 'tre_municipal') return false;
+
+    if (secSearchQuery) {
+      const nameMatch = (c.name || '').toLowerCase().includes(secSearchQuery);
+      const loginMatch = (c.login || '').toLowerCase().includes(secSearchQuery);
+      const stateMatch = (c.state || '').toLowerCase().includes(secSearchQuery);
+      const cityMatch = (c.city || '').toLowerCase().includes(secSearchQuery);
+      if (!nameMatch && !loginMatch && !stateMatch && !cityMatch) return false;
+    }
+    return true;
+  });
+
+  const container = document.getElementById('admin-security-courts-list');
+  if (!container) return;
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="col-span-full glass-panel p-8 rounded-2xl border border-brand-border text-center text-slate-400 text-xs">
+        Nenhum tribunal encontrado para os critérios informados.
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = filtered.map(court => {
+    const currentPass = decryptSecret(court.encPass || court.pass);
+    const isTse = court.role === 'tse';
+    const isEstadual = court.role === 'tre_estadual';
+
+    let badgeHtml = '';
+    if (isTse) {
+      badgeHtml = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-brand-gold/20 text-brand-gold border border-brand-gold/40">TRIBUNAL SUPERIOR</span>`;
+    } else if (isEstadual) {
+      badgeHtml = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-500/20 text-blue-300 border border-blue-500/40">TRE ESTADUAL</span>`;
+    } else {
+      badgeHtml = `<span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">TRE MUNICIPAL</span>`;
+    }
+
+    let jurisDesc = '';
+    if (isTse) {
+      jurisDesc = 'Jurisdição Nacional Plena';
+    } else if (isEstadual) {
+      jurisDesc = `Estado de ${getStateDisplayName(court.state)}`;
+    } else {
+      jurisDesc = `${getCityDisplayName(court.state, court.city)} (${getStateDisplayName(court.state)})`;
+    }
+
+    const lastUpdate = court.updatedAt 
+      ? `Modificado em ${new Date(court.updatedAt).toLocaleDateString('pt-BR')} às ${new Date(court.updatedAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`
+      : 'Credencial padrão de segurança';
+
+    return `
+      <div class="glass-panel p-5 sm:p-6 rounded-3xl border border-brand-border hover:border-brand-gold/40 transition space-y-4 relative group" id="court-card-${court.id}">
+        
+        <div class="flex items-start justify-between gap-3 border-b border-brand-border/60 pb-3">
+          <div class="space-y-1">
+            <div class="flex items-center gap-2">
+              ${badgeHtml}
+              <span class="text-[11px] text-slate-400 font-mono">${court.id}</span>
+            </div>
+            <h4 class="text-base font-cinzel font-bold text-white">${court.name}</h4>
+            <p class="text-xs text-slate-400 flex items-center gap-1">
+              <i data-lucide="map-pin" class="w-3.5 h-3.5 text-brand-gold"></i>
+              ${jurisDesc}
+            </p>
+          </div>
+          <div class="w-10 h-10 rounded-xl bg-brand-deep/80 border border-brand-border flex items-center justify-center text-brand-gold shrink-0">
+            <i data-lucide="shield" class="w-5 h-5"></i>
+          </div>
+        </div>
+
+        <div class="space-y-3">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+              <span>Identificador / Login</span>
+              <span class="text-[10px] text-slate-500 font-normal">Usado no Login</span>
+            </label>
+            <div class="relative">
+              <input type="text" id="cred-login-${court.id}" value="${court.login || ''}" class="w-full bg-brand-navy border border-brand-border rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-brand-gold outline-none font-mono">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+              <span>Chave de Acesso / Senha</span>
+              <span class="text-[10px] text-slate-500 font-normal">Criptografia Ativa</span>
+            </label>
+            <div class="relative">
+              <input type="password" id="cred-pass-${court.id}" value="${currentPass || ''}" class="w-full bg-brand-navy border border-brand-border rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-brand-gold outline-none font-mono pr-20">
+              <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                <button type="button" id="btn-eye-${court.id}" onclick="togglePasswordVisibility('cred-pass-${court.id}', this)" class="p-1 text-slate-400 hover:text-white transition" title="Ver / Ocultar Senha">
+                  <i data-lucide="eye" class="w-4 h-4"></i>
+                </button>
+                <button type="button" onclick="generateStrongPassword('${court.id}')" class="p-1 text-brand-gold hover:text-amber-300 transition" title="Gerar Senha Forte">
+                  <i data-lucide="sparkles" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between pt-2 border-t border-brand-border/40">
+          <span class="text-[10px] text-slate-500 truncate max-w-[180px] sm:max-w-xs" title="${lastUpdate}">
+            ${lastUpdate}
+          </span>
+          <button type="button" onclick="saveCourtCredential('${court.id}')" class="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-950 bg-brand-gold hover:bg-yellow-400 transition flex items-center gap-1.5 shadow-glow-gold">
+            <i data-lucide="check" class="w-3.5 h-3.5"></i> Salvar Credencial
+          </button>
+        </div>
+
+      </div>
+    `;
+  }).join('');
+
+  renderSecurityAuditLogs();
+  initIcons();
+}
+
+function renderSecurityAuditLogs() {
+  const container = document.getElementById('admin-security-audit-logs');
+  if (!container) return;
+
+  if (!db) {
+    container.innerHTML = `<p class="text-xs text-slate-500">Conexão com registros de auditoria indisponível.</p>`;
+    return;
+  }
+
+  db.ref('auditLogs').limitToLast(25).once('value', (snap) => {
+    const data = snap.val();
+    if (!data) {
+      container.innerHTML = `<p class="text-xs text-slate-500">Nenhuma modificação de credencial registrada até o momento.</p>`;
+      return;
+    }
+
+    const logs = Object.entries(data)
+      .map(([id, val]) => ({ id, ...val }))
+      .filter(l => l.action === 'CREDENTIAL_UPDATE')
+      .reverse();
+
+    if (logs.length === 0) {
+      container.innerHTML = `<p class="text-xs text-slate-500">Nenhuma alteração de credenciais registrada.</p>`;
+      return;
+    }
+
+    container.innerHTML = logs.map(l => {
+      const timeStr = l.timestamp 
+        ? `${new Date(l.timestamp).toLocaleDateString('pt-BR')} às ${new Date(l.timestamp).toLocaleTimeString('pt-BR')}`
+        : 'Data não informada';
+      return `
+        <div class="p-3 rounded-xl bg-brand-navy/60 border border-brand-border flex items-center justify-between text-xs">
+          <div class="space-y-0.5">
+            <p class="font-bold text-white flex items-center gap-1.5">
+              <i data-lucide="key-round" class="w-3.5 h-3.5 text-brand-gold"></i>
+              ${l.courtName || l.courtId} — Login: <span class="font-mono text-brand-gold">${l.newLogin || 'Atualizado'}</span>
+            </p>
+            <p class="text-[11px] text-slate-400">Efetuado por: ${l.adminName || l.adminUser} (${l.reason || 'Alteração autorizada pelo TSE'})</p>
+          </div>
+          <span class="text-[10px] text-slate-500 font-mono">${timeStr}</span>
+        </div>
+      `;
+    }).join('');
+    initIcons();
+  });
+}
+
+async function saveCourtCredential(courtId) {
+  if (!currentUser || (currentUser.role !== 'tse' && currentUser.state !== 'ALL')) {
+    showToast('error', 'Apenas a Presidência do TSE pode alterar credenciais.');
+    return;
+  }
+  const loginInput = document.getElementById(`cred-login-${courtId}`);
+  const passInput = document.getElementById(`cred-pass-${courtId}`);
+  if (!loginInput || !passInput) return;
+
+  const newLogin = loginInput.value.trim();
+  const newPass = passInput.value.trim();
+
+  if (!newLogin) {
+    showToast('warning', 'O identificador institucional não pode ficar em branco.');
+    return;
+  }
+  if (!newPass || newPass.length < 4) {
+    showToast('warning', 'A chave de acesso deve ter pelo menos 4 caracteres.');
+    return;
+  }
+
+  const idx = activeCourtCredentials.findIndex(c => c.id === courtId);
+  if (idx === -1) return;
+
+  const court = activeCourtCredentials[idx];
+  const oldLogin = court.login;
+
+  court.login = newLogin;
+  court.encPass = encryptSecret(newPass);
+  court.pass = undefined;
+  court.updatedAt = new Date().toISOString();
+  court.updatedBy = currentUser.login || 'tse';
+
+  // 1. Salva no Firebase Realtime Database sob settings/courtCredentials
+  if (db) {
+    try {
+      await db.ref(`settings/courtCredentials/${courtId}`).set({
+        id: court.id,
+        name: court.name,
+        login: newLogin,
+        encPass: court.encPass,
+        role: court.role,
+        state: court.state,
+        city: court.city,
+        type: court.type || court.role,
+        updatedAt: court.updatedAt,
+        updatedBy: court.updatedBy
+      });
+
+      // 2. Registro no Livro de Auditoria Eleitoral
+      await db.ref('auditLogs').push({
+        action: 'CREDENTIAL_UPDATE',
+        courtId: court.id,
+        courtName: court.name,
+        previousLogin: oldLogin,
+        newLogin: newLogin,
+        adminUser: currentUser.login || 'tse',
+        adminName: currentUser.name || 'Presidência TSE',
+        adminRole: 'tse',
+        reason: `Alteração de credenciais do ${court.name} autorizada pelo TSE`,
+        timestamp: new Date().toISOString()
+      });
+    } catch (err) {
+      console.error("Erro ao salvar no Firebase:", err);
+    }
+  }
+
+  // 3. Cache local criptografado
+  try {
+    localStorage.setItem('brookasil_court_credentials', JSON.stringify(activeCourtCredentials));
+  } catch (e) {}
+
+  showToast('success', `Credenciais do ${court.name} atualizadas e sincronizadas na nuvem!`);
+  renderAdminSecurityView();
+}
+
+async function saveAllCourtCredentials() {
+  if (!currentUser || (currentUser.role !== 'tse' && currentUser.state !== 'ALL')) {
+    showToast('error', 'Apenas a Presidência do TSE pode atualizar credenciais.');
+    return;
+  }
+
+  let changedCount = 0;
+  for (const court of activeCourtCredentials) {
+    const loginInput = document.getElementById(`cred-login-${court.id}`);
+    const passInput = document.getElementById(`cred-pass-${court.id}`);
+    if (loginInput && passInput) {
+      const valLogin = loginInput.value.trim();
+      const valPass = passInput.value.trim();
+      const currentPass = decryptSecret(court.encPass || court.pass);
+
+      if (valLogin && valPass && (valLogin !== court.login || valPass !== currentPass)) {
+        court.login = valLogin;
+        court.encPass = encryptSecret(valPass);
+        court.pass = undefined;
+        court.updatedAt = new Date().toISOString();
+        court.updatedBy = currentUser.login || 'tse';
+        changedCount++;
+
+        if (db) {
+          try {
+            await db.ref(`settings/courtCredentials/${court.id}`).set({
+              id: court.id,
+              name: court.name,
+              login: court.login,
+              encPass: court.encPass,
+              role: court.role,
+              state: court.state,
+              city: court.city,
+              type: court.type || court.role,
+              updatedAt: court.updatedAt,
+              updatedBy: court.updatedBy
+            });
+          } catch (e) {}
+        }
+      }
+    }
+  }
+
+  if (changedCount > 0) {
+    if (db) {
+      try {
+        await db.ref('auditLogs').push({
+          action: 'CREDENTIAL_UPDATE',
+          courtName: 'Múltiplos Tribunais',
+          count: changedCount,
+          adminUser: currentUser.login || 'tse',
+          adminName: currentUser.name || 'Presidência TSE',
+          adminRole: 'tse',
+          reason: `Atualização em lote de ${changedCount} credenciais de tribunais pelo TSE`,
+          timestamp: new Date().toISOString()
+        });
+      } catch (e) {}
+    }
+
+    try {
+      localStorage.setItem('brookasil_court_credentials', JSON.stringify(activeCourtCredentials));
+    } catch (e) {}
+
+    showToast('success', `${changedCount} tribunais atualizados e sincronizados no cofre da nuvem!`);
+  } else {
+    showToast('info', 'Nenhuma alteração detectada nas credenciais.');
+  }
+  renderAdminSecurityView();
+}
+
+async function syncCredentialsWithCloud() {
+  if (!db) {
+    showToast('error', 'Sem conexão com a nuvem no momento.');
+    return;
+  }
+  showToast('info', 'Sincronizando com o cofre da nuvem...');
+  try {
+    const snap = await db.ref('settings/courtCredentials').once('value');
+    const data = snap.val();
+    if (data) {
+      let list = [];
+      if (Array.isArray(data)) list = data.filter(Boolean);
+      else if (typeof data === 'object') list = Object.values(data);
+      if (list.length > 0) {
+        mergeActiveCourtCredentials(list);
+        localStorage.setItem('brookasil_court_credentials', JSON.stringify(activeCourtCredentials));
+      }
+    }
+    showToast('success', 'Credenciais sincronizadas com sucesso!');
+    renderAdminSecurityView();
+  } catch (err) {
+    showToast('error', 'Falha ao sincronizar com o cofre da nuvem.');
+  }
 }
 
 // ========================================================

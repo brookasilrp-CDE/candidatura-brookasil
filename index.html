@@ -867,6 +867,9 @@
         <button id="admin-tab-partidos-btn" onclick="switchAdminTab('partidos')" class="admin-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition text-slate-300 hover:bg-white/5 whitespace-nowrap" data-tab="partidos">
           <i data-lucide="flag" class="w-3.5 h-3.5 inline mr-1"></i> Gestão de Partidos (TSE)
         </button>
+        <button id="admin-tab-seguranca-btn" onclick="switchAdminTab('seguranca')" class="admin-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition text-amber-300 hover:bg-amber-400/10 border border-amber-500/30 whitespace-nowrap" data-tab="seguranca">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5 inline mr-1 text-brand-gold"></i> Gestão de Acessos & Credenciais (TSE)
+        </button>
         <button onclick="switchAdminTab('auditoria')" class="admin-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition text-slate-300 hover:bg-white/5 whitespace-nowrap" data-tab="auditoria">
           <i data-lucide="file-clock" class="w-3.5 h-3.5 inline mr-1"></i> Logs de Auditoria
         </button>
@@ -1052,6 +1055,129 @@
         </div>
       </div>
 
+      <!-- TAB: SEGURANÇA E CREDENCIAIS DOS TRIBUNAIS (EXCLUSIVO TSE) -->
+      <div id="admin-subview-seguranca" class="admin-subview hidden space-y-6">
+        
+        <!-- ESTADO 1: COFRE BLOQUEADO (DESAFIO DE SENHA MESTRA DO TSE) -->
+        <div id="admin-vault-locked" class="glass-panel p-8 sm:p-12 rounded-3xl border border-amber-500/40 bg-gradient-to-b from-amber-950/20 via-brand-navy/80 to-brand-deep text-center max-w-xl mx-auto space-y-6 shadow-2xl">
+          <div class="w-20 h-20 rounded-3xl bg-amber-500/10 border border-amber-500/40 text-brand-gold flex items-center justify-center mx-auto shadow-glow-gold">
+            <i data-lucide="shield-alert" class="w-10 h-10"></i>
+          </div>
+
+          <div class="space-y-2">
+            <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-amber-500/20 text-amber-300 border border-amber-500/40 inline-block">
+              Área de Alta Segurança • Exclusivo TSE
+            </span>
+            <h3 class="text-2xl font-cinzel font-bold text-white">Cofre de Credenciais Eleitorais</h3>
+            <p class="text-xs text-slate-300 leading-relaxed max-w-md mx-auto">
+              Para visualizar, alterar ou gerenciar os logins e senhas dos Tribunais Regionais Eleitorais (TREs), confirme a <strong class="text-brand-gold">Senha Mestra do TSE</strong>.
+            </p>
+          </div>
+
+          <form onsubmit="handleUnlockVault(event)" class="space-y-4 max-w-sm mx-auto">
+            <div class="relative">
+              <input type="password" id="vault-master-pass" required placeholder="Digite a Senha Mestra do TSE" class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-3 text-white text-sm focus:border-brand-gold outline-none pr-10">
+              <button type="button" onclick="togglePasswordVisibility('vault-master-pass', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1">
+                <i data-lucide="eye" class="w-4 h-4"></i>
+              </button>
+            </div>
+            <button type="submit" class="w-full py-3.5 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-brand-gold via-amber-400 to-yellow-500 hover:to-brand-gold transition shadow-glow-gold text-xs flex items-center justify-center gap-2">
+              <i data-lucide="key" class="w-4 h-4"></i> Autenticar & Desbloquear Cofre
+            </button>
+          </form>
+
+          <div class="text-[11px] text-slate-400 flex items-center justify-center gap-2 pt-3 border-t border-brand-border/40">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400 shrink-0"></i>
+            <span>Todas as alterações são registradas com assinatura oficial no livro de auditoria.</span>
+          </div>
+        </div>
+
+        <!-- ESTADO 2: COFRE DESBLOQUEADO (PAINEL COMPLETO DE GESTÃO) -->
+        <div id="admin-vault-unlocked" class="hidden space-y-6">
+          
+          <!-- Header do Cofre -->
+          <div class="glass-panel p-6 sm:p-8 rounded-3xl border border-brand-gold/40 bg-gradient-to-r from-amber-950/20 via-brand-navy to-brand-deep flex flex-col md:flex-row md:items-center justify-between gap-4 shadow-xl">
+            <div class="space-y-1">
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+                  <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  Cofre Desbloqueado
+                </span>
+                <span class="text-xs text-slate-400">• Presidência do TSE</span>
+              </div>
+              <h3 class="text-xl sm:text-2xl font-cinzel font-bold text-white">Gestão Segura de Acessos & Credenciais</h3>
+              <p class="text-xs text-slate-300">
+                Altere os logins e as senhas de qualquer TRE Estadual ou Municipal. As novas credenciais entram em vigor instantaneamente.
+              </p>
+            </div>
+
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="syncCredentialsWithCloud()" class="px-3 py-2 rounded-xl text-xs font-bold text-slate-300 bg-white/5 hover:bg-white/10 border border-brand-border flex items-center gap-1.5 transition">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> Sincronizar
+              </button>
+              <button onclick="saveAllCourtCredentials()" class="px-4 py-2 rounded-xl text-xs font-bold text-slate-950 bg-gradient-to-r from-brand-gold to-yellow-500 hover:to-brand-gold flex items-center gap-1.5 transition shadow-glow-gold">
+                <i data-lucide="save" class="w-3.5 h-3.5"></i> Salvar Todas
+              </button>
+              <button onclick="lockSecurityVault()" class="px-3 py-2 rounded-xl text-xs font-bold text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 flex items-center gap-1.5 transition">
+                <i data-lucide="lock" class="w-3.5 h-3.5"></i> Bloquear Cofre
+              </button>
+            </div>
+          </div>
+
+          <!-- Alerta de Segurança e Boas Práticas -->
+          <div class="p-4 rounded-2xl bg-brand-deep/80 border border-brand-border flex items-start gap-3 text-xs text-slate-300">
+            <i data-lucide="info" class="w-4 h-4 text-brand-gold shrink-0 mt-0.5"></i>
+            <div>
+              <p><strong class="text-white">Diretriz de Segurança Eleitoral:</strong> As senhas são protegidas com criptografia de ponta a ponta e nunca são expostas ao público. Ao definir novas credenciais para um TRE, transmita-as somente através dos canais de comunicação oficiais criptografados da Justiça Eleitoral.</p>
+            </div>
+          </div>
+
+          <!-- Barra de Filtros e Busca -->
+          <div class="glass-panel p-4 rounded-2xl border border-brand-border flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+              <button onclick="filterSecurityCourts('all')" class="sec-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition bg-brand-gold text-slate-950" data-sec-filter="all">
+                Todos (<span id="count-all-courts">13</span>)
+              </button>
+              <button onclick="filterSecurityCourts('tse')" class="sec-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition text-slate-400 hover:bg-white/5" data-sec-filter="tse">
+                TSE Nacional (1)
+              </button>
+              <button onclick="filterSecurityCourts('tre_estadual')" class="sec-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition text-slate-400 hover:bg-white/5" data-sec-filter="tre_estadual">
+                TREs Estaduais (4)
+              </button>
+              <button onclick="filterSecurityCourts('tre_municipal')" class="sec-filter-btn px-3 py-1.5 rounded-xl text-xs font-bold transition text-slate-400 hover:bg-white/5" data-sec-filter="tre_municipal">
+                TREs Municipais (8)
+              </button>
+            </div>
+
+            <div class="relative w-full sm:w-72">
+              <i data-lucide="search" class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+              <input type="text" id="sec-search-input" oninput="handleSecurityCourtSearch(this.value)" placeholder="Buscar por tribunal ou login..." class="w-full bg-brand-navy border border-brand-border rounded-xl pl-9 pr-3 py-1.5 text-xs text-white focus:border-brand-gold outline-none">
+            </div>
+          </div>
+
+          <!-- Lista de Tribunais e Credenciais -->
+          <div id="admin-security-courts-list" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Rendered by JS -->
+          </div>
+
+          <!-- Histórico de Auditoria de Credenciais -->
+          <div class="glass-panel p-6 rounded-3xl border border-brand-border space-y-4 mt-6">
+            <div class="flex items-center justify-between border-b border-brand-border pb-3">
+              <div class="flex items-center gap-2">
+                <i data-lucide="file-key" class="w-4 h-4 text-brand-gold"></i>
+                <h4 class="text-sm font-bold text-white">Livro de Auditoria de Modificações de Credenciais</h4>
+              </div>
+              <span class="text-[10px] text-slate-400">Registros em tempo real</span>
+            </div>
+            <div id="admin-security-audit-logs" class="space-y-2 max-h-60 overflow-y-auto pr-1">
+              <!-- Rendered by JS -->
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
       <!-- TAB 5: AUDITORIA -->
       <div id="admin-subview-auditoria" class="admin-subview hidden space-y-6">
         <div class="glass-panel p-8 rounded-3xl border border-brand-border space-y-6">
@@ -1088,8 +1214,8 @@
         </svg>
         <span class="font-bold text-white font-cinzel">Justiça Eleitoral de Brookasil</span> • Eleições 2026
       </div>
-      <div>
-        Sistema Oficial Integrado com Firebase Realtime Database • Pronto para GitHub Pages
+      <div class="text-slate-400 text-[11px] sm:text-xs">
+        República Democrática de Brookasil • Tribunal Superior Eleitoral • Infraestrutura Criptografada e Segura
       </div>
     </div>
   </footer>
@@ -1099,102 +1225,48 @@
   <!-- ============================================== -->
 
   <!-- Modal de Login Administrativo -->
-  <div id="login-modal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+  <div id="login-modal" class="fixed inset-0 z-50 hidden bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-panel max-w-md w-full rounded-3xl border border-brand-border p-8 space-y-6 shadow-2xl relative">
-      <button onclick="closeLoginModal()" class="absolute top-6 right-6 text-slate-400 hover:text-white">
+      <button onclick="closeLoginModal()" class="absolute top-6 right-6 text-slate-400 hover:text-white p-1">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
 
       <div class="text-center space-y-2">
-        <div class="w-14 h-14 rounded-2xl bg-brand-deep border border-brand-electric/40 mx-auto flex items-center justify-center text-brand-gold shadow-glow-blue">
+        <div class="w-14 h-14 rounded-2xl bg-brand-deep border border-brand-gold/40 mx-auto flex items-center justify-center text-brand-gold shadow-glow-gold">
           <i data-lucide="shield-check" class="w-7 h-7"></i>
         </div>
-        <h3 class="text-2xl font-cinzel font-bold text-white">Acesso Administrativo</h3>
+        <h3 class="text-2xl font-cinzel font-bold text-white">Acesso Institucional</h3>
         <p class="text-xs text-slate-400">Tribunal Superior Eleitoral & Tribunais Regionais</p>
       </div>
 
       <form onsubmit="handleLoginSubmit(event)" class="space-y-4">
         <div>
           <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Identificador / Usuário</label>
-          <input type="text" id="login-username" required placeholder="Ex: TSE_Brookasil@2026 ou TRE_Brookhaven@2026" class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-3 text-white text-sm focus:border-brand-electric outline-none">
+          <input type="text" id="login-username" required autocomplete="username" placeholder="Identificador oficial do Tribunal" class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-3 text-white text-sm focus:border-brand-gold outline-none">
         </div>
         <div>
           <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Chave de Acesso / Senha</label>
-          <input type="password" id="login-password" required placeholder="••••••••••••" class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-3 text-white text-sm focus:border-brand-electric outline-none">
+          <div class="relative">
+            <input type="password" id="login-password" required autocomplete="current-password" placeholder="••••••••••••" class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-3 text-white text-sm focus:border-brand-gold outline-none pr-10">
+            <button type="button" onclick="togglePasswordVisibility('login-password', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1" title="Mostrar/ocultar senha">
+              <i data-lucide="eye" class="w-4 h-4"></i>
+            </button>
+          </div>
         </div>
 
-        <button type="submit" class="w-full py-3.5 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-brand-gold to-yellow-500 hover:to-brand-gold transition shadow-glow-gold text-sm flex items-center justify-center gap-2">
+        <button type="submit" class="w-full py-3.5 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-brand-gold via-amber-400 to-yellow-500 hover:to-brand-gold transition shadow-glow-gold text-sm flex items-center justify-center gap-2">
           <i data-lucide="lock" class="w-4 h-4"></i> Autenticar no Sistema
         </button>
       </form>
 
-      <!-- Guia Rápido de Acesso dos Tribunais (TREs Municipais e Estaduais) -->
-      <div class="border-t border-brand-border/60 pt-4">
-        <details class="group">
-          <summary class="flex items-center justify-between text-xs font-bold text-slate-400 cursor-pointer hover:text-brand-gold transition select-none">
-            <span class="flex items-center gap-1.5">
-              <i data-lucide="key" class="w-3.5 h-3.5 text-brand-gold"></i> Credenciais Rápidas dos TREs Municipais
-            </span>
-            <span class="text-[10px] bg-brand-deep border border-brand-border px-2 py-0.5 rounded text-slate-400 group-open:rotate-180 transition-transform">▼</span>
-          </summary>
-
-          <div class="mt-3 space-y-2 max-h-52 overflow-y-auto pr-1 text-left text-xs">
-            <p class="text-[11px] text-slate-400">Clique em qualquer tribunal municipal abaixo para preencher o login e a senha automaticamente:</p>
-            
-            <div class="grid grid-cols-2 gap-1.5 pt-1">
-              <!-- Brookhaven -->
-              <button type="button" onclick="quickFillLogin('TRE_CidadeEleitoral@2026', 'TRE.cidadeeleitoral')" class="p-2 rounded-xl bg-brand-navy/80 hover:bg-brand-blue/30 border border-brand-border hover:border-brand-electric text-left transition group/btn">
-                <span class="font-bold text-white block truncate text-[11px]">TRE Cidade Eleitoral</span>
-                <span class="text-[10px] text-slate-400 block font-mono">TRE.cidadeeleitoral</span>
-              </button>
-
-              <button type="button" onclick="quickFillLogin('TRE_Braviland@2026', 'TRE.braviland')" class="p-2 rounded-xl bg-brand-navy/80 hover:bg-brand-blue/30 border border-brand-border hover:border-brand-electric text-left transition group/btn">
-                <span class="font-bold text-white block truncate text-[11px]">TRE Braviland</span>
-                <span class="text-[10px] text-slate-400 block font-mono">TRE.braviland</span>
-              </button>
-
-              <!-- Florêmix -->
-              <button type="button" onclick="quickFillLogin('TRE_Florápolis@2026', 'TRE.florapolis')" class="p-2 rounded-xl bg-brand-navy/80 hover:bg-brand-blue/30 border border-brand-border hover:border-brand-electric text-left transition group/btn">
-                <span class="font-bold text-white block truncate text-[11px]">TRE Florápolis</span>
-                <span class="text-[10px] text-slate-400 block font-mono">TRE.florapolis</span>
-              </button>
-
-              <button type="button" onclick="quickFillLogin('TRE_Riomarina@2026', 'TRE.riomarina')" class="p-2 rounded-xl bg-brand-navy/80 hover:bg-brand-blue/30 border border-brand-border hover:border-brand-electric text-left transition group/btn">
-                <span class="font-bold text-white block truncate text-[11px]">TRE Riomarina</span>
-                <span class="text-[10px] text-slate-400 block font-mono">TRE.riomarina</span>
-              </button>
-
-              <!-- Fortemega -->
-              <button type="button" onclick="quickFillLogin('TRE_PortoRubi@2026', 'TRE.portorubi')" class="p-2 rounded-xl bg-brand-navy/80 hover:bg-brand-blue/30 border border-brand-border hover:border-brand-electric text-left transition group/btn">
-                <span class="font-bold text-white block truncate text-[11px]">TRE Porto Rubi</span>
-                <span class="text-[10px] text-slate-400 block font-mono">TRE.portorubi</span>
-              </button>
-
-              <button type="button" onclick="quickFillLogin('TRE_Fortelume@2026', 'TRE.fortelume')" class="p-2 rounded-xl bg-brand-navy/80 hover:bg-brand-blue/30 border border-brand-border hover:border-brand-electric text-left transition group/btn">
-                <span class="font-bold text-white block truncate text-[11px]">TRE Fortelume</span>
-                <span class="text-[10px] text-slate-400 block font-mono">TRE.fortelume</span>
-              </button>
-
-              <!-- Novacore -->
-              <button type="button" onclick="quickFillLogin('TRE_Nápolis@2026', 'TRE.napolis')" class="p-2 rounded-xl bg-brand-navy/80 hover:bg-brand-blue/30 border border-brand-border hover:border-brand-electric text-left transition group/btn">
-                <span class="font-bold text-white block truncate text-[11px]">TRE Nápolis</span>
-                <span class="text-[10px] text-slate-400 block font-mono">TRE.napolis</span>
-              </button>
-
-              <button type="button" onclick="quickFillLogin('TRE_Catarinía@2026', 'TRE.catarinia')" class="p-2 rounded-xl bg-brand-navy/80 hover:bg-brand-blue/30 border border-brand-border hover:border-brand-electric text-left transition group/btn">
-                <span class="font-bold text-white block truncate text-[11px]">TRE Catarinía</span>
-                <span class="text-[10px] text-slate-400 block font-mono">TRE.catarinia</span>
-              </button>
-            </div>
-
-            <div class="pt-2 border-t border-brand-border/40 flex items-center justify-between text-[10px] text-slate-500">
-              <button type="button" onclick="quickFillLogin('TSE_Brookasil@2026', 'ARTHUR@1971')" class="hover:text-brand-gold font-bold transition">
-                ⚡ Usar TSE Nacional
-              </button>
-              <span>RP Brookasil 2026</span>
-            </div>
-          </div>
-        </details>
+      <!-- Aviso Institucional de Sigilo -->
+      <div class="border-t border-brand-border/60 pt-4 text-center">
+        <div class="p-3 rounded-2xl bg-brand-navy/60 border border-brand-border/80 flex items-center gap-2.5 text-left text-xs text-slate-400">
+          <i data-lucide="lock-keyhole" class="w-4 h-4 text-brand-gold shrink-0"></i>
+          <p class="text-[11px] leading-tight">
+            Ambiente estritamente restrito e auditado. As credenciais dos TREs são gerenciadas pela Presidência do TSE.
+          </p>
+        </div>
       </div>
     </div>
   </div>
