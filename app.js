@@ -86,6 +86,19 @@ const DEFAULT_COURT_CREDENTIALS = [
     state: "ALL",
     city: "ALL",
     type: "tse",
+    aliases: [
+      "tse",
+      "master",
+      "painel master",
+      "tse master",
+      "admin",
+      "presidencia",
+      "arthur",
+      "tse_brookasil",
+      "tse_brookasil@2026",
+      "tse-master",
+      "tse@2026"
+    ],
     encPass: "BK_ENC_JTAzJTE5JTBCJTAyJTAwJTAxJTE0eHp2bg=="
   },
   {
@@ -96,6 +109,7 @@ const DEFAULT_COURT_CREDENTIALS = [
     state: "brookhaven",
     city: "ALL",
     type: "tre_estadual",
+    aliases: ["tre_brookhaven", "brookhaven", "tre-brookhaven", "tre_brookhaven@2026"],
     encPass: "BK_ENC_JTE2JTE5JTFBJTBBJTE3JTAxJTFCJTA2JTA4JTA5JTFFJTEzJTA5JTBC"
   },
   {
@@ -106,6 +120,7 @@ const DEFAULT_COURT_CREDENTIALS = [
     state: "floremix",
     city: "ALL",
     type: "tre_estadual",
+    aliases: ["tre_floremix", "floremix", "tre-floremix", "tre_floremix@2026", "tre_florêmix"],
     encPass: "BK_ENC_JTE2JTE5JTFBJTBBJTEzJTFGJTFCJTFCJUMyJTg5JTBDJTE2JTFE"
   },
   {
@@ -116,6 +131,7 @@ const DEFAULT_COURT_CREDENTIALS = [
     state: "fortemega",
     city: "ALL",
     type: "tre_estadual",
+    aliases: ["tre_fortemega", "fortemega", "tre-fortemega", "tre_fortemega@2026"],
     encPass: "BK_ENC_JTE2JTE5JTFBJTBBJTEzJTFDJTA2JTFEJTA2JTBDJTFBJTAyJTBE"
   },
   {
@@ -126,6 +142,7 @@ const DEFAULT_COURT_CREDENTIALS = [
     state: "novacore",
     city: "ALL",
     type: "tre_estadual",
+    aliases: ["tre_novacore", "novacore", "tre-novacore", "tre_novacore@2026"],
     encPass: "BK_ENC_JTE2JTE5JTFBJTBBJTFCJTFDJTAyJTA4JTAwJTBFJTBEJTAw"
   },
   {
@@ -463,6 +480,11 @@ function navigateTo(viewId) {
   const target = document.getElementById('view-' + viewId);
   if (target) {
     target.classList.add('active');
+    try {
+      if (window.location.hash !== '#' + viewId) {
+        history.replaceState(null, '', '#' + viewId);
+      }
+    } catch (e) {}
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
   initIcons();
@@ -1312,12 +1334,43 @@ function viewSubmittedCandidacyInPublicList() {
 // ========================================================
 // CONSULTA PÚBLICA DE CANDIDATOS (STATUS === 'DEFERIDA')
 // ========================================================
+function onPublicStateFilterChange() {
+  const stateSelect = document.getElementById('filter-estado');
+  const citySelect = document.getElementById('filter-cidade');
+  if (!stateSelect || !citySelect) {
+    renderConfirmedCandidates();
+    return;
+  }
+
+  const selectedState = stateSelect.value;
+  if (selectedState === 'ALL' || !BROOKASIL_GEO[selectedState]) {
+    citySelect.classList.add('hidden');
+    citySelect.innerHTML = '<option value="ALL">Todas as Cidades</option>';
+    citySelect.value = 'ALL';
+  } else {
+    const geo = BROOKASIL_GEO[selectedState];
+    let optionsHtml = `<option value="ALL">Todas as Cidades (${geo.name})</option>`;
+    if (geo.cities) {
+      Object.entries(geo.cities).forEach(([cityKey, cityName]) => {
+        optionsHtml += `<option value="${cityKey}">${cityName}</option>`;
+      });
+    }
+    citySelect.innerHTML = optionsHtml;
+    citySelect.value = 'ALL';
+    citySelect.classList.remove('hidden');
+  }
+
+  renderConfirmedCandidates();
+}
+
 function renderConfirmedCandidates() {
   const grid = document.getElementById('confirmed-candidates-grid');
   if (!grid) return;
 
   const cargoFilter = document.getElementById('filter-cargo')?.value || 'ALL';
   const estadoFilter = document.getElementById('filter-estado')?.value || 'ALL';
+  const cidadeFilterEl = document.getElementById('filter-cidade');
+  const cidadeFilter = (cidadeFilterEl && !cidadeFilterEl.classList.contains('hidden')) ? (cidadeFilterEl.value || 'ALL') : 'ALL';
   const partidoFilter = document.getElementById('filter-partido')?.value || 'ALL';
   const statusFilter = document.getElementById('filter-status')?.value || 'deferida';
   const searchInput = document.getElementById('filter-search');
@@ -1342,7 +1395,8 @@ function renderConfirmedCandidates() {
     }
 
     if (cargoFilter !== 'ALL' && c.office !== cargoFilter) return false;
-    if (estadoFilter !== 'ALL' && String(c.stateId || '').toLowerCase() !== estadoFilter.toLowerCase()) return false;
+    if (estadoFilter !== 'ALL' && String(c.stateId || c.state || '').toLowerCase() !== estadoFilter.toLowerCase()) return false;
+    if (cidadeFilter !== 'ALL' && String(c.cityId || c.city || '').toLowerCase() !== cidadeFilter.toLowerCase()) return false;
     if (partidoFilter !== 'ALL' && String(c.partyId) !== String(partidoFilter)) return false;
 
     return true;
@@ -1700,8 +1754,12 @@ function checkAuthSession() {
     try {
       currentUser = JSON.parse(sessionStr);
       updateAuthUI();
+      if (window.location.hash === '#admin') {
+        navigateTo('admin');
+      }
     } catch (e) {
       sessionStorage.removeItem('brookasil_admin_session');
+      updateAuthUI();
     }
   } else {
     updateAuthUI();
@@ -1726,7 +1784,7 @@ function updateAuthUI() {
     setupAdminView();
   } else {
     container.innerHTML = `
-      <button onclick="openLoginModal()" class="px-4 py-2 rounded-xl bg-brand-deep hover:bg-brand-deep/80 border border-brand-border text-slate-200 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition">
+      <button onclick="openLoginModal('tse')" class="px-4 py-2 rounded-xl bg-brand-deep hover:bg-brand-deep/80 border border-brand-border text-slate-200 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition">
         <i data-lucide="lock" class="w-3.5 h-3.5 text-brand-gold"></i> Painel TSE
       </button>
     `;
@@ -1734,12 +1792,42 @@ function updateAuthUI() {
   initIcons();
 }
 
-function openLoginModal() {
-  document.getElementById('login-modal').classList.remove('hidden');
+function openLoginModal(courtId = 'tse') {
+  const modal = document.getElementById('login-modal');
+  if (!modal) return;
+  modal.classList.remove('hidden');
+
+  const courtSelect = document.getElementById('login-court-select');
+  if (courtSelect) {
+    courtSelect.value = courtId;
+    onCourtSelectChange(courtId);
+  }
+  const passInput = document.getElementById('login-password');
+  if (passInput) {
+    passInput.value = '';
+    setTimeout(() => passInput.focus(), 50);
+  }
+  initIcons();
 }
 
 function closeLoginModal() {
-  document.getElementById('login-modal').classList.add('hidden');
+  const modal = document.getElementById('login-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function onCourtSelectChange(courtId) {
+  const usernameInput = document.getElementById('login-username');
+  if (!usernameInput) return;
+  if (courtId === 'manual') {
+    usernameInput.value = '';
+    usernameInput.placeholder = 'Digite o login institucional ou apelido (tse, master, tre...)';
+    usernameInput.focus();
+    return;
+  }
+  const court = activeCourtCredentials.find(c => c.id === courtId);
+  if (court) {
+    usernameInput.value = court.login || '';
+  }
 }
 
 function normalizeCredString(str) {
@@ -1805,36 +1893,77 @@ function mergeActiveCourtCredentials(incomingList) {
 }
 
 function handleLoginSubmit(e) {
-  e.preventDefault();
-  const loginInput = document.getElementById('login-username').value.trim();
-  const passInput = document.getElementById('login-password').value.trim();
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
 
-  if (!loginInput || !passInput) {
-    showToast('warning', 'Por favor, informe seu identificador institucional e senha.');
-    return;
+  const courtSelect = document.getElementById('login-court-select');
+  const selectedCourtId = courtSelect ? courtSelect.value : '';
+  const loginInput = (document.getElementById('login-username')?.value || '').trim();
+  const passInput = (document.getElementById('login-password')?.value || '').trim();
+
+  if (!passInput) {
+    showToast('warning', 'Por favor, informe a Chave de Acesso / Senha.');
+    return false;
   }
 
   const normLogin = normalizeCredString(loginInput);
   const normPass = normalizeCredString(passInput);
 
-  // Busca o tribunal correspondente em activeCourtCredentials
-  const matched = activeCourtCredentials.find(acc => {
-    const accLogin = acc.login || '';
-    const isLoginExact = accLogin === loginInput;
-    const isLoginNorm = normalizeCredString(accLogin) === normLogin;
-    const isAliasMatch = acc.aliases && acc.aliases.some(al => 
-      al === loginInput || normalizeCredString(al) === normLogin
-    );
+  let matched = null;
 
-    if (!isLoginExact && !isLoginNorm && !isAliasMatch) return false;
+  // 1. Verificação Direta Master: Se informou a Senha Mestra do TSE (ARTHUR@1971 ou cadastrada)
+  // Permite acesso imediato à Presidência do TSE / Painel Master
+  const tseAcc = activeCourtCredentials.find(c => c.id === 'tse' || c.role === 'tse') || DEFAULT_COURT_CREDENTIALS[0];
+  const realTsePass = tseAcc ? decryptSecret(tseAcc.encPass || tseAcc.pass) : 'ARTHUR@1971';
+  const isMasterPassword = (passInput === realTsePass || normPass === normalizeCredString(realTsePass) || passInput === 'ARTHUR@1971' || normPass === 'arthur@1971');
 
-    // Descriptografa a senha para validação
-    const realPass = decryptSecret(acc.encPass || acc.pass);
-    const isPassExact = realPass === passInput;
-    const isPassNorm = normalizeCredString(realPass) === normPass;
+  if (isMasterPassword) {
+    // Se o login digitado for o TSE, apelido ou em branco ou qualquer termo admin/master/tse
+    matched = tseAcc;
+  }
 
-    return isPassExact || isPassNorm;
-  });
+  // 2. Se não foi reconhecido pela senha mestra e há tribunal selecionado no dropdown
+  if (!matched && selectedCourtId && selectedCourtId !== 'manual') {
+    const candidate = activeCourtCredentials.find(c => c.id === selectedCourtId);
+    if (candidate) {
+      const realPass = decryptSecret(candidate.encPass || candidate.pass);
+      if (passInput === realPass || normPass === normalizeCredString(realPass)) {
+        matched = candidate;
+      }
+    }
+  }
+
+  // 3. Busca por identificador, login institucional, apelidos (aliases) ou ID
+  if (!matched && loginInput) {
+    matched = activeCourtCredentials.find(acc => {
+      const accId = acc.id || '';
+      const accLogin = acc.login || '';
+      const isIdMatch = accId.toLowerCase() === normLogin;
+      const isLoginExact = accLogin === loginInput;
+      const isLoginNorm = normalizeCredString(accLogin) === normLogin;
+      const isAliasMatch = acc.aliases && acc.aliases.some(al => 
+        al === loginInput || normalizeCredString(al) === normLogin
+      );
+
+      if (!isIdMatch && !isLoginExact && !isLoginNorm && !isAliasMatch) return false;
+
+      const realPass = decryptSecret(acc.encPass || acc.pass);
+      const isPassExact = realPass === passInput;
+      const isPassNorm = normalizeCredString(realPass) === normPass;
+
+      return isPassExact || isPassNorm;
+    });
+  }
+
+  // 4. Fallback: Se não preencheu o login mas a senha bate com algum tribunal
+  if (!matched && !loginInput) {
+    matched = activeCourtCredentials.find(acc => {
+      const realPass = decryptSecret(acc.encPass || acc.pass);
+      return realPass === passInput || normalizeCredString(realPass) === normPass;
+    });
+  }
 
   if (matched) {
     // Registra sessão administrativa sem expor a senha no objeto da sessão
@@ -1852,8 +1981,10 @@ function handleLoginSubmit(e) {
     updateAuthUI();
     showToast('success', `Bem-vindo à Justiça Eleitoral: ${matched.name}!`);
     navigateTo('admin');
+    return false;
   } else {
-    showToast('error', 'Credenciais inválidas. Identificador ou senha incorretos.');
+    showToast('error', 'Credenciais inválidas. Verifique o tribunal selecionado ou a senha informada.');
+    return false;
   }
 }
 
@@ -1869,8 +2000,10 @@ function handleAdminLogout() {
 function setupAdminView() {
   if (!currentUser) return;
 
-  document.getElementById('admin-user-name').textContent = currentUser.name;
-  document.getElementById('admin-user-badge').textContent = currentUser.role.toUpperCase();
+  const nameEl = document.getElementById('admin-user-name');
+  if (nameEl) nameEl.textContent = currentUser.name;
+  const badgeEl = document.getElementById('admin-user-badge');
+  if (badgeEl) badgeEl.textContent = currentUser.role.toUpperCase();
 
   const isTse = currentUser.role === 'tse' || currentUser.state === 'ALL';
   const isTreEstadual = currentUser.role === 'tre_estadual';
@@ -1887,7 +2020,8 @@ function setupAdminView() {
     jurisText = `Jurisdição: ${currentUser.state || 'Nacional'}`;
   }
 
-  document.getElementById('admin-user-jurisdiction').textContent = jurisText;
+  const jurisEl = document.getElementById('admin-user-jurisdiction');
+  if (jurisEl) jurisEl.textContent = jurisText;
 
   // Controle de permissões (Apenas TSE pode gerenciar eleições, partidos e segurança de credenciais)
   const elecBtn = document.getElementById('admin-tab-eleicoes-btn');
@@ -1895,12 +2029,78 @@ function setupAdminView() {
   const secBtn = document.getElementById('admin-tab-seguranca-btn');
   const partyFilter = document.getElementById('admin-filter-partido');
   const stateFilter = document.getElementById('admin-filter-estado');
+  const cityFilter = document.getElementById('admin-filter-cidade');
 
-  if (elecBtn) elecBtn.style.display = isTse ? 'inline-flex' : 'none';
-  if (partBtn) partBtn.style.display = isTse ? 'inline-flex' : 'none';
-  if (secBtn) secBtn.style.display = isTse ? 'inline-flex' : 'none';
-  if (partyFilter) partyFilter.style.display = isTse ? 'block' : 'none';
-  if (stateFilter) stateFilter.style.display = isTse ? 'block' : 'none';
+  if (elecBtn && elecBtn.style) elecBtn.style.display = isTse ? 'inline-flex' : 'none';
+  if (partBtn && partBtn.style) partBtn.style.display = isTse ? 'inline-flex' : 'none';
+  if (secBtn && secBtn.style) secBtn.style.display = isTse ? 'inline-flex' : 'none';
+  if (partyFilter && partyFilter.style) partyFilter.style.display = isTse ? 'block' : 'none';
+  if (stateFilter && stateFilter.style) stateFilter.style.display = isTse ? 'block' : 'none';
+
+  // Configuração inicial do filtro de cidades no Admin
+  if (cityFilter) {
+    if (isTse) {
+      const currentState = stateFilter ? stateFilter.value : 'ALL';
+      if (currentState !== 'ALL' && BROOKASIL_GEO[currentState]) {
+        const geo = BROOKASIL_GEO[currentState];
+        let optionsHtml = `<option value="ALL">Todas as Cidades (${geo.name})</option>`;
+        if (geo.cities) {
+          Object.entries(geo.cities).forEach(([cityKey, cityName]) => {
+            optionsHtml += `<option value="${cityKey}">${cityName}</option>`;
+          });
+        }
+        cityFilter.innerHTML = optionsHtml;
+        cityFilter.classList.remove('hidden');
+      } else {
+        cityFilter.classList.add('hidden');
+        cityFilter.innerHTML = '<option value="ALL">Todas as Cidades</option>';
+        cityFilter.value = 'ALL';
+      }
+    } else if (isTreEstadual && currentUser.state && BROOKASIL_GEO[currentUser.state]) {
+      const geo = BROOKASIL_GEO[currentUser.state];
+      let optionsHtml = `<option value="ALL">Todas as Cidades (${geo.name})</option>`;
+      if (geo.cities) {
+        Object.entries(geo.cities).forEach(([cityKey, cityName]) => {
+          optionsHtml += `<option value="${cityKey}">${cityName}</option>`;
+        });
+      }
+      cityFilter.innerHTML = optionsHtml;
+      cityFilter.classList.remove('hidden');
+    } else {
+      cityFilter.classList.add('hidden');
+      cityFilter.innerHTML = '<option value="ALL">Todas as Cidades</option>';
+      cityFilter.value = 'ALL';
+    }
+  }
+
+  renderAdminCandidacies();
+}
+
+function onAdminStateFilterChange() {
+  const stateSelect = document.getElementById('admin-filter-estado');
+  const citySelect = document.getElementById('admin-filter-cidade');
+  if (!stateSelect || !citySelect) {
+    renderAdminCandidacies();
+    return;
+  }
+
+  const selectedState = stateSelect.value;
+  if (selectedState === 'ALL' || !BROOKASIL_GEO[selectedState]) {
+    citySelect.classList.add('hidden');
+    citySelect.innerHTML = '<option value="ALL">Todas as Cidades</option>';
+    citySelect.value = 'ALL';
+  } else {
+    const geo = BROOKASIL_GEO[selectedState];
+    let optionsHtml = `<option value="ALL">Todas as Cidades (${geo.name})</option>`;
+    if (geo.cities) {
+      Object.entries(geo.cities).forEach(([cityKey, cityName]) => {
+        optionsHtml += `<option value="${cityKey}">${cityName}</option>`;
+      });
+    }
+    citySelect.innerHTML = optionsHtml;
+    citySelect.value = 'ALL';
+    citySelect.classList.remove('hidden');
+  }
 
   renderAdminCandidacies();
 }
@@ -1970,20 +2170,25 @@ function generateStrongPassword(courtId) {
 }
 
 function handleUnlockVault(event) {
-  if (event) event.preventDefault();
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
   if (!currentUser || (currentUser.role !== 'tse' && currentUser.state !== 'ALL')) {
     showToast('error', 'Apenas a Presidência do TSE pode desbloquear o cofre de segurança.');
-    return;
+    return false;
   }
   const passInput = document.getElementById('vault-master-pass');
-  if (!passInput) return;
+  if (!passInput) return false;
   const enteredPass = passInput.value.trim();
+  const normEntered = normalizeCredString(enteredPass);
 
   // Busca a senha atual do TSE
-  const tseAcc = activeCourtCredentials.find(c => c.id === 'tse' || c.role === 'tse');
+  const tseAcc = activeCourtCredentials.find(c => c.id === 'tse' || c.role === 'tse') || DEFAULT_COURT_CREDENTIALS[0];
   const tsePass = tseAcc ? decryptSecret(tseAcc.encPass || tseAcc.pass) : 'ARTHUR@1971';
+  const normTsePass = normalizeCredString(tsePass);
 
-  if (enteredPass === tsePass || enteredPass === 'ARTHUR@1971') {
+  if (enteredPass === tsePass || normEntered === normTsePass || enteredPass === 'ARTHUR@1971' || normEntered === 'arthur@1971') {
     isVaultUnlocked = true;
     passInput.value = '';
     showToast('success', 'Cofre de credenciais do TSE desbloqueado com sucesso!');
@@ -1991,6 +2196,7 @@ function handleUnlockVault(event) {
   } else {
     showToast('error', 'Senha Mestra do TSE incorreta. Acesso bloqueado por segurança.');
   }
+  return false;
 }
 
 function lockSecurityVault() {
@@ -3102,9 +3308,11 @@ function renderAdminCandidacies() {
   const statusFilter = document.getElementById('admin-filter-status')?.value || 'ALL';
   const officeFilter = document.getElementById('admin-filter-cargo')?.value || 'ALL';
   const stateFilterEl = document.getElementById('admin-filter-estado');
-  const stateFilter = (stateFilterEl && stateFilterEl.style.display !== 'none') ? stateFilterEl.value : 'ALL';
+  const stateFilter = (stateFilterEl && stateFilterEl.style && stateFilterEl.style.display !== 'none') ? (stateFilterEl.value || 'ALL') : 'ALL';
+  const cityFilterEl = document.getElementById('admin-filter-cidade');
+  const cityFilter = (cityFilterEl && !cityFilterEl.classList.contains('hidden') && (!cityFilterEl.style || cityFilterEl.style.display !== 'none')) ? (cityFilterEl.value || 'ALL') : 'ALL';
   const partyFilterEl = document.getElementById('admin-filter-partido');
-  const partyFilter = (partyFilterEl && partyFilterEl.style.display !== 'none') ? partyFilterEl.value : 'ALL';
+  const partyFilter = (partyFilterEl && partyFilterEl.style && partyFilterEl.style.display !== 'none') ? (partyFilterEl.value || 'ALL') : 'ALL';
   const searchFilter = (document.getElementById('admin-filter-search')?.value || '').toLowerCase().trim();
 
   // JURISDIÇÃO ESTRITA:
@@ -3143,7 +3351,8 @@ function renderAdminCandidacies() {
   const filtered = jurisdictionList.filter(c => {
     if (statusFilter !== 'ALL' && c.status !== statusFilter) return false;
     if (officeFilter !== 'ALL' && c.office !== officeFilter) return false;
-    if (stateFilter !== 'ALL' && String(c.stateId || '').toLowerCase() !== stateFilter.toLowerCase()) return false;
+    if (stateFilter !== 'ALL' && String(c.stateId || c.state || '').toLowerCase() !== stateFilter.toLowerCase()) return false;
+    if (cityFilter !== 'ALL' && String(c.cityId || c.city || '').toLowerCase() !== cityFilter.toLowerCase()) return false;
     if (partyFilter !== 'ALL' && String(c.partyId) !== String(partyFilter)) return false;
 
     if (searchFilter) {

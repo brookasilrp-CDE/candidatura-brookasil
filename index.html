@@ -657,12 +657,15 @@
             <option value="Prefeito">Prefeito</option>
             <option value="Vereador">Vereador</option>
           </select>
-          <select id="filter-estado" onchange="renderConfirmedCandidates()" class="bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-xs text-white outline-none">
+          <select id="filter-estado" onchange="onPublicStateFilterChange()" class="bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-xs text-white outline-none">
             <option value="ALL">Todos os Estados</option>
             <option value="brookhaven">Brookhaven</option>
             <option value="floremix">Florêmix</option>
             <option value="fortemega">Fortemega</option>
             <option value="novacore">Novacore</option>
+          </select>
+          <select id="filter-cidade" onchange="renderConfirmedCandidates()" class="hidden bg-brand-navy border border-brand-electric/50 text-brand-electric rounded-xl px-3 py-2 text-xs outline-none transition-all">
+            <option value="ALL">Todas as Cidades</option>
           </select>
           <select id="filter-partido" onchange="renderConfirmedCandidates()" class="bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-xs text-white outline-none">
             <option value="ALL">Todos os Partidos</option>
@@ -931,13 +934,16 @@
               <option value="Prefeito">Prefeito</option>
               <option value="Vereador">Vereador</option>
             </select>
-            <!-- Only TSE sees state filter -->
-            <select id="admin-filter-estado" onchange="renderAdminCandidacies()" class="bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-xs text-white outline-none">
+            <!-- State and City filters -->
+            <select id="admin-filter-estado" onchange="onAdminStateFilterChange()" class="bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-xs text-white outline-none">
               <option value="ALL">Todos os Estados</option>
               <option value="brookhaven">Brookhaven</option>
               <option value="floremix">Florêmix</option>
               <option value="fortemega">Fortemega</option>
               <option value="novacore">Novacore</option>
+            </select>
+            <select id="admin-filter-cidade" onchange="renderAdminCandidacies()" class="hidden bg-brand-navy border border-brand-electric/50 text-brand-electric rounded-xl px-3 py-2 text-xs outline-none transition-all">
+              <option value="ALL">Todas as Cidades</option>
             </select>
             <!-- Only TSE sees party filter as per rules -->
             <select id="admin-filter-partido" onchange="renderAdminCandidacies()" class="bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-xs text-white outline-none">
@@ -1074,7 +1080,7 @@
             </p>
           </div>
 
-          <form onsubmit="handleUnlockVault(event)" class="space-y-4 max-w-sm mx-auto">
+          <form onsubmit="handleUnlockVault(event); return false;" action="javascript:void(0);" class="space-y-4 max-w-sm mx-auto">
             <div class="relative">
               <input type="password" id="vault-master-pass" required placeholder="Digite a Senha Mestra do TSE" class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-3 text-white text-sm focus:border-brand-gold outline-none pr-10">
               <button type="button" onclick="togglePasswordVisibility('vault-master-pass', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1">
@@ -1239,23 +1245,53 @@
         <p class="text-xs text-slate-400">Tribunal Superior Eleitoral & Tribunais Regionais</p>
       </div>
 
-      <form onsubmit="handleLoginSubmit(event)" class="space-y-4">
+      <form onsubmit="handleLoginSubmit(event); return false;" action="javascript:void(0);" class="space-y-4">
         <div>
-          <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Identificador / Usuário</label>
-          <input type="text" id="login-username" required autocomplete="username" placeholder="Identificador oficial do Tribunal" class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-3 text-white text-sm focus:border-brand-gold outline-none">
+          <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+            <span>Tribunal / Instância</span>
+            <span class="text-[10px] text-brand-gold font-normal">TSE ou TRE</span>
+          </label>
+          <select id="login-court-select" onchange="onCourtSelectChange(this.value)" class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-2.5 text-white text-xs focus:border-brand-gold outline-none">
+            <option value="tse" selected>🏛️ Tribunal Superior Eleitoral (TSE / Presidência Master)</option>
+            <option value="tre_brookhaven">⚖️ TRE Brookhaven (Estadual)</option>
+            <option value="tre_floremix">⚖️ TRE Florêmix (Estadual)</option>
+            <option value="tre_fortemega">⚖️ TRE Fortemega (Estadual)</option>
+            <option value="tre_novacore">⚖️ TRE Novacore (Estadual)</option>
+            <option value="tre_cidadeeleitoral">🏙️ TRE Cidade Eleitoral (Municipal - Brookhaven)</option>
+            <option value="tre_braviland">🏙️ TRE Braviland (Municipal - Brookhaven)</option>
+            <option value="tre_florapolis">🏙️ TRE Florápolis (Municipal - Florêmix)</option>
+            <option value="tre_riomarina">🏙️ TRE Rio Marina (Municipal - Florêmix)</option>
+            <option value="tre_portorubi">🏙️ TRE Porto Rubi (Municipal - Fortemega)</option>
+            <option value="tre_fortelume">🏙️ TRE Fortelume (Municipal - Fortemega)</option>
+            <option value="tre_napolis">🏙️ TRE Nápolis (Municipal - Novacore)</option>
+            <option value="tre_catarinia">🏙️ TRE Catarínia (Municipal - Novacore)</option>
+            <option value="manual">🔍 Digitar outro identificador ou apelido</option>
+          </select>
         </div>
+
         <div>
-          <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Chave de Acesso / Senha</label>
+          <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+            <span>Identificador / Usuário</span>
+            <span class="text-[10px] text-slate-400 font-normal">Auto / Apelido (tse, master, admin)</span>
+          </label>
+          <input type="text" id="login-username" value="TSE_Brookasil@2026" autocomplete="username" placeholder="Identificador ou apelido (tse, master, admin...)" class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-2.5 text-white text-xs focus:border-brand-gold outline-none">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+            <span>Chave de Acesso / Senha</span>
+            <span class="text-[10px] text-brand-gold font-mono font-normal">Senha Mestra ou do TRE</span>
+          </label>
           <div class="relative">
-            <input type="password" id="login-password" required autocomplete="current-password" placeholder="••••••••••••" class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-3 text-white text-sm focus:border-brand-gold outline-none pr-10">
+            <input type="password" id="login-password" required autocomplete="current-password" placeholder="Digite a chave de acesso" class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-2.5 text-white text-xs focus:border-brand-gold outline-none pr-10">
             <button type="button" onclick="togglePasswordVisibility('login-password', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1" title="Mostrar/ocultar senha">
               <i data-lucide="eye" class="w-4 h-4"></i>
             </button>
           </div>
         </div>
 
-        <button type="submit" class="w-full py-3.5 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-brand-gold via-amber-400 to-yellow-500 hover:to-brand-gold transition shadow-glow-gold text-sm flex items-center justify-center gap-2">
-          <i data-lucide="lock" class="w-4 h-4"></i> Autenticar no Sistema
+        <button type="submit" class="w-full py-3.5 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-brand-gold via-amber-400 to-yellow-500 hover:to-brand-gold transition shadow-glow-gold text-sm flex items-center justify-center gap-2 mt-2">
+          <i data-lucide="lock" class="w-4 h-4"></i> Autenticar no Painel
         </button>
       </form>
 
