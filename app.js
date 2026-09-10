@@ -477,6 +477,20 @@ function navigateTo(viewId) {
     }
   });
 
+  // Atualização sincronizada da barra inferior móvel (Bottom Navigation)
+  document.querySelectorAll('.bottom-nav-item').forEach(btn => {
+    const bView = btn.getAttribute('data-bottom-view');
+    if (bView === viewId) {
+      btn.classList.add('text-brand-electric', 'font-bold');
+      btn.classList.remove('text-slate-400');
+    } else {
+      if (bView !== 'candidaturas') {
+        btn.classList.remove('text-brand-electric', 'font-bold');
+        btn.classList.add('text-slate-400');
+      }
+    }
+  });
+
   const target = document.getElementById('view-' + viewId);
   if (target) {
     target.classList.add('active');
@@ -490,9 +504,20 @@ function navigateTo(viewId) {
   initIcons();
 }
 
+function handleBottomNavAdminClick() {
+  if (currentUser) {
+    navigateTo('admin');
+  } else {
+    openLoginModal('tse');
+  }
+}
+
 function toggleMobileMenu() {
   const menu = document.getElementById('mobile-menu');
-  menu.classList.toggle('hidden');
+  if (menu) {
+    menu.classList.toggle('hidden');
+    initIcons();
+  }
 }
 
 function toggleTheme() {
@@ -966,8 +991,22 @@ function generateAutoNumber() {
 }
 
 // ========================================================
-// PROCESSAMENTO LOCAL DE IMAGEM & PDF (SEM FIREBASE STORAGE)
+// RECURSO OFICIAL DE ENQUADRAMENTO E CORTE DE FOTO (3x4)
 // ========================================================
+let cropperZoom = 1.0;
+let cropperPanX = 0;
+let cropperPanY = 0;
+let cropperRotation = 0;
+let isCropperDragging = false;
+let cropperDragStartX = 0;
+let cropperDragStartY = 0;
+let cropperInitialPanX = 0;
+let cropperInitialPanY = 0;
+let cropperTargetContext = 'form'; // 'form' ou 'tse_edit'
+let rawUploadedPhotoDataUrl = '';
+let cropperLoadedImg = new Image();
+let cropperListenersAttached = false;
+
 function handlePhotoUpload(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -979,44 +1018,254 @@ function handlePhotoUpload(e) {
 
   const reader = new FileReader();
   reader.onload = function(evt) {
-    const img = new Image();
-    img.onload = function() {
-      // Redimensionamento e compressão em Canvas (Max 400x500 para economia de RTDB)
-      const canvas = document.createElement('canvas');
-      let width = img.width;
-      let height = img.height;
-      const maxWidth = 400;
-      const maxHeight = 500;
-
-      if (width > height) {
-        if (width > maxWidth) {
-          height = Math.round((height * maxWidth) / width);
-          width = maxWidth;
-        }
-      } else {
-        if (height > maxHeight) {
-          width = Math.round((width * maxHeight) / height);
-          height = maxHeight;
-        }
-      }
-
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, width, height);
-
-      uploadedPhotoBase64 = canvas.toDataURL('image/jpeg', 0.82);
-
-      const previewImg = document.getElementById('photo-preview-img');
-      const placeholder = document.getElementById('photo-placeholder');
-      previewImg.src = uploadedPhotoBase64;
-      previewImg.classList.remove('hidden');
-      placeholder.classList.add('hidden');
-      showToast('success', 'Foto oficial processada e otimizada com sucesso!');
-    };
-    img.src = evt.target.result;
+    rawUploadedPhotoDataUrl = evt.target.result;
+    // Abre imediatamente o ajustador interativo para o candidato centralizar/posicionar
+    openPhotoCropperModal(rawUploadedPhotoDataUrl, 'form');
   };
   reader.readAsDataURL(file);
+}
+
+function openPhotoCropperModal(imageSrc = null, targetContext = 'form') {
+  cropperTargetContext = targetContext;
+
+  const src = imageSrc || (targetContext === 'tse_edit' ? (tseEditPhotoBase64 || selectedCandForTseEdit?.photo || '') : (rawUploadedPhotoDataUrl || uploadedPhotoBase64));
+  if (!src) {
+    showToast('error', 'Selecione uma imagem primeiro para poder ajustar o enquadramento.');
+    return;
+  }
+
+  cropperZoom = 1.0;
+  cropperPanX = 0;
+  cropperPanY = 0;
+  cropperRotation = 0;
+
+  const modal = document.getElementById('photo-cropper-modal');
+  const imgEl = document.getElementById('cropper-preview-img');
+  const zoomRange = document.getElementById('cropper-zoom-range');
+  const zoomVal = document.getElementById('cropper-zoom-val');
+
+  if (zoomRange) zoomRange.value = "1.0";
+  if (zoomVal) zoomVal.textContent = "100%";
+
+  cropperLoadedImg = new Image();
+  cropperLoadedImg.onload = function() {
+    if (imgEl) {
+      imgEl.src = cropperLoadedImg.src;
+      fitImageToCropperViewport(cropperLoadedImg.naturalWidth, cropperLoadedImg.naturalHeight);
+      updateCropperTransform();
+    }
+  };
+  cropperLoadedImg.src = src;
+
+  if (modal) {
+    modal.classList.remove('hidden');
+    initIcons();
+  }
+
+  initCropperDragListeners();
+}
+
+function fitImageToCropperViewport(imgWidth, imgHeight) {
+  const vp = document.getElementById('cropper-viewport');
+  const vpWidth = vp ? (vp.clientWidth || 285) : 285;
+  const vpHeight = vp ? (vp.clientHeight || 380) : 380;
+
+  const imgEl = document.getElementById('cropper-preview-img');
+  if (!imgEl) return;
+
+  const scaleX = vpWidth / imgWidth;
+  const scaleY = vpHeight / imgHeight;
+  const initialScale = Math.max(scaleX, scaleY);
+
+  const displayW = Math.round(imgWidth * initialScale);
+  const displayH = Math.round(imgHeight * initialScale);
+
+  imgEl.style.width = `${displayW}px`;
+  imgEl.style.height = `${displayH}px`;
+  imgEl.style.left = `${Math.round((vpWidth - displayW) / 2)}px`;
+  imgEl.style.top = `${Math.round((vpHeight - displayH) / 2)}px`;
+
+  cropperPanX = 0;
+  cropperPanY = 0;
+  cropperZoom = 1.0;
+}
+
+function updateCropperTransform() {
+  const imgEl = document.getElementById('cropper-preview-img');
+  if (!imgEl) return;
+  imgEl.style.transform = `translate(${cropperPanX}px, ${cropperPanY}px) scale(${cropperZoom}) rotate(${cropperRotation}deg)`;
+
+  const zoomVal = document.getElementById('cropper-zoom-val');
+  if (zoomVal) {
+    zoomVal.textContent = `${Math.round(cropperZoom * 100)}%`;
+  }
+}
+
+function setCropperZoom(val) {
+  cropperZoom = parseFloat(val) || 1.0;
+  updateCropperTransform();
+}
+
+function stepCropperZoom(delta) {
+  const zoomRange = document.getElementById('cropper-zoom-range');
+  let newZoom = Math.min(Math.max(cropperZoom + delta, 0.5), 3.0);
+  newZoom = Math.round(newZoom * 100) / 100;
+  cropperZoom = newZoom;
+  if (zoomRange) zoomRange.value = newZoom.toString();
+  updateCropperTransform();
+}
+
+function centerCropper() {
+  cropperPanX = 0;
+  cropperPanY = 0;
+  updateCropperTransform();
+  showToast('info', 'Foto centralizada na moldura.');
+}
+
+function rotateCropper() {
+  cropperRotation = (cropperRotation + 90) % 360;
+  updateCropperTransform();
+}
+
+function resetCropper() {
+  cropperZoom = 1.0;
+  cropperPanX = 0;
+  cropperPanY = 0;
+  cropperRotation = 0;
+  const zoomRange = document.getElementById('cropper-zoom-range');
+  if (zoomRange) zoomRange.value = "1.0";
+  updateCropperTransform();
+}
+
+function initCropperDragListeners() {
+  if (cropperListenersAttached) return;
+  cropperListenersAttached = true;
+
+  const vp = document.getElementById('cropper-viewport');
+  if (!vp) return;
+
+  // Mouse Drag para Desktop
+  vp.addEventListener('mousedown', (e) => {
+    isCropperDragging = true;
+    cropperDragStartX = e.clientX;
+    cropperDragStartY = e.clientY;
+    cropperInitialPanX = cropperPanX;
+    cropperInitialPanY = cropperPanY;
+    vp.style.cursor = 'grabbing';
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!isCropperDragging) return;
+    const dx = e.clientX - cropperDragStartX;
+    const dy = e.clientY - cropperDragStartY;
+    cropperPanX = cropperInitialPanX + dx;
+    cropperPanY = cropperInitialPanY + dy;
+    updateCropperTransform();
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (isCropperDragging) {
+      isCropperDragging = false;
+      const vpEl = document.getElementById('cropper-viewport');
+      if (vpEl) vpEl.style.cursor = 'grab';
+    }
+  });
+
+  // Touch Drag para Mobile (Vertical / Horizontal)
+  vp.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 1) {
+      isCropperDragging = true;
+      cropperDragStartX = e.touches[0].clientX;
+      cropperDragStartY = e.touches[0].clientY;
+      cropperInitialPanX = cropperPanX;
+      cropperInitialPanY = cropperPanY;
+    }
+  }, { passive: false });
+
+  vp.addEventListener('touchmove', (e) => {
+    if (!isCropperDragging || e.touches.length !== 1) return;
+    e.preventDefault();
+    const dx = e.touches[0].clientX - cropperDragStartX;
+    const dy = e.touches[0].clientY - cropperDragStartY;
+    cropperPanX = cropperInitialPanX + dx;
+    cropperPanY = cropperInitialPanY + dy;
+    updateCropperTransform();
+  }, { passive: false });
+
+  vp.addEventListener('touchend', () => {
+    isCropperDragging = false;
+  });
+}
+
+function applyCroppedPhoto() {
+  const vp = document.getElementById('cropper-viewport');
+  const imgEl = document.getElementById('cropper-preview-img');
+  if (!vp || !imgEl || !cropperLoadedImg.src) {
+    closePhotoCropperModal();
+    return;
+  }
+
+  // Canvas oficial 3x4 de alta resolução (450x600 px)
+  const outWidth = 450;
+  const outHeight = 600;
+  const canvas = document.createElement('canvas');
+  canvas.width = outWidth;
+  canvas.height = outHeight;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
+
+  // Fundo profissional de urna
+  ctx.fillStyle = '#060d1f';
+  ctx.fillRect(0, 0, outWidth, outHeight);
+
+  // Escala exata entre a viewport do modal e o canvas de saída
+  const vpRect = vp.getBoundingClientRect();
+  const scaleRatio = outWidth / (vpRect.width || 285);
+
+  const imgRect = imgEl.getBoundingClientRect();
+  const relX = (imgRect.left - vpRect.left) * scaleRatio;
+  const relY = (imgRect.top - vpRect.top) * scaleRatio;
+  const relW = imgRect.width * scaleRatio;
+  const relH = imgRect.height * scaleRatio;
+
+  ctx.save();
+  ctx.translate(relX + relW / 2, relY + relH / 2);
+  ctx.rotate((cropperRotation * Math.PI) / 180);
+  ctx.drawImage(cropperLoadedImg, -relW / 2, -relH / 2, relW, relH);
+  ctx.restore();
+
+  const finalBase64 = canvas.toDataURL('image/jpeg', 0.86);
+
+  if (cropperTargetContext === 'form') {
+    uploadedPhotoBase64 = finalBase64;
+    const previewImg = document.getElementById('photo-preview-img');
+    const placeholder = document.getElementById('photo-placeholder');
+    const cropBtn = document.getElementById('form-crop-btn');
+    const overlayCropBtn = document.getElementById('photo-overlay-crop-btn');
+
+    if (previewImg) {
+      previewImg.src = finalBase64;
+      previewImg.classList.remove('hidden');
+    }
+    if (placeholder) placeholder.classList.add('hidden');
+    if (cropBtn) cropBtn.classList.remove('hidden');
+    if (overlayCropBtn) overlayCropBtn.classList.remove('hidden');
+
+    showToast('success', 'Foto do candidato enquadrada e centralizada com sucesso!');
+  } else if (cropperTargetContext === 'tse_edit') {
+    tseEditPhotoBase64 = finalBase64;
+    const tsePreview = document.getElementById('tse-edit-photo-preview');
+    if (tsePreview) tsePreview.src = finalBase64;
+    showToast('success', 'Foto da candidatura retificada e enquadrada!');
+  }
+
+  closePhotoCropperModal();
+}
+
+function closePhotoCropperModal() {
+  const modal = document.getElementById('photo-cropper-modal');
+  if (modal) modal.classList.add('hidden');
+  isCropperDragging = false;
 }
 
 function handlePdfUpload(e) {
@@ -1502,12 +1751,17 @@ function renderConfirmedCandidates() {
         </div>
       </div>
 
-      <div class="mt-4 pt-3 border-t border-brand-border flex items-center justify-between gap-2">
-        <a href="${c.tiktok.startsWith('http') ? c.tiktok : 'https://tiktok.com/' + c.tiktok}" target="_blank" rel="noopener noreferrer" class="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-brand-electric text-xs font-semibold flex items-center gap-1">
-          <span>🎵</span> TikTok
-        </a>
+      <div class="mt-4 pt-3 border-t border-brand-border/60 flex flex-wrap items-center justify-between gap-2">
+        <div class="flex items-center gap-1.5">
+          <a href="${c.tiktok.startsWith('http') ? c.tiktok : 'https://tiktok.com/' + c.tiktok}" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 active:bg-white/15 text-brand-electric text-xs font-semibold flex items-center gap-1.5 transition">
+            <span>🎵</span> TikTok
+          </a>
+          <button onclick="viewCandidacyDetails('${c.id}')" class="px-3 py-2 rounded-xl bg-brand-blue/20 hover:bg-brand-blue/30 active:bg-brand-blue/40 text-brand-electric text-xs font-semibold flex items-center gap-1.5 transition">
+            <i data-lucide="info" class="w-3.5 h-3.5"></i> Ficha
+          </button>
+        </div>
         ${c.proposalPdf ? `
-          <button onclick="downloadOrViewPdf('${c.id}')" class="px-3 py-1.5 rounded-lg bg-brand-gold/10 hover:bg-brand-gold/20 text-brand-gold text-xs font-semibold flex items-center gap-1">
+          <button onclick="downloadOrViewPdf('${c.id}')" class="px-3 py-2 rounded-xl bg-brand-gold/15 hover:bg-brand-gold/25 active:bg-brand-gold/30 text-brand-gold text-xs font-semibold flex items-center gap-1.5 transition">
             <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Proposta
           </button>
         ` : ''}
@@ -1525,8 +1779,409 @@ function downloadOrViewPdf(candId) {
     return;
   }
   const w = window.open("");
-  w.document.write(`<iframe src="${cand.proposalPdf}" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`);
+  if (w) {
+    w.document.write(`<iframe src="${cand.proposalPdf}" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`);
+  } else {
+    // Caso bloqueador de pop-ups impeça window.open
+    const link = document.createElement('a');
+    link.href = cand.proposalPdf;
+    link.target = '_blank';
+    link.rel = 'noopener noreferrer';
+    link.download = `plano_governo_${cand.ballotName || cand.protocol || 'candidato'}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 }
+
+// ========================================================
+// SISTEMA DE SEGURANÇA E COMPETÊNCIA JURISDICIONAL ELEITORAL
+// ========================================================
+function getCompetentCourtInfo(c) {
+  if (!c) {
+    return {
+      courtId: 'tse',
+      courtName: 'Tribunal Superior Eleitoral (TSE)',
+      level: 'Federal (TSE Nacional)',
+      levelCode: 'tse',
+      stateName: 'Nacional',
+      cityName: 'Nacional',
+      jurisdictionDesc: 'Todo o Território Nacional'
+    };
+  }
+
+  // 1. Cargo de Presidente da República: Competência originária privativa do TSE Nacional
+  if (c.office === 'Presidente') {
+    return {
+      courtId: 'tse',
+      courtName: 'Tribunal Superior Eleitoral (TSE)',
+      level: 'Federal (TSE Nacional)',
+      levelCode: 'tse',
+      stateName: 'Nacional',
+      cityName: 'Nacional',
+      jurisdictionDesc: 'Todo o Território Nacional'
+    };
+  }
+
+  const stateKey = String(c.stateId || c.state || 'brookhaven').toLowerCase().trim();
+  const stateConfig = BROOKASIL_GEO[stateKey];
+  const stateName = stateConfig ? stateConfig.name : (getStateDisplayName(stateKey) || stateKey);
+
+  // 2. Cargos Municipais (Prefeito e Vereador): Competência originária do respectivo TRE Municipal
+  if (isMunicipalOffice(c.office)) {
+    const cityKey = String(c.cityId || c.city || '').toLowerCase().trim();
+    const cityName = stateConfig?.cities?.[cityKey] || getCityDisplayName(stateKey, cityKey) || cityKey;
+
+    const cred = (activeCourtCredentials || []).find(cr => 
+      cr.role === 'tre_municipal' &&
+      String(cr.state).toLowerCase().trim() === stateKey &&
+      String(cr.city).toLowerCase().trim() === cityKey
+    );
+
+    const officialName = cred ? cred.name : `TRE ${cityName}`;
+    return {
+      courtId: cred ? cred.id : `tre_${cityKey}`,
+      courtName: officialName,
+      level: '1ª Instância Municipal',
+      levelCode: 'tre_municipal',
+      stateKey,
+      cityKey,
+      stateName,
+      cityName,
+      jurisdictionDesc: `Município de ${cityName} (${stateName})`
+    };
+  }
+
+  // 3. Cargos Estaduais / Federais Proporcionais (Governador, Senador, Dep. Federal, Dep. Estadual):
+  // Competência privativa do TRE Estadual
+  const cred = (activeCourtCredentials || []).find(cr => 
+    cr.role === 'tre_estadual' &&
+    String(cr.state).toLowerCase().trim() === stateKey
+  );
+  const officialName = cred ? cred.name : `TRE ${stateName}`;
+  return {
+    courtId: cred ? cred.id : `tre_${stateKey}`,
+    courtName: officialName,
+    level: '1ª Instância Estadual',
+    levelCode: 'tre_estadual',
+    stateKey,
+    stateName,
+    cityName: 'Estado Inteiro',
+    jurisdictionDesc: `Estado de ${stateName}`
+  };
+}
+
+function canUserJudgeCandidate(c, user) {
+  if (!user) {
+    return {
+      allowed: false,
+      reason: 'Acesso negado: Nenhuma sessão judicial ativa.',
+      competentCourtName: 'Não identificado'
+    };
+  }
+  if (!c) {
+    return {
+      allowed: false,
+      reason: 'Candidatura inválida.',
+      competentCourtName: 'Não identificado'
+    };
+  }
+
+  const comp = getCompetentCourtInfo(c);
+
+  // 1. Cargo de Presidente: Exclusividade do TSE Nacional
+  if (c.office === 'Presidente') {
+    if (user.role === 'tse' || user.id === 'tse') {
+      return {
+        allowed: true,
+        competentCourtName: comp.courtName,
+        level: comp.level,
+        isOriginatingCourt: true
+      };
+    }
+    return {
+      allowed: false,
+      competentCourtName: comp.courtName,
+      level: comp.level,
+      reason: `Incompetência Jurisdicional: O julgamento e homologação de candidatura a Presidente da República são de competência originária exclusiva do Tribunal Superior Eleitoral (TSE). O tribunal "${user.name}" não possui jurisdição eleitoral federal.`
+    };
+  }
+
+  // 2. Cargos Municipais (Prefeito e Vereador): Exclusividade do TRE Municipal daquela comarca
+  if (isMunicipalOffice(c.office)) {
+    const candState = String(c.stateId || c.state || '').toLowerCase().trim();
+    const candCity = String(c.cityId || c.city || '').toLowerCase().trim();
+    const userState = String(user.state || '').toLowerCase().trim();
+    const userCity = String(user.city || '').toLowerCase().trim();
+
+    if (user.role === 'tre_municipal' && userState === candState && userCity === candCity) {
+      return {
+        allowed: true,
+        competentCourtName: comp.courtName,
+        level: comp.level,
+        isOriginatingCourt: true
+      };
+    }
+
+    if (user.role === 'tse' || user.id === 'tse') {
+      return {
+        allowed: false,
+        competentCourtName: comp.courtName,
+        level: comp.level,
+        reason: `Incompetência de 1ª Instância: Esta candidatura é MUNICIPAL (${c.office} em ${comp.cityName}) e tramita sob a competência privativa do ${comp.courtName}. A legislação eleitoral proíbe que o TSE homologue registros municipais sem a prévia homologação pelo TRE local competente.`
+      };
+    }
+
+    if (user.role === 'tre_estadual') {
+      return {
+        allowed: false,
+        competentCourtName: comp.courtName,
+        level: comp.level,
+        reason: `Incompetência de Grau: Candidaturas municipais de ${comp.cityName} devem ser homologadas pelo ${comp.courtName}, não pelo TRE Estadual.`
+      };
+    }
+
+    return {
+      allowed: false,
+      competentCourtName: comp.courtName,
+      level: comp.level,
+      reason: `Incompetência Territorial: Esta candidatura pertence à jurisdição exclusiva do ${comp.courtName}. O tribunal "${user.name}" não possui competência sobre este município.`
+    };
+  }
+
+  // 3. Cargos Estaduais (Governador, Senador, Deputado Federal, Deputado Estadual): Competência do TRE Estadual
+  const candState = String(c.stateId || c.state || '').toLowerCase().trim();
+  const userState = String(user.state || '').toLowerCase().trim();
+
+  if (user.role === 'tre_estadual' && userState === candState) {
+    return {
+      allowed: true,
+      competentCourtName: comp.courtName,
+      level: comp.level,
+      isOriginatingCourt: true
+    };
+  }
+
+  if (user.role === 'tse' || user.id === 'tse') {
+    return {
+      allowed: false,
+      competentCourtName: comp.courtName,
+      level: comp.level,
+      reason: `Incompetência Originária: Esta candidatura estadual (${c.office} - ${comp.stateName}) é de competência privativa do ${comp.courtName}. O TSE não homologa registros estaduais originários.`
+    };
+  }
+
+  return {
+    allowed: false,
+    competentCourtName: comp.courtName,
+    level: comp.level,
+    reason: `Incompetência Territorial: Esta candidatura tramita perante o ${comp.courtName}. Seu tribunal ("${user.name}") não possui jurisdição sobre o estado de ${comp.stateName}.`
+  };
+}
+
+// ========================================================
+// FICHA OFICIAL / DETALHES COMPLETOS DA CANDIDATURA
+// ========================================================
+let selectedCandForDetails = null;
+
+function viewCandidacyDetails(candId) {
+  const c = candidaciesList.find(item => String(item.id) === String(candId));
+  if (!c) {
+    showToast('error', 'Candidatura não localizada no registro oficial.');
+    return;
+  }
+  selectedCandForDetails = c;
+
+  const modal = document.getElementById('candidacy-details-modal');
+  if (!modal) return;
+
+  // Foto
+  const photoEl = document.getElementById('details-cand-photo');
+  if (photoEl) {
+    photoEl.src = c.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80';
+    photoEl.alt = c.ballotName || 'Candidato';
+  }
+
+  // Nome e Protocolo
+  const badgeEl = document.getElementById('details-cand-badge');
+  if (badgeEl) {
+    const st = c.status || 'pendente';
+    badgeEl.textContent = st === 'deferida' ? 'APTA (HOMOLOGADA)' : (st === 'indeferida' ? 'INDEFERIDA' : (st === 'excluida' ? 'EXCLUÍDA' : 'EM ANÁLISE'));
+    badgeEl.className = `px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+      st === 'deferida' ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' :
+      st === 'indeferida' ? 'bg-red-500/20 text-red-300 border border-red-500/40' :
+      st === 'excluida' ? 'bg-slate-700 text-slate-300' :
+      'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+    }`;
+  }
+
+  const protoEl = document.getElementById('details-cand-protocol');
+  if (protoEl) protoEl.textContent = `PROT: ${c.protocol || 'N/D'}`;
+
+  const nameEl = document.getElementById('details-cand-name');
+  if (nameEl) nameEl.textContent = c.ballotName || 'Candidato';
+
+  const fullNameEl = document.getElementById('details-cand-fullname');
+  if (fullNameEl) fullNameEl.textContent = c.fullName ? `Nome Legal: ${c.fullName}` : '';
+
+  const circ = c.cityId && c.cityId !== 'ALL' 
+    ? `${getCityDisplayName(c.stateId, c.cityId)} - ${getStateDisplayName(c.stateId)}`
+    : getStateDisplayName(c.stateId);
+  const subEl = document.getElementById('details-cand-sub');
+  if (subEl) subEl.textContent = `${c.office} • ${c.partyAcronym} • ${circ}`;
+
+  // Número
+  const numEl = document.getElementById('details-cand-number');
+  if (numEl) numEl.textContent = c.number || '--';
+
+  // Partido
+  const partyBox = document.getElementById('details-cand-party-box');
+  if (partyBox) {
+    partyBox.textContent = c.partyAcronym || '--';
+    partyBox.style.backgroundColor = c.partyColor || '#2563eb';
+  }
+  const partyNameEl = document.getElementById('details-cand-party-name');
+  if (partyNameEl) partyNameEl.textContent = `${c.partyName || ''} (${c.partyNumber || c.partyAcronym || ''})`;
+
+  // Cargo e Circunscrição
+  const officeEl = document.getElementById('details-cand-office');
+  if (officeEl) officeEl.textContent = c.office || '--';
+
+  const jurisEl = document.getElementById('details-cand-jurisdiction');
+  if (jurisEl) jurisEl.textContent = circ;
+
+  // Vice e Coligação
+  const viceEl = document.getElementById('details-cand-vice');
+  if (viceEl) viceEl.textContent = c.viceName || 'Não aplicável (Cargo proporcional ou sem vice informado)';
+
+  const colEl = document.getElementById('details-cand-coalition');
+  if (colEl) colEl.textContent = c.coalition || 'Candidatura Isolada / Sem Coligação';
+
+  // TikTok
+  const tiktokLink = document.getElementById('details-cand-tiktok');
+  const tiktokText = document.getElementById('details-cand-tiktok-text');
+  if (tiktokLink && tiktokText) {
+    if (c.tiktok) {
+      tiktokText.textContent = c.tiktok;
+      tiktokLink.href = c.tiktok.startsWith('http') ? c.tiktok : `https://tiktok.com/${c.tiktok.replace(/^@/, '')}`;
+      tiktokLink.classList.remove('pointer-events-none', 'opacity-50');
+    } else {
+      tiktokText.textContent = 'Não informado';
+      tiktokLink.href = '#';
+      tiktokLink.classList.add('pointer-events-none', 'opacity-50');
+    }
+  }
+
+  // PDF
+  const pdfContainer = document.getElementById('details-cand-pdf-container');
+  if (pdfContainer) {
+    if (c.proposalPdf) {
+      pdfContainer.innerHTML = `
+        <button onclick="downloadOrViewPdf('${c.id}')" class="px-3 py-1.5 rounded-xl bg-brand-gold/20 hover:bg-brand-gold/30 active:bg-brand-gold/40 text-brand-gold font-bold text-xs flex items-center gap-1.5 transition">
+          <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Abrir Plano de Governo (PDF)
+        </button>
+      `;
+    } else {
+      pdfContainer.innerHTML = `<span class="text-slate-500 italic text-xs">Nenhum PDF anexado na inscrição</span>`;
+    }
+  }
+
+  // Competência Jurisdicional de 1ª Instância
+  const compInfo = getCompetentCourtInfo(c);
+  const courtNameEl = document.getElementById('details-cand-competent-court-name');
+  if (courtNameEl) courtNameEl.textContent = `${compInfo.courtName} • ${compInfo.jurisdictionDesc}`;
+
+  const compBadgeEl = document.getElementById('details-cand-competence-badge');
+  if (compBadgeEl) {
+    compBadgeEl.textContent = compInfo.level;
+    compBadgeEl.className = `px-2.5 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1 self-start sm:self-center ${
+      compInfo.levelCode === 'tse' 
+        ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+        : (compInfo.levelCode === 'tre_estadual' ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30')
+    }`;
+  }
+
+  // Propostas texto
+  const propSec = document.getElementById('details-cand-proposals-section');
+  const propText = document.getElementById('details-cand-proposals-text');
+  if (propSec && propText) {
+    if (c.proposalsText && c.proposalsText.trim()) {
+      propText.textContent = c.proposalsText;
+      propSec.classList.remove('hidden');
+    } else {
+      propSec.classList.add('hidden');
+    }
+  }
+
+  // Decisão Judicial
+  const judSec = document.getElementById('details-cand-judgment-section');
+  const judReason = document.getElementById('details-cand-judgment-reason');
+  const judBy = document.getElementById('details-cand-judged-by');
+  if (judSec && judReason && judBy) {
+    if (c.rejectionReason || c.judgedBy || c.status === 'deferida' || c.status === 'indeferida') {
+      judReason.textContent = c.rejectionReason || (c.status === 'deferida' ? 'Candidatura deferida pelo Tribunal após preenchimento tempestivo de todas as exigências legais e constitucionais de elegibilidade.' : 'Sem despacho fundamentado.');
+      judBy.textContent = c.judgedBy ? `Magistrado: ${c.judgedBy}` : (c.competentCourt ? `Tribunal: ${c.competentCourt}` : 'Tribunal Eleitoral');
+      judSec.classList.remove('hidden');
+    } else {
+      judSec.classList.add('hidden');
+    }
+  }
+
+  // Data de criação
+  const dateEl = document.getElementById('details-cand-created-at');
+  if (dateEl) {
+    dateEl.textContent = c.createdAt ? new Date(c.createdAt).toLocaleString('pt-BR') : '--';
+  }
+
+  // Ações do Juiz (se autenticado)
+  const judgeActionsEl = document.getElementById('details-cand-judge-actions');
+  if (judgeActionsEl) {
+    if (currentUser) {
+      const judgeAuth = canUserJudgeCandidate(c, currentUser);
+      let html = '';
+
+      if (currentUser.role === 'tse') {
+        html += `
+          <button onclick="closeCandidacyDetailsModal(); openTseEditCandidateModal('${c.id}');" class="px-4 py-2.5 rounded-xl bg-purple-600/30 hover:bg-purple-600/40 text-purple-200 border border-purple-500/50 active:scale-98 font-bold text-xs flex items-center gap-1.5 transition">
+            <i data-lucide="edit-3" class="w-4 h-4 text-purple-300"></i> Retificar Cadastro (TSE)
+          </button>
+        `;
+      }
+
+      if (judgeAuth.allowed) {
+        html += `
+          <button onclick="closeCandidacyDetailsModal(); openJudgmentModal('${c.id}');" class="px-4 py-2.5 rounded-xl bg-brand-gold text-slate-950 hover:bg-yellow-400 active:scale-98 font-extrabold text-xs flex items-center gap-1.5 shadow-glow-gold transition">
+            <i data-lucide="gavel" class="w-4 h-4"></i> Julgar / Apreciar
+          </button>
+        `;
+      } else {
+        html += `
+          <button onclick="closeCandidacyDetailsModal(); openJudgmentModal('${c.id}');" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs flex items-center gap-1.5 transition" title="${judgeAuth.reason}">
+            <i data-lucide="scale" class="w-4 h-4 text-brand-electric"></i> Ver Processo (${compInfo.courtName})
+          </button>
+        `;
+      }
+
+      judgeActionsEl.innerHTML = html;
+    } else {
+      judgeActionsEl.innerHTML = '';
+    }
+  }
+
+  modal.classList.remove('hidden');
+  initIcons();
+}
+
+function closeCandidacyDetailsModal() {
+  const modal = document.getElementById('candidacy-details-modal');
+  if (modal) {
+    modal.classList.add('hidden');
+  }
+  selectedCandForDetails = null;
+}
+
+window.viewCandidacyDetails = viewCandidacyDetails;
+window.closeCandidacyDetailsModal = closeCandidacyDetailsModal;
 
 // ========================================================
 // CATÁLOGO DE PARTIDOS POLÍTICOS (43 LEGENDAS)
@@ -1913,29 +2568,25 @@ function handleLoginSubmit(e) {
 
   let matched = null;
 
-  // 1. Verificação Direta Master: Se informou a Senha Mestra do TSE (ARTHUR@1971 ou cadastrada)
-  // Permite acesso imediato à Presidência do TSE / Painel Master
   const tseAcc = activeCourtCredentials.find(c => c.id === 'tse' || c.role === 'tse') || DEFAULT_COURT_CREDENTIALS[0];
   const realTsePass = tseAcc ? decryptSecret(tseAcc.encPass || tseAcc.pass) : 'ARTHUR@1971';
   const isMasterPassword = (passInput === realTsePass || normPass === normalizeCredString(realTsePass) || passInput === 'ARTHUR@1971' || normPass === 'arthur@1971');
 
-  if (isMasterPassword) {
-    // Se o login digitado for o TSE, apelido ou em branco ou qualquer termo admin/master/tse
-    matched = tseAcc;
-  }
-
-  // 2. Se não foi reconhecido pela senha mestra e há tribunal selecionado no dropdown
-  if (!matched && selectedCourtId && selectedCourtId !== 'manual') {
+  // 1. Se o usuário selecionou expressamente um Tribunal no seletor (dropdown):
+  // Respeita estritamente o tribunal selecionado!
+  if (selectedCourtId && selectedCourtId !== 'manual') {
     const candidate = activeCourtCredentials.find(c => c.id === selectedCourtId);
     if (candidate) {
       const realPass = decryptSecret(candidate.encPass || candidate.pass);
-      if (passInput === realPass || normPass === normalizeCredString(realPass)) {
+      const isCourtPass = (passInput === realPass || normPass === normalizeCredString(realPass));
+      // A senha do próprio tribunal OU a senha mestra autorizam o acesso àquele tribunal específico
+      if (isCourtPass || isMasterPassword) {
         matched = candidate;
       }
     }
   }
 
-  // 3. Busca por identificador, login institucional, apelidos (aliases) ou ID
+  // 2. Se não selecionou um tribunal no dropdown (modo manual ou seletor vazio), busca pelo login informado:
   if (!matched && loginInput) {
     matched = activeCourtCredentials.find(acc => {
       const accId = acc.id || '';
@@ -1953,8 +2604,15 @@ function handleLoginSubmit(e) {
       const isPassExact = realPass === passInput;
       const isPassNorm = normalizeCredString(realPass) === normPass;
 
-      return isPassExact || isPassNorm;
+      return isPassExact || isPassNorm || isMasterPassword;
     });
+  }
+
+  // 3. Se ainda não casou, e informou a Senha Mestra sem login ou com login do TSE:
+  if (!matched && isMasterPassword) {
+    if (!loginInput || normLogin === 'tse' || normLogin === 'admin' || normLogin === 'master') {
+      matched = tseAcc;
+    }
   }
 
   // 4. Fallback: Se não preencheu o login mas a senha bate com algum tribunal
@@ -3369,14 +4027,105 @@ function renderAdminCandidacies() {
     return true;
   });
 
+  const mobileListEl = document.getElementById('admin-candidacies-mobile-list');
+
   if (filtered.length === 0) {
     tbody.innerHTML = '';
+    if (mobileListEl) {
+      mobileListEl.innerHTML = '<div class="p-8 text-center text-slate-500 text-xs">Nenhuma candidatura localizada sob sua jurisdição com os filtros atuais.</div>';
+    }
     emptyEl.classList.remove('hidden');
     return;
   }
   emptyEl.classList.add('hidden');
 
-  tbody.innerHTML = filtered.map(c => `
+  // Renderiza cards para celular na vertical
+  if (mobileListEl) {
+    mobileListEl.innerHTML = filtered.map(c => {
+      const compInfo = getCompetentCourtInfo(c);
+      const judgeAuth = canUserJudgeCandidate(c, currentUser);
+
+      return `
+      <div class="p-4 rounded-2xl bg-brand-deep/85 border ${c.status === 'pendente' ? 'border-amber-500/50 shadow-md ring-1 ring-amber-500/20' : 'border-brand-border/70'} space-y-3">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex items-center gap-3">
+            <img src="${c.photo}" alt="${c.ballotName}" class="w-12 h-14 rounded-xl object-cover bg-brand-navy border border-brand-border shrink-0 shadow-md">
+            <div>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="font-bold text-white text-sm leading-snug">${c.ballotName}</span>
+                ${c.status === 'pendente' ? '<span class="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-amber-400/20 text-amber-300 border border-amber-400/40 animate-pulse">NOVO</span>' : ''}
+              </div>
+              <span class="text-xs text-slate-300 block">${c.fullName}</span>
+              <span class="text-[10px] text-brand-electric font-mono block mt-0.5">Prot: ${c.protocol || 'N/D'}</span>
+            </div>
+          </div>
+          <span class="px-2 py-1 rounded-full text-[10px] font-bold uppercase shrink-0 ${
+            c.status === 'deferida' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
+            c.status === 'indeferida' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
+            c.status === 'excluida' ? 'bg-slate-700 text-slate-300' :
+            'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+          }">
+            ${c.status}
+          </span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 text-xs bg-brand-navy/70 p-2.5 rounded-xl border border-brand-border/50">
+          <div>
+            <span class="text-[10px] uppercase text-slate-400 block font-semibold">Cargo & Circunscrição</span>
+            <span class="font-bold text-brand-electric block text-[11px]">${c.office}</span>
+            <span class="text-[10px] text-slate-300">${c.cityId && c.cityId !== 'ALL' ? (getCityDisplayName(c.stateId, c.cityId) + ' - ' + getStateDisplayName(c.stateId)) : getStateDisplayName(c.stateId)}</span>
+          </div>
+          <div class="text-right">
+            <span class="text-[10px] uppercase text-slate-400 block font-semibold">Partido / Número</span>
+            <span class="font-bold block text-[11px]" style="color: ${c.partyColor || '#fff'}">${c.partyAcronym}</span>
+            <span class="font-mono font-black text-brand-gold text-sm">${c.number}</span>
+          </div>
+        </div>
+
+        <!-- Jurisdição Originária de Competência -->
+        <div class="text-[10px] text-slate-400 flex items-center justify-between border-t border-brand-border/40 pt-2 px-1">
+          <span class="flex items-center gap-1 truncate">
+            <i data-lucide="scale" class="w-3 h-3 text-brand-electric shrink-0"></i>
+            <span>Foro: <strong class="text-slate-200">${compInfo.courtName}</strong></span>
+          </span>
+          <span class="font-mono text-[9px] px-1.5 py-0.5 rounded ${judgeAuth.allowed ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-400 border border-slate-700'} shrink-0">
+            ${judgeAuth.allowed ? 'Foro Local' : 'Outra Instância'}
+          </span>
+        </div>
+
+        <div class="flex items-center gap-2 pt-1">
+          ${currentUser && currentUser.role === 'tse' ? `
+            <button onclick="openTseEditCandidateModal('${c.id}')" class="px-3 py-2.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 text-xs font-bold flex items-center justify-center gap-1 transition" title="Retificar Cadastro (Exclusivo TSE)">
+              <i data-lucide="edit-3" class="w-4 h-4"></i>
+              <span>Editar</span>
+            </button>
+          ` : ''}
+          ${judgeAuth.allowed ? `
+            <button onclick="openJudgmentModal('${c.id}')" class="flex-1 py-2.5 rounded-xl ${c.status === 'pendente' ? 'bg-gradient-to-r from-brand-gold to-yellow-500 text-slate-950 hover:bg-yellow-400 font-black shadow-glow-gold' : 'bg-brand-blue hover:bg-blue-500 text-white font-bold'} text-xs flex items-center justify-center gap-1.5 transition active:scale-98">
+              <i data-lucide="gavel" class="w-4 h-4"></i>
+              <span>${c.status === 'pendente' ? 'Julgar Candidatura' : 'Reavaliar Julgamento'}</span>
+            </button>
+          ` : `
+            <button onclick="openJudgmentModal('${c.id}')" class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-98" title="${judgeAuth.reason}">
+              <i data-lucide="scale" class="w-4 h-4 text-brand-electric"></i>
+              <span>Ver Processo (${compInfo.courtName})</span>
+            </button>
+          `}
+          <button onclick="viewCandidacyDetails('${c.id}')" class="px-3 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold flex items-center justify-center gap-1 transition" title="Ver Detalhes">
+            <i data-lucide="eye" class="w-4 h-4"></i>
+          </button>
+        </div>
+      </div>
+    `;
+    }).join('');
+  }
+
+  // Renderiza tabela para telas Desktop
+  tbody.innerHTML = filtered.map(c => {
+    const compInfo = getCompetentCourtInfo(c);
+    const judgeAuth = canUserJudgeCandidate(c, currentUser);
+
+    return `
     <tr class="hover:bg-white/5 transition ${c.status === 'pendente' ? 'bg-amber-500/5' : ''}">
       <td class="px-6 py-4">
         <div class="flex items-center gap-3">
@@ -3393,7 +4142,8 @@ function renderAdminCandidacies() {
       </td>
       <td class="px-6 py-4">
         <span class="text-xs font-semibold text-brand-electric block">${c.office}</span>
-        <span class="text-[11px] text-slate-400">${c.cityId && c.cityId !== 'ALL' ? (getCityDisplayName(c.stateId, c.cityId) + ' (' + getStateDisplayName(c.stateId) + ')') : getStateDisplayName(c.stateId)}</span>
+        <span class="text-[11px] text-slate-400 block">${c.cityId && c.cityId !== 'ALL' ? (getCityDisplayName(c.stateId, c.cityId) + ' (' + getStateDisplayName(c.stateId) + ')') : getStateDisplayName(c.stateId)}</span>
+        <span class="text-[10px] text-slate-400 flex items-center gap-1 mt-1"><i data-lucide="scale" class="w-3 h-3 text-brand-electric"></i> ${compInfo.courtName}</span>
       </td>
       <td class="px-6 py-4">
         <span class="text-xs font-bold text-white block" style="color: ${c.partyColor || '#fff'}">${c.partyAcronym}</span>
@@ -3411,12 +4161,30 @@ function renderAdminCandidacies() {
         </span>
       </td>
       <td class="px-6 py-4 text-right">
-        <button onclick="openJudgmentModal('${c.id}')" class="px-3.5 py-1.5 rounded-xl ${c.status === 'pendente' ? 'bg-brand-gold text-slate-950 hover:bg-yellow-400 font-extrabold' : 'bg-brand-blue hover:bg-blue-500 text-white font-bold'} text-xs transition shadow-sm">
-          ${c.status === 'pendente' ? 'Julgar Agora' : 'Reavaliar'}
-        </button>
+        <div class="flex items-center justify-end gap-2">
+          ${currentUser && currentUser.role === 'tse' ? `
+            <button onclick="openTseEditCandidateModal('${c.id}')" class="px-3 py-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 font-bold text-xs transition flex items-center gap-1" title="Retificar Cadastro (Exclusivo TSE)">
+              <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Editar
+            </button>
+          ` : ''}
+          ${judgeAuth.allowed ? `
+            <button onclick="openJudgmentModal('${c.id}')" class="px-3.5 py-1.5 rounded-xl ${c.status === 'pendente' ? 'bg-brand-gold text-slate-950 hover:bg-yellow-400 font-extrabold shadow-glow-gold' : 'bg-brand-blue hover:bg-blue-500 text-white font-bold'} text-xs transition shadow-sm flex items-center gap-1.5">
+              <i data-lucide="gavel" class="w-3.5 h-3.5"></i>
+              <span>${c.status === 'pendente' ? 'Julgar Agora' : 'Reavaliar'}</span>
+            </button>
+          ` : `
+            <button onclick="openJudgmentModal('${c.id}')" class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-semibold text-xs transition flex items-center gap-1.5" title="${judgeAuth.reason}">
+              <i data-lucide="scale" class="w-3.5 h-3.5 text-brand-electric"></i>
+              <span>Ver Processo</span>
+            </button>
+          `}
+        </div>
       </td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
+
+  initIcons();
 }
 
 function openJudgmentModal(candId) {
@@ -3432,11 +4200,92 @@ function openJudgmentModal(candId) {
   document.getElementById('modal-cand-badge').textContent = c.protocol;
 
   const tiktokEl = document.getElementById('modal-cand-tiktok');
-  tiktokEl.textContent = c.tiktok;
-  tiktokEl.href = c.tiktok.startsWith('http') ? c.tiktok : 'https://tiktok.com/' + c.tiktok;
+  tiktokEl.textContent = c.tiktok || 'Não informado';
+  tiktokEl.href = (c.tiktok && c.tiktok.startsWith('http')) ? c.tiktok : (c.tiktok ? 'https://tiktok.com/' + c.tiktok.replace(/^@/, '') : '#');
 
   document.getElementById('modal-cand-vice').textContent = c.viceName || 'Não aplicável';
   document.getElementById('judgment-reason-text').value = c.rejectionReason || '';
+
+  // Verificação Jurisdicional Estrita
+  const compInfo = getCompetentCourtInfo(c);
+  const judgeAuth = canUserJudgeCandidate(c, currentUser);
+
+  const courtNameEl = document.getElementById('judgment-competent-court-name');
+  if (courtNameEl) {
+    courtNameEl.textContent = `${compInfo.courtName} • ${compInfo.jurisdictionDesc}`;
+  }
+
+  const badgeEl = document.getElementById('judgment-jurisdiction-badge');
+  const alertBox = document.getElementById('judgment-jurisdiction-alert');
+  const blockedNotice = document.getElementById('judgment-blocked-notice');
+  const blockedReason = document.getElementById('judgment-blocked-reason');
+
+  if (judgeAuth.allowed) {
+    if (badgeEl) {
+      badgeEl.className = 'px-3 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1 self-start sm:self-center bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+      badgeEl.innerHTML = '<i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Foro Competente Autorizado';
+    }
+    if (alertBox) {
+      alertBox.className = 'p-3.5 rounded-2xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-emerald-950/20 border-emerald-500/30';
+    }
+    if (blockedNotice) blockedNotice.classList.add('hidden');
+  } else {
+    if (badgeEl) {
+      badgeEl.className = 'px-3 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1 self-start sm:self-center bg-red-500/20 text-red-300 border border-red-500/40';
+      badgeEl.innerHTML = '<i data-lucide="shield-alert" class="w-3.5 h-3.5"></i> Foro Incompetente';
+    }
+    if (alertBox) {
+      alertBox.className = 'p-3.5 rounded-2xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-red-950/20 border-red-500/30';
+    }
+    if (blockedNotice && blockedReason) {
+      blockedReason.textContent = judgeAuth.reason;
+      blockedNotice.classList.remove('hidden');
+    }
+  }
+
+  // Habilita / Desabilita botões de ação judicial conforme competência
+  const deferBtn = document.getElementById('judgment-defer-btn');
+  const indeferBtn = document.getElementById('judgment-indefer-btn');
+  const excludeBtn = document.getElementById('judgment-exclude-btn');
+  const reopenBtn = document.getElementById('judgment-reopen-btn');
+
+  if (deferBtn) {
+    deferBtn.disabled = !judgeAuth.allowed;
+    deferBtn.classList.toggle('opacity-40', !judgeAuth.allowed);
+    deferBtn.classList.toggle('cursor-not-allowed', !judgeAuth.allowed);
+    deferBtn.title = judgeAuth.allowed ? 'Homologar candidatura' : judgeAuth.reason;
+  }
+  if (indeferBtn) {
+    indeferBtn.disabled = !judgeAuth.allowed;
+    indeferBtn.classList.toggle('opacity-40', !judgeAuth.allowed);
+    indeferBtn.classList.toggle('cursor-not-allowed', !judgeAuth.allowed);
+    indeferBtn.title = judgeAuth.allowed ? 'Indeferir candidatura' : judgeAuth.reason;
+  }
+  if (excludeBtn) {
+    const canExclude = judgeAuth.allowed || currentUser?.role === 'tse';
+    excludeBtn.disabled = !canExclude;
+    excludeBtn.classList.toggle('opacity-40', !canExclude);
+    excludeBtn.classList.toggle('cursor-not-allowed', !canExclude);
+  }
+
+  // Botão de Devolver para PENDENTE (Permite corrigir homologações indevidas)
+  if (reopenBtn) {
+    const canReopen = (c.status === 'deferida' || c.status === 'indeferida') && (judgeAuth.allowed || currentUser?.role === 'tse');
+    if (canReopen) {
+      reopenBtn.classList.remove('hidden');
+    } else {
+      reopenBtn.classList.add('hidden');
+    }
+  }
+
+  const tseEditBtn = document.getElementById('judgment-tse-edit-btn');
+  if (tseEditBtn) {
+    if (currentUser && currentUser.role === 'tse') {
+      tseEditBtn.classList.remove('hidden');
+    } else {
+      tseEditBtn.classList.add('hidden');
+    }
+  }
 
   document.getElementById('judgment-modal').classList.remove('hidden');
   initIcons();
@@ -3456,13 +4305,68 @@ function viewCandidatePdf() {
 }
 
 async function executeJudgment(newStatus) {
-  if (!selectedCandForJudgment || !currentUser) return;
+  if (!selectedCandForJudgment || !currentUser) {
+    showToast('error', 'Sessão judicial não identificada.');
+    return;
+  }
 
   const c = selectedCandForJudgment;
   const reason = document.getElementById('judgment-reason-text').value.trim();
+  const compInfo = getCompetentCourtInfo(c);
+  const judgeAuth = canUserJudgeCandidate(c, currentUser);
+
+  // 1. REABERTURA (DEVOLVER PARA PENDENTE):
+  if (newStatus === 'pendente') {
+    if (!judgeAuth.allowed && currentUser.role !== 'tse') {
+      showToast('error', 'Apenas o Tribunal competente ou a Presidência do TSE podem devolver esta candidatura para análise.');
+      return;
+    }
+
+    try {
+      await db.ref('candidates/' + c.id).update({
+        status: 'pendente',
+        rejectionReason: null,
+        judgedBy: null,
+        judgedAt: null,
+        competentCourt: compInfo.courtName,
+        reopenedBy: currentUser.name,
+        reopenedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+
+      await db.ref('auditLogs').push({
+        candidateId: c.id || '',
+        candidateProtocol: c.protocol || '',
+        ballotName: c.ballotName || '',
+        office: c.office || '',
+        number: c.number || '',
+        previousStatus: c.status || 'deferida',
+        newStatus: 'pendente',
+        reason: reason || 'Processo reaberto e devolvido para a fila de julgamento do órgão competente',
+        adminUser: currentUser.login || currentUser.id || 'tse',
+        adminName: currentUser.name || 'Magistrado',
+        adminRole: currentUser.role || 'tse',
+        timestamp: new Date().toISOString()
+      });
+
+      showToast('success', `Candidatura devolvida para PENDENTE. O ${compInfo.courtName} fará a homologação.`);
+      closeJudgmentModal();
+      return;
+    } catch (err) {
+      console.error('Erro ao devolver candidatura:', err);
+      showToast('error', 'Erro ao devolver processo para status pendente.');
+      return;
+    }
+  }
+
+  // 2. JULGAMENTO REGULAR (DEFERIR, INDEFERIR, EXCLUIR):
+  if (!judgeAuth.allowed) {
+    showToast('error', judgeAuth.reason);
+    return;
+  }
 
   if ((newStatus === 'indeferida' || newStatus === 'excluida') && !reason) {
-    showToast('error', 'É obrigatório inserir a fundamentação do despacho.');
+    showToast('error', 'É obrigatório inserir a fundamentação jurídica do despacho.');
     return;
   }
 
@@ -3471,6 +4375,7 @@ async function executeJudgment(newStatus) {
       status: newStatus,
       rejectionReason: reason || null,
       judgedBy: currentUser.name,
+      competentCourt: compInfo.courtName,
       judgedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -3492,19 +4397,306 @@ async function executeJudgment(newStatus) {
       number: c.number || '',
       previousStatus: c.status || 'pendente',
       newStatus: newStatus,
-      reason: reason || 'Julgamento regular deferido',
-      adminUser: (currentUser && currentUser.login) ? currentUser.login : 'tse',
-      adminName: (currentUser && currentUser.name) ? currentUser.name : 'Magistrado',
-      adminRole: (currentUser && currentUser.role) ? currentUser.role : 'tse',
+      reason: reason || `Homologação deferida pelo órgão judicial competente: ${compInfo.courtName}`,
+      adminUser: currentUser.login || currentUser.id || 'tse',
+      adminName: currentUser.name || 'Magistrado',
+      adminRole: currentUser.role || 'tse',
+      competentCourt: compInfo.courtName,
       timestamp: new Date().toISOString()
     });
 
-    showToast('success', `Julgamento registrado com sucesso: ${newStatus.toUpperCase()}`);
+    showToast('success', `Julgamento registrado com sucesso: ${newStatus.toUpperCase()} por ${currentUser.name}`);
     closeJudgmentModal();
 
   } catch (error) {
     console.error("Erro ao julgar:", error);
     showToast('error', 'Falha ao gravar julgamento judicial.');
+  }
+}
+
+// ========================================================
+// RETIFICAÇÃO DE CANDIDATURAS - EXCLUSIVO PRESIDÊNCIA DO TSE
+// ========================================================
+let selectedCandForTseEdit = null;
+let tseEditPhotoBase64 = '';
+
+function openTseEditFromJudgment() {
+  if (!selectedCandForJudgment) return;
+  const candId = selectedCandForJudgment.id;
+  closeJudgmentModal();
+  openTseEditCandidateModal(candId);
+}
+
+function openTseEditCandidateModal(candId) {
+  if (!currentUser || currentUser.role !== 'tse') {
+    showToast('error', 'Apenas a Presidência do TSE possui prerrogativa legal para retificar cadastros eleitorais.');
+    return;
+  }
+
+  const cand = candidaciesList.find(c => String(c.id) === String(candId));
+  if (!cand) {
+    showToast('error', 'Candidatura não localizada no registro oficial.');
+    return;
+  }
+
+  selectedCandForTseEdit = cand;
+  tseEditPhotoBase64 = cand.photo || '';
+
+  const modal = document.getElementById('tse-edit-candidate-modal');
+  if (!modal) return;
+
+  // Preenche dados identificadores
+  document.getElementById('tse-edit-cand-id').value = cand.id;
+  document.getElementById('tse-edit-protocol-badge').textContent = cand.protocol || 'SEM PROTOCOLO';
+  
+  // Foto
+  const photoPreview = document.getElementById('tse-edit-photo-preview');
+  if (photoPreview) {
+    photoPreview.src = cand.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&auto=format&fit=crop&q=80';
+  }
+
+  // Nomes
+  document.getElementById('tse-edit-ballot-name').value = cand.ballotName || '';
+  document.getElementById('tse-edit-full-name').value = cand.fullName || '';
+
+  // Popula Partidos
+  const partySelect = document.getElementById('tse-edit-party');
+  if (partySelect) {
+    partySelect.innerHTML = partiesList.map(p => `
+      <option value="${p.id}" ${String(p.id) === String(cand.partyId) ? 'selected' : ''}>
+        [${p.acronym}] ${p.name} (Nº ${p.number})
+      </option>
+    `).join('');
+  }
+
+  // Popula Estados
+  const stateSelect = document.getElementById('tse-edit-state');
+  if (stateSelect) {
+    stateSelect.innerHTML = '<option value="">Selecione o Estado...</option>' +
+      Object.entries(BROOKASIL_GEO).map(([key, item]) => `
+        <option value="${key}" ${String(key).toLowerCase() === String(cand.stateId || cand.state || '').toLowerCase() ? 'selected' : ''}>
+          ${item.name}
+        </option>
+      `).join('');
+  }
+
+  // Popula Cidades do Estado selecionado
+  const citySelect = document.getElementById('tse-edit-city');
+  const currentStateKey = stateSelect ? stateSelect.value : '';
+  if (citySelect) {
+    if (currentStateKey && BROOKASIL_GEO[currentStateKey]) {
+      citySelect.innerHTML = '<option value="">Não aplicável ou Selecione</option>' +
+        Object.entries(BROOKASIL_GEO[currentStateKey].cities).map(([cKey, cName]) => `
+          <option value="${cKey}" ${String(cKey).toLowerCase() === String(cand.cityId || cand.city || '').toLowerCase() ? 'selected' : ''}>
+            ${cName}
+          </option>
+        `).join('');
+    } else {
+      citySelect.innerHTML = '<option value="">Não aplicável ou Selecione</option>';
+    }
+  }
+
+  // Cargo e visibilidades
+  const officeSelect = document.getElementById('tse-edit-office');
+  if (officeSelect) {
+    officeSelect.value = cand.office || 'Presidente';
+  }
+  onTseEditOfficeChange();
+
+  // Número
+  document.getElementById('tse-edit-number').value = cand.number !== undefined ? cand.number : '';
+
+  // Vice, Coligação, TikTok, Nascimento e Status
+  document.getElementById('tse-edit-vice').value = cand.viceName || '';
+  document.getElementById('tse-edit-coalition').value = cand.coalition || '';
+  document.getElementById('tse-edit-tiktok').value = cand.tiktok || '';
+  document.getElementById('tse-edit-birth-date').value = cand.birthDate || '';
+  document.getElementById('tse-edit-status').value = cand.status || 'pendente';
+  document.getElementById('tse-edit-proposals').value = cand.proposalsText || '';
+  document.getElementById('tse-edit-audit-reason').value = '';
+
+  modal.classList.remove('hidden');
+  initIcons();
+}
+
+function closeTseEditCandidateModal() {
+  const modal = document.getElementById('tse-edit-candidate-modal');
+  if (modal) modal.classList.add('hidden');
+  selectedCandForTseEdit = null;
+  tseEditPhotoBase64 = '';
+}
+
+function onTseEditStateChange() {
+  const stateSelect = document.getElementById('tse-edit-state');
+  const citySelect = document.getElementById('tse-edit-city');
+  if (!stateSelect || !citySelect) return;
+
+  const stateKey = stateSelect.value;
+  if (stateKey && BROOKASIL_GEO[stateKey]) {
+    citySelect.innerHTML = '<option value="">Selecione a cidade...</option>' +
+      Object.entries(BROOKASIL_GEO[stateKey].cities).map(([key, name]) => `<option value="${key}">${name}</option>`).join('');
+  } else {
+    citySelect.innerHTML = '<option value="">Selecione o estado primeiro...</option>';
+  }
+}
+
+function onTseEditOfficeChange() {
+  // Mantém os campos acessíveis no formulário do modal
+}
+
+function handleTseEditPhotoFile(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  if (file.size > 8 * 1024 * 1024) {
+    showToast('error', 'A foto deve ter no máximo 8MB.');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    rawUploadedPhotoDataUrl = evt.target.result;
+    openPhotoCropperModal(rawUploadedPhotoDataUrl, 'tse_edit');
+  };
+  reader.readAsDataURL(file);
+}
+
+function openPhotoCropperForTseEdit() {
+  const currentPhoto = tseEditPhotoBase64 || selectedCandForTseEdit?.photo;
+  if (!currentPhoto) {
+    showToast('error', 'Nenhuma foto carregada para ajustar.');
+    return;
+  }
+  openPhotoCropperModal(currentPhoto, 'tse_edit');
+}
+
+async function handleTseEditCandidateSubmit(e) {
+  e.preventDefault();
+
+  if (!currentUser || currentUser.role !== 'tse') {
+    showToast('error', 'Acesso negado: Apenas a Presidência do TSE pode salvar retificações.');
+    return;
+  }
+
+  if (!selectedCandForTseEdit) {
+    showToast('error', 'Nenhum candidato selecionado para retificação.');
+    return;
+  }
+
+  const candId = selectedCandForTseEdit.id;
+  const ballotName = document.getElementById('tse-edit-ballot-name').value.trim();
+  const fullName = document.getElementById('tse-edit-full-name').value.trim();
+  const office = document.getElementById('tse-edit-office').value;
+  const partyId = document.getElementById('tse-edit-party').value;
+  const numberVal = parseInt(document.getElementById('tse-edit-number').value, 10);
+  const stateId = document.getElementById('tse-edit-state').value || '';
+  const cityId = document.getElementById('tse-edit-city').value || '';
+  const viceName = document.getElementById('tse-edit-vice').value.trim();
+  const coalition = document.getElementById('tse-edit-coalition').value.trim();
+  const tiktok = document.getElementById('tse-edit-tiktok').value.trim();
+  const birthDate = document.getElementById('tse-edit-birth-date').value;
+  const status = document.getElementById('tse-edit-status').value;
+  const proposalsText = document.getElementById('tse-edit-proposals').value.trim();
+  const auditReason = document.getElementById('tse-edit-audit-reason').value.trim();
+
+  if (!ballotName || !fullName) {
+    showToast('error', 'Nome de urna e nome completo são obrigatórios.');
+    return;
+  }
+
+  if (isNaN(numberVal) || numberVal <= 0) {
+    showToast('error', 'Informe um número eleitoral válido.');
+    return;
+  }
+
+  if (!auditReason) {
+    showToast('error', 'A fundamentação da retificação do TSE é obrigatória para fins de auditoria eleitoral.');
+    return;
+  }
+
+  const selectedParty = partiesList.find(p => String(p.id) === String(partyId));
+  const newPhoto = tseEditPhotoBase64 || selectedCandForTseEdit.photo;
+
+  // Prepara o objeto retificado
+  const updatedCandidate = {
+    ...selectedCandForTseEdit,
+    ballotName,
+    fullName,
+    office,
+    partyId,
+    partyAcronym: selectedParty?.acronym || selectedCandForTseEdit.partyAcronym,
+    partyName: selectedParty?.name || selectedCandForTseEdit.partyName,
+    partyColor: selectedParty?.color || selectedCandForTseEdit.partyColor,
+    partyNumber: selectedParty?.number || selectedCandForTseEdit.partyNumber,
+    number: numberVal,
+    stateId: stateId || selectedCandForTseEdit.stateId || 'brookhaven',
+    cityId: cityId || selectedCandForTseEdit.cityId || '',
+    viceName: viceName || null,
+    coalition: coalition || null,
+    tiktok: tiktok || selectedCandForTseEdit.tiktok || '',
+    birthDate: birthDate || selectedCandForTseEdit.birthDate || '',
+    status: status,
+    proposalsText: proposalsText,
+    photo: newPhoto,
+    lastRectifiedAt: new Date().toISOString(),
+    lastRectifiedBy: currentUser.name || 'Presidência do TSE',
+    updatedAt: new Date().toISOString()
+  };
+
+  try {
+    // 1. Atualiza no Firebase Realtime Database
+    if (db) {
+      await db.ref('candidates/' + candId).update(updatedCandidate);
+
+      // Se mudou o número e o anterior era diferente, atualiza registro de número
+      if (selectedCandForTseEdit.number !== numberVal) {
+        if (selectedCandForTseEdit.number) {
+          await db.ref(`numberRegistry/${selectedCandForTseEdit.electionId || 'brk2026'}/${selectedCandForTseEdit.office}/${selectedCandForTseEdit.number}`).remove().catch(() => {});
+        }
+        await db.ref(`numberRegistry/${selectedCandForTseEdit.electionId || 'brk2026'}/${office}/${numberVal}`).set({
+          candidateId: candId,
+          ballotName: ballotName,
+          partyAcronym: selectedParty?.acronym || '',
+          reservedAt: new Date().toISOString(),
+          reservedByTse: true
+        }).catch(() => {});
+      }
+
+      // 2. Grava log imutável de auditoria no TSE
+      await db.ref('auditLogs').push({
+        action: 'tse_candidate_rectification',
+        candidateId: candId,
+        candidateProtocol: selectedCandForTseEdit.protocol || '',
+        ballotName: ballotName,
+        office: office,
+        number: numberVal,
+        party: selectedParty?.acronym || '',
+        reason: auditReason,
+        adminUser: currentUser.login || 'tse',
+        adminName: currentUser.name || 'Presidência do TSE',
+        adminRole: 'tse',
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // 3. Atualiza localmente no array candidaciesList
+    const idx = candidaciesList.findIndex(c => String(c.id) === String(candId));
+    if (idx !== -1) {
+      candidaciesList[idx] = updatedCandidate;
+    }
+
+    showToast('success', `Candidatura de "${ballotName}" retificada e publicada com sucesso pelo TSE!`);
+    closeTseEditCandidateModal();
+
+    // 4. Atualiza todas as visualizações em tempo real
+    renderConfirmedCandidates();
+    renderAdminCandidacies();
+    updateGlobalStats();
+    updateAdminCharts();
+
+  } catch (err) {
+    console.error('Erro ao salvar retificação no TSE:', err);
+    showToast('error', 'Falha ao gravar retificação da candidatura.');
   }
 }
 
@@ -3518,17 +4710,32 @@ function renderAuditLogs(logs) {
   }
 
   container.innerHTML = logs.map(l => {
-    const isParty = !!l.action;
-    const badgeText = l.action ? l.action.replace('PARTY_', 'PARTIDO: ') : (l.newStatus ? l.newStatus.toUpperCase() : 'AÇÃO');
-    const badgeClass = (l.action === 'PARTY_DELETE' || l.newStatus === 'indeferida' || l.newStatus === 'excluida')
-      ? 'bg-red-500/20 text-red-400 border border-red-500/30'
-      : (l.action === 'PARTY_CREATE' || l.newStatus === 'deferida')
-      ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-      : 'bg-brand-blue/30 text-brand-electric border border-brand-electric/30';
+    const isTseRect = l.action === 'tse_candidate_rectification' || l.action === 'TSE_RETIFICACAO';
+    const isParty = !!l.action && !isTseRect;
+    
+    let badgeText = 'AÇÃO';
+    let badgeClass = 'bg-brand-blue/30 text-brand-electric border border-brand-electric/30';
+    let descText = '';
 
-    const descText = isParty
-      ? `Legenda ${l.partyAcronym || ''} (Nº ${l.partyNumber !== undefined ? l.partyNumber : 'S/N'}) • ${l.reason || 'Atualização cadastral'}`
-      : `${l.ballotName || 'Candidatura'} (${l.office || ''} - ${l.number || ''}) • Motivo: ${l.reason || 'Despacho judicial regular'}`;
+    if (isTseRect) {
+      badgeText = 'RETIFICAÇÃO TSE';
+      badgeClass = 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm';
+      descText = `Candidatura ${l.ballotName || ''} (${l.office || ''} - ${l.number || ''}) • Justificativa: ${l.reason || 'Retificação oficial TSE'}`;
+    } else if (isParty) {
+      badgeText = l.action.replace('PARTY_', 'PARTIDO: ');
+      badgeClass = (l.action === 'PARTY_DELETE') 
+        ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+        : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+      descText = `Legenda ${l.partyAcronym || ''} (Nº ${l.partyNumber !== undefined ? l.partyNumber : 'S/N'}) • ${l.reason || 'Atualização cadastral'}`;
+    } else {
+      badgeText = l.newStatus ? l.newStatus.toUpperCase() : 'JULGAMENTO';
+      badgeClass = (l.newStatus === 'indeferida' || l.newStatus === 'excluida')
+        ? 'bg-red-500/20 text-red-400 border border-red-500/30'
+        : (l.newStatus === 'deferida')
+        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+        : 'bg-amber-500/20 text-amber-300 border border-amber-500/30';
+      descText = `${l.ballotName || 'Candidatura'} (${l.office || ''} - ${l.number || ''}) • Motivo: ${l.reason || 'Despacho judicial regular'}`;
+    }
 
     return `
       <div class="p-3.5 rounded-xl bg-brand-navy/60 border border-brand-border flex items-center justify-between gap-4 text-xs">
@@ -3665,3 +4872,22 @@ function showToast(type, message) {
     setTimeout(() => toast.remove(), 300);
   }, 4000);
 }
+
+// Exportações globais de funções interativas para a interface HTML
+window.openPhotoCropperModal = openPhotoCropperModal;
+window.closePhotoCropperModal = closePhotoCropperModal;
+window.setCropperZoom = setCropperZoom;
+window.stepCropperZoom = stepCropperZoom;
+window.centerCropper = centerCropper;
+window.rotateCropper = rotateCropper;
+window.resetCropper = resetCropper;
+window.applyCroppedPhoto = applyCroppedPhoto;
+window.openTseEditCandidateModal = openTseEditCandidateModal;
+window.closeTseEditCandidateModal = closeTseEditCandidateModal;
+window.onTseEditStateChange = onTseEditStateChange;
+window.onTseEditOfficeChange = onTseEditOfficeChange;
+window.handleTseEditPhotoFile = handleTseEditPhotoFile;
+window.openPhotoCropperForTseEdit = openPhotoCropperForTseEdit;
+window.handleTseEditCandidateSubmit = handleTseEditCandidateSubmit;
+window.openTseEditFromJudgment = openTseEditFromJudgment;
+

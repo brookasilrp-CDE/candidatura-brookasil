@@ -77,27 +77,65 @@
     }
     .animate-float { animation: float-slow 3s ease-in-out infinite; }
 
-    /* Glassmorphism */
+    @keyframes fadeInView {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Glassmorphism Refinado */
     .glass-panel {
-      background: rgba(15, 31, 66, 0.75);
-      backdrop-filter: blur(14px);
-      -webkit-backdrop-filter: blur(14px);
-      border: 1px solid rgba(56, 189, 248, 0.2);
+      background: rgba(15, 31, 66, 0.78);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(56, 189, 248, 0.18);
+    }
+    .glass-panel-gold {
+      background: rgba(22, 28, 48, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(251, 191, 36, 0.35);
+    }
+    .glass-bottom-nav {
+      background: rgba(10, 20, 44, 0.92);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.6), 0 0 20px rgba(37, 99, 235, 0.15);
     }
     .light .glass-panel {
-      background: rgba(255, 255, 255, 0.9);
+      background: rgba(255, 255, 255, 0.92);
       border: 1px solid rgba(37, 99, 235, 0.2);
     }
 
+    /* Otimizações de toque e scroll para celulares verticais */
+    html, body {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      scroll-behavior: smooth;
+    }
+    @media (max-width: 768px) {
+      /* Previne zoom agressivo automático no iPhone ao focar em inputs */
+      input, select, textarea {
+        font-size: 16px !important;
+      }
+    }
+
+    /* Utilitário para ocultar scrollbars mantendo scroll funcional */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
     /* Custom Scrollbar */
-    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar { width: 7px; height: 7px; }
     ::-webkit-scrollbar-track { background: #050c1e; }
     ::-webkit-scrollbar-thumb { background: #1e3568; border-radius: 4px; }
     ::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
 
-    /* Hide elements with class */
+    /* Visualização das Telas SPA com transição suave */
     .view-section { display: none; }
-    .view-section.active { display: block; }
+    .view-section.active {
+      display: block;
+      animation: fadeInView 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
   </style>
 </head>
 <body class="bg-brand-navy text-slate-100 font-sans min-h-screen flex flex-col transition-colors duration-300 selection:bg-brand-electric selection:text-brand-navy">
@@ -201,34 +239,102 @@
 
     </div>
 
-    <!-- Mobile Drawer Menu -->
-    <div id="mobile-menu" class="hidden lg:hidden border-t border-brand-border/60 bg-brand-deep/95 backdrop-blur-xl px-4 py-3 space-y-1">
-      <button onclick="navigateTo('home'); toggleMobileMenu();" class="w-full text-left px-3 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 flex items-center gap-2">
-        <i data-lucide="home" class="w-4 h-4"></i> Início
-      </button>
-      <button onclick="navigateTo('candidaturas'); toggleMobileMenu();" class="w-full text-left px-3 py-2.5 rounded-lg text-brand-gold hover:bg-white/5 flex items-center gap-2 font-semibold">
-        <i data-lucide="file-signature" class="w-4 h-4"></i> Registrar Candidatura
-      </button>
-      <button onclick="navigateTo('candidatos'); toggleMobileMenu();" class="w-full text-left px-3 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 flex items-center gap-2">
-        <i data-lucide="users" class="w-4 h-4"></i> Candidatos Confirmados
-      </button>
-      <button onclick="navigateTo('partidos'); toggleMobileMenu();" class="w-full text-left px-3 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 flex items-center gap-2">
-        <i data-lucide="flag" class="w-4 h-4"></i> Partidos Políticos (43)
-      </button>
-      <button onclick="navigateTo('eleicoes'); toggleMobileMenu();" class="w-full text-left px-3 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 flex items-center gap-2">
-        <i data-lucide="vote" class="w-4 h-4"></i> Eleições & Vagas
-      </button>
-      <button onclick="navigateTo('consultar'); toggleMobileMenu();" class="w-full text-left px-3 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 flex items-center gap-2">
-        <i data-lucide="search" class="w-4 h-4"></i> Consultar Número / Protocolo
-      </button>
-      <button onclick="navigateTo('informacoes'); toggleMobileMenu();" class="w-full text-left px-3 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/5 flex items-center gap-2">
-        <i data-lucide="info" class="w-4 h-4"></i> Guia Oficial
-      </button>
+    <!-- Mobile Drawer Menu Modal / Sheet -->
+    <div id="mobile-menu" class="hidden lg:hidden border-t border-brand-border/80 bg-brand-deep/98 backdrop-blur-2xl px-4 py-4 space-y-2 shadow-2xl transition-all">
+      <div class="flex items-center justify-between pb-3 border-b border-brand-border/60">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-brand-electric animate-ping"></span>
+          <span class="text-xs uppercase font-bold tracking-widest text-slate-300">Justiça Eleitoral • Menu</span>
+        </div>
+        <button onclick="toggleMobileMenu()" class="p-1.5 rounded-lg text-slate-400 hover:text-white bg-white/5 active:scale-95" title="Fechar Menu">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-1 gap-1.5 pt-1">
+        <button onclick="navigateTo('home'); toggleMobileMenu();" class="w-full text-left px-3.5 py-3 rounded-xl text-slate-200 hover:text-white bg-white/5 hover:bg-white/10 active:bg-white/15 flex items-center gap-3 transition">
+          <div class="w-8 h-8 rounded-lg bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
+            <i data-lucide="home" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <span class="font-bold text-sm block leading-tight">Início</span>
+            <span class="text-[11px] text-slate-400">Página principal e prazos</span>
+          </div>
+        </button>
+
+        <button onclick="navigateTo('candidaturas'); toggleMobileMenu();" class="w-full text-left px-3.5 py-3 rounded-xl text-brand-gold bg-brand-gold/10 hover:bg-brand-gold/20 active:bg-brand-gold/25 border border-brand-gold/30 flex items-center gap-3 transition">
+          <div class="w-8 h-8 rounded-lg bg-brand-gold/20 text-brand-gold flex items-center justify-center shrink-0">
+            <i data-lucide="file-signature" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <span class="font-bold text-sm block leading-tight">Registrar Candidatura</span>
+            <span class="text-[11px] text-amber-200/80">Inscrição oficial para pleito</span>
+          </div>
+        </button>
+
+        <button onclick="navigateTo('candidatos'); toggleMobileMenu();" class="w-full text-left px-3.5 py-3 rounded-xl text-slate-200 hover:text-white bg-white/5 hover:bg-white/10 active:bg-white/15 flex items-center gap-3 transition">
+          <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+            <i data-lucide="users" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <span class="font-bold text-sm block leading-tight">Candidatos Confirmados</span>
+            <span class="text-[11px] text-slate-400">Consulta com filtro por cidade</span>
+          </div>
+        </button>
+
+        <button onclick="navigateTo('partidos'); toggleMobileMenu();" class="w-full text-left px-3.5 py-3 rounded-xl text-slate-200 hover:text-white bg-white/5 hover:bg-white/10 active:bg-white/15 flex items-center gap-3 transition">
+          <div class="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
+            <i data-lucide="flag" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <span class="font-bold text-sm block leading-tight">Partidos Políticos (43)</span>
+            <span class="text-[11px] text-slate-400">Espectros, números e estatísticas</span>
+          </div>
+        </button>
+
+        <button onclick="navigateTo('eleicoes'); toggleMobileMenu();" class="w-full text-left px-3.5 py-3 rounded-xl text-slate-200 hover:text-white bg-white/5 hover:bg-white/10 active:bg-white/15 flex items-center gap-3 transition">
+          <div class="w-8 h-8 rounded-lg bg-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
+            <i data-lucide="vote" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <span class="font-bold text-sm block leading-tight">Eleições & Vagas</span>
+            <span class="text-[11px] text-slate-400">Cargos em disputa e calendário</span>
+          </div>
+        </button>
+
+        <button onclick="navigateTo('consultar'); toggleMobileMenu();" class="w-full text-left px-3.5 py-3 rounded-xl text-slate-200 hover:text-white bg-white/5 hover:bg-white/10 active:bg-white/15 flex items-center gap-3 transition">
+          <div class="w-8 h-8 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+            <i data-lucide="search" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <span class="font-bold text-sm block leading-tight">Consultar Protocolo / Número</span>
+            <span class="text-[11px] text-slate-400">Verificação de status em tempo real</span>
+          </div>
+        </button>
+
+        <button onclick="navigateTo('informacoes'); toggleMobileMenu();" class="w-full text-left px-3.5 py-3 rounded-xl text-slate-200 hover:text-white bg-white/5 hover:bg-white/10 active:bg-white/15 flex items-center gap-3 transition">
+          <div class="w-8 h-8 rounded-lg bg-slate-500/20 text-slate-300 flex items-center justify-center shrink-0">
+            <i data-lucide="info" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <span class="font-bold text-sm block leading-tight">Guia Oficial & Regras</span>
+            <span class="text-[11px] text-slate-400">Normas e documentação</span>
+          </div>
+        </button>
+      </div>
+
+      <!-- Quick Admin Access Mobile -->
+      <div class="pt-3 border-t border-brand-border/60">
+        <button onclick="openLoginModal('tse'); toggleMobileMenu();" class="w-full py-3 rounded-xl bg-gradient-to-r from-blue-900/60 to-brand-deep border border-brand-electric/30 text-white font-bold text-xs flex items-center justify-center gap-2 active:scale-98 transition shadow-md">
+          <i data-lucide="shield-check" class="w-4 h-4 text-brand-gold"></i>
+          <span>Acesso Magistrado / Painel TSE</span>
+        </button>
+      </div>
     </div>
   </header>
 
   <!-- MAIN CONTENT CONTAINER (View Routing Target) -->
-  <main id="app-main" class="flex-grow relative z-10 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <main id="app-main" class="flex-grow relative z-10 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-28 lg:py-8">
     
     <!-- ============================================== -->
     <!-- VIEW 1: HOME (PÁGINA INICIAL)                   -->
@@ -574,16 +680,24 @@
             <div>
               <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Foto Oficial do Candidato (3x4) *</label>
               <div class="flex items-center gap-4">
-                <div id="photo-preview-box" class="w-24 h-28 rounded-xl bg-brand-deep border-2 border-dashed border-brand-border flex items-center justify-center overflow-hidden flex-shrink-0 relative">
+                <div id="photo-preview-box" class="w-24 h-32 rounded-2xl bg-brand-deep border-2 border-dashed border-brand-border hover:border-brand-gold/50 flex items-center justify-center overflow-hidden flex-shrink-0 relative group shadow-md transition">
                   <img id="photo-preview-img" class="w-full h-full object-cover hidden" alt="Foto">
                   <span id="photo-placeholder" class="text-slate-500 text-xs text-center p-2">Sem foto</span>
+                  <button type="button" id="photo-overlay-crop-btn" onclick="openPhotoCropperModal()" class="absolute inset-0 bg-slate-950/75 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center text-brand-gold text-[11px] font-bold transition hidden" title="Ajustar Enquadramento">
+                    <i data-lucide="crop" class="w-5 h-5 mb-1"></i> Reenquadrar
+                  </button>
                 </div>
                 <div class="flex-1 space-y-2">
                   <input type="file" id="form-photo-input" accept="image/*" onchange="handlePhotoUpload(event)" class="hidden" required>
-                  <button type="button" onclick="document.getElementById('form-photo-input').click()" class="px-4 py-2.5 rounded-xl bg-brand-deep hover:bg-brand-deep/80 border border-brand-border text-white text-xs font-semibold flex items-center gap-2">
-                    <i data-lucide="upload" class="w-4 h-4 text-brand-electric"></i> Escolher Foto
-                  </button>
-                  <p class="text-[11px] text-slate-400">Processada e comprimida localmente no navegador (PNG/JPEG).</p>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <button type="button" onclick="document.getElementById('form-photo-input').click()" class="px-4 py-2.5 rounded-xl bg-brand-deep hover:bg-white/10 active:bg-white/15 border border-brand-border text-white text-xs font-semibold flex items-center gap-2 transition">
+                      <i data-lucide="upload" class="w-4 h-4 text-brand-electric"></i> Escolher Foto
+                    </button>
+                    <button type="button" id="form-crop-btn" onclick="openPhotoCropperModal()" class="px-4 py-2.5 rounded-xl bg-brand-gold/20 hover:bg-brand-gold/30 active:bg-brand-gold/40 border border-brand-gold/40 text-brand-gold text-xs font-bold flex items-center gap-2 transition hidden">
+                      <i data-lucide="crop" class="w-4 h-4"></i> Centralizar / Enquadrar
+                    </button>
+                  </div>
+                  <p class="text-[11px] text-slate-400">Você pode arrastar para centralizar, aplicar zoom e enquadrar o rosto na moldura oficial de urna.</p>
                 </div>
               </div>
             </div>
@@ -638,43 +752,45 @@
         </span>
       </div>
 
-      <!-- Filters Bar -->
-      <div class="glass-panel p-4 rounded-2xl border border-brand-border/60 flex flex-wrap gap-4 items-center justify-between">
-        <div class="flex flex-wrap gap-3 flex-1 min-w-[280px]">
-          <select id="filter-status" onchange="renderConfirmedCandidates()" class="bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-xs text-white outline-none">
-            <option value="deferida" selected>Apenas Homologadas (Aptas pelo TRE)</option>
-            <option value="pendente">Em Análise (Aguardando Decisão do TRE)</option>
-            <option value="indeferida">Indeferidas pelo Tribunal</option>
-            <option value="ALL">Todas as Candidaturas (Todos os Status)</option>
-          </select>
-          <select id="filter-cargo" onchange="renderConfirmedCandidates()" class="bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-xs text-white outline-none">
-            <option value="ALL">Todos os Cargos</option>
-            <option value="Presidente">Presidente</option>
-            <option value="Governador">Governador</option>
-            <option value="Senador">Senador</option>
-            <option value="Deputado Federal">Deputado Federal</option>
-            <option value="Deputado Estadual">Deputado Estadual</option>
-            <option value="Prefeito">Prefeito</option>
-            <option value="Vereador">Vereador</option>
-          </select>
-          <select id="filter-estado" onchange="onPublicStateFilterChange()" class="bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-xs text-white outline-none">
-            <option value="ALL">Todos os Estados</option>
-            <option value="brookhaven">Brookhaven</option>
-            <option value="floremix">Florêmix</option>
-            <option value="fortemega">Fortemega</option>
-            <option value="novacore">Novacore</option>
-          </select>
-          <select id="filter-cidade" onchange="renderConfirmedCandidates()" class="hidden bg-brand-navy border border-brand-electric/50 text-brand-electric rounded-xl px-3 py-2 text-xs outline-none transition-all">
-            <option value="ALL">Todas as Cidades</option>
-          </select>
-          <select id="filter-partido" onchange="renderConfirmedCandidates()" class="bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-xs text-white outline-none">
-            <option value="ALL">Todos os Partidos</option>
-            <!-- Populated dynamically -->
-          </select>
-        </div>
-        <div class="relative w-full sm:w-64">
-          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
-          <input type="text" id="filter-search" oninput="renderConfirmedCandidates()" placeholder="Buscar por nome, número ou sigla..." class="w-full bg-brand-navy border border-brand-border rounded-xl pl-9 pr-3 py-2 text-xs text-white outline-none focus:border-brand-electric">
+      <!-- Filters Bar Responsivo & Touch-Friendly -->
+      <div class="glass-panel p-4 sm:p-5 rounded-3xl border border-brand-border/70 space-y-3.5 shadow-xl">
+        <div class="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-2.5 sm:gap-3 flex-1">
+            <select id="filter-status" onchange="renderConfirmedCandidates()" class="bg-brand-navy border border-brand-border hover:border-brand-electric/50 focus:border-brand-electric rounded-xl px-3.5 py-2.5 text-xs text-white outline-none min-h-[44px] transition">
+              <option value="deferida" selected>Apenas Homologadas (Aptas pelo TRE)</option>
+              <option value="pendente">Em Análise (Aguardando Decisão do TRE)</option>
+              <option value="indeferida">Indeferidas pelo Tribunal</option>
+              <option value="ALL">Todas as Candidaturas (Todos os Status)</option>
+            </select>
+            <select id="filter-cargo" onchange="renderConfirmedCandidates()" class="bg-brand-navy border border-brand-border hover:border-brand-electric/50 focus:border-brand-electric rounded-xl px-3.5 py-2.5 text-xs text-white outline-none min-h-[44px] transition">
+              <option value="ALL">Todos os Cargos</option>
+              <option value="Presidente">Presidente</option>
+              <option value="Governador">Governador</option>
+              <option value="Senador">Senador</option>
+              <option value="Deputado Federal">Deputado Federal</option>
+              <option value="Deputado Estadual">Deputado Estadual</option>
+              <option value="Prefeito">Prefeito</option>
+              <option value="Vereador">Vereador</option>
+            </select>
+            <select id="filter-estado" onchange="onPublicStateFilterChange()" class="bg-brand-navy border border-brand-border hover:border-brand-electric/50 focus:border-brand-electric rounded-xl px-3.5 py-2.5 text-xs text-white outline-none min-h-[44px] transition">
+              <option value="ALL">Todos os Estados</option>
+              <option value="brookhaven">Brookhaven</option>
+              <option value="floremix">Florêmix</option>
+              <option value="fortemega">Fortemega</option>
+              <option value="novacore">Novacore</option>
+            </select>
+            <select id="filter-cidade" onchange="renderConfirmedCandidates()" class="hidden bg-brand-navy border border-brand-electric/70 text-brand-electric rounded-xl px-3.5 py-2.5 text-xs outline-none min-h-[44px] transition-all font-semibold">
+              <option value="ALL">Todas as Cidades</option>
+            </select>
+            <select id="filter-partido" onchange="renderConfirmedCandidates()" class="bg-brand-navy border border-brand-border hover:border-brand-electric/50 focus:border-brand-electric rounded-xl px-3.5 py-2.5 text-xs text-white outline-none min-h-[44px] transition">
+              <option value="ALL">Todos os Partidos</option>
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+          <div class="relative w-full lg:w-72">
+            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+            <input type="text" id="filter-search" oninput="renderConfirmedCandidates()" placeholder="Buscar nome, número ou sigla..." class="w-full bg-brand-navy border border-brand-border rounded-xl pl-10 pr-3 py-2.5 text-xs text-white outline-none focus:border-brand-electric min-h-[44px] transition">
+          </div>
         </div>
       </div>
 
@@ -694,19 +810,19 @@
           <h2 class="text-3xl font-cinzel font-bold text-white">Partidos Políticos de Brookasil</h2>
           <p class="text-sm text-slate-400">43 legendas registradas no Tribunal Superior Eleitoral, divididas por espectro ideológico.</p>
         </div>
-        <div class="flex items-center gap-2 text-xs">
+        <div class="flex flex-wrap items-center gap-2 text-xs">
           <span class="px-3 py-1.5 rounded-lg bg-blue-500/20 text-blue-400 font-bold border border-blue-500/30">Direita (19)</span>
           <span class="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30">Centro (10)</span>
           <span class="px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400 font-bold border border-red-500/30">Esquerda (14)</span>
         </div>
       </div>
 
-      <!-- Group Tabs -->
-      <div class="flex items-center gap-2 border-b border-brand-border pb-2">
-        <button onclick="setPartyGroupFilter('ALL')" class="party-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition bg-brand-blue text-white" data-group="ALL">Todos os 43 Partidos</button>
-        <button onclick="setPartyGroupFilter('Direita')" class="party-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition text-slate-300 hover:bg-white/5" data-group="Direita">Direita</button>
-        <button onclick="setPartyGroupFilter('Centro')" class="party-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition text-slate-300 hover:bg-white/5" data-group="Centro">Centro</button>
-        <button onclick="setPartyGroupFilter('Esquerda')" class="party-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition text-slate-300 hover:bg-white/5" data-group="Esquerda">Esquerda</button>
+      <!-- Group Tabs Touch-Friendly -->
+      <div class="flex items-center gap-2 border-b border-brand-border/60 pb-2 overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
+        <button onclick="setPartyGroupFilter('ALL')" class="party-tab-btn whitespace-nowrap px-4 py-2.5 rounded-xl text-xs font-bold transition bg-brand-blue text-white min-h-[40px] shadow-sm" data-group="ALL">Todos os 43 Partidos</button>
+        <button onclick="setPartyGroupFilter('Direita')" class="party-tab-btn whitespace-nowrap px-4 py-2.5 rounded-xl text-xs font-bold transition text-slate-300 hover:bg-white/5 min-h-[40px]" data-group="Direita">Direita</button>
+        <button onclick="setPartyGroupFilter('Centro')" class="party-tab-btn whitespace-nowrap px-4 py-2.5 rounded-xl text-xs font-bold transition text-slate-300 hover:bg-white/5 min-h-[40px]" data-group="Centro">Centro</button>
+        <button onclick="setPartyGroupFilter('Esquerda')" class="party-tab-btn whitespace-nowrap px-4 py-2.5 rounded-xl text-xs font-bold transition text-slate-300 hover:bg-white/5 min-h-[40px]" data-group="Esquerda">Esquerda</button>
       </div>
 
       <!-- Parties Grid -->
@@ -914,51 +1030,59 @@
           </button>
         </div>
 
-        <!-- Filter bar for Admin Judgments -->
-        <div class="glass-panel p-4 rounded-2xl border border-brand-border flex flex-wrap gap-4 items-center justify-between">
-          <div class="flex flex-wrap gap-3 flex-1 min-w-[280px]">
-            <select id="admin-filter-status" onchange="renderAdminCandidacies()" class="bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-xs text-white outline-none">
-              <option value="ALL">Todos os Status</option>
-              <option value="pendente">Pendentes (Aguardando Decisão)</option>
-              <option value="deferida">Deferidas</option>
-              <option value="indeferida">Indeferidas</option>
-              <option value="excluida">Excluídas</option>
-            </select>
-            <select id="admin-filter-cargo" onchange="renderAdminCandidacies()" class="bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-xs text-white outline-none">
-              <option value="ALL">Todos os Cargos</option>
-              <option value="Presidente">Presidente</option>
-              <option value="Governador">Governador</option>
-              <option value="Senador">Senador</option>
-              <option value="Deputado Federal">Deputado Federal</option>
-              <option value="Deputado Estadual">Deputado Estadual</option>
-              <option value="Prefeito">Prefeito</option>
-              <option value="Vereador">Vereador</option>
-            </select>
-            <!-- State and City filters -->
-            <select id="admin-filter-estado" onchange="onAdminStateFilterChange()" class="bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-xs text-white outline-none">
-              <option value="ALL">Todos os Estados</option>
-              <option value="brookhaven">Brookhaven</option>
-              <option value="floremix">Florêmix</option>
-              <option value="fortemega">Fortemega</option>
-              <option value="novacore">Novacore</option>
-            </select>
-            <select id="admin-filter-cidade" onchange="renderAdminCandidacies()" class="hidden bg-brand-navy border border-brand-electric/50 text-brand-electric rounded-xl px-3 py-2 text-xs outline-none transition-all">
-              <option value="ALL">Todas as Cidades</option>
-            </select>
-            <!-- Only TSE sees party filter as per rules -->
-            <select id="admin-filter-partido" onchange="renderAdminCandidacies()" class="bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-xs text-white outline-none">
-              <option value="ALL">Todos os Partidos</option>
-            </select>
-          </div>
-          <div class="relative w-full sm:w-64">
-            <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3 top-2.5"></i>
-            <input type="text" id="admin-filter-search" oninput="renderAdminCandidacies()" placeholder="Buscar nome, número ou protocolo..." class="w-full bg-brand-navy border border-brand-border rounded-xl pl-9 pr-3 py-2 text-xs text-white outline-none focus:border-brand-electric">
+        <!-- Filter bar for Admin Judgments Responsiva -->
+        <div class="glass-panel p-4 sm:p-5 rounded-3xl border border-brand-border space-y-3 shadow-xl">
+          <div class="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-2.5 sm:gap-3 flex-1">
+              <select id="admin-filter-status" onchange="renderAdminCandidacies()" class="bg-brand-navy border border-brand-border hover:border-brand-electric/50 focus:border-brand-electric rounded-xl px-3.5 py-2.5 text-xs text-white outline-none min-h-[44px] transition">
+                <option value="ALL">Todos os Status</option>
+                <option value="pendente">Pendentes (Aguardando Decisão)</option>
+                <option value="deferida">Deferidas</option>
+                <option value="indeferida">Indeferidas</option>
+                <option value="excluida">Excluídas</option>
+              </select>
+              <select id="admin-filter-cargo" onchange="renderAdminCandidacies()" class="bg-brand-navy border border-brand-border hover:border-brand-electric/50 focus:border-brand-electric rounded-xl px-3.5 py-2.5 text-xs text-white outline-none min-h-[44px] transition">
+                <option value="ALL">Todos os Cargos</option>
+                <option value="Presidente">Presidente</option>
+                <option value="Governador">Governador</option>
+                <option value="Senador">Senador</option>
+                <option value="Deputado Federal">Deputado Federal</option>
+                <option value="Deputado Estadual">Deputado Estadual</option>
+                <option value="Prefeito">Prefeito</option>
+                <option value="Vereador">Vereador</option>
+              </select>
+              <!-- State and City filters -->
+              <select id="admin-filter-estado" onchange="onAdminStateFilterChange()" class="bg-brand-navy border border-brand-border hover:border-brand-electric/50 focus:border-brand-electric rounded-xl px-3.5 py-2.5 text-xs text-white outline-none min-h-[44px] transition">
+                <option value="ALL">Todos os Estados</option>
+                <option value="brookhaven">Brookhaven</option>
+                <option value="floremix">Florêmix</option>
+                <option value="fortemega">Fortemega</option>
+                <option value="novacore">Novacore</option>
+              </select>
+              <select id="admin-filter-cidade" onchange="renderAdminCandidacies()" class="hidden bg-brand-navy border border-brand-electric/70 text-brand-electric rounded-xl px-3.5 py-2.5 text-xs outline-none min-h-[44px] transition-all font-semibold">
+                <option value="ALL">Todas as Cidades</option>
+              </select>
+              <!-- Only TSE sees party filter as per rules -->
+              <select id="admin-filter-partido" onchange="renderAdminCandidacies()" class="bg-brand-navy border border-brand-border hover:border-brand-electric/50 focus:border-brand-electric rounded-xl px-3.5 py-2.5 text-xs text-white outline-none min-h-[44px] transition">
+                <option value="ALL">Todos os Partidos</option>
+              </select>
+            </div>
+            <div class="relative w-full lg:w-72">
+              <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+              <input type="text" id="admin-filter-search" oninput="renderAdminCandidacies()" placeholder="Buscar nome, número ou protocolo..." class="w-full bg-brand-navy border border-brand-border rounded-xl pl-10 pr-3 py-2.5 text-xs text-white outline-none focus:border-brand-electric min-h-[44px] transition">
+            </div>
           </div>
         </div>
 
-        <!-- Candidacies Table / List -->
-        <div class="glass-panel rounded-3xl border border-brand-border overflow-hidden">
-          <div class="overflow-x-auto">
+        <!-- Candidacies Table (Desktop) & Mobile Cards (Vertical Phone) -->
+        <div class="glass-panel rounded-3xl border border-brand-border overflow-hidden shadow-2xl">
+          <!-- Mobile Cards View for Vertical Phones -->
+          <div id="admin-candidacies-mobile-list" class="block md:hidden divide-y divide-brand-border/60 p-3 space-y-3">
+            <!-- Rendered by JS for vertical phone screens -->
+          </div>
+
+          <!-- Desktop Table View -->
+          <div class="hidden md:block overflow-x-auto">
             <table class="w-full text-left text-sm text-slate-300">
               <thead class="bg-brand-deep text-xs uppercase text-slate-400 tracking-wider border-b border-brand-border">
                 <tr>
@@ -1272,9 +1396,9 @@
         <div>
           <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
             <span>Identificador / Usuário</span>
-            <span class="text-[10px] text-slate-400 font-normal">Auto / Apelido (tse, master, admin)</span>
+            <span class="text-[10px] text-slate-400 font-normal">Identificação Oficial do Tribunal</span>
           </label>
-          <input type="text" id="login-username" value="TSE_Brookasil@2026" autocomplete="username" placeholder="Identificador ou apelido (tse, master, admin...)" class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-2.5 text-white text-xs focus:border-brand-gold outline-none">
+          <input type="text" id="login-username" value="" autocomplete="username" placeholder="Identificador ou login do Tribunal" class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-2.5 text-white text-xs focus:border-brand-gold outline-none">
         </div>
 
         <div>
@@ -1307,6 +1431,388 @@
     </div>
   </div>
 
+  <!-- Modal de Visualização da Ficha Completa da Candidatura (Público & Oficial) -->
+  <div id="candidacy-details-modal" class="fixed inset-0 z-50 hidden bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
+    <div class="glass-panel max-w-2xl w-full rounded-3xl border border-brand-border/80 p-6 sm:p-8 space-y-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+      <button onclick="closeCandidacyDetailsModal()" class="absolute top-6 right-6 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition" title="Fechar">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <div class="flex items-start gap-4 sm:gap-5 border-b border-brand-border/60 pb-5">
+        <img id="details-cand-photo" class="w-20 h-24 sm:w-24 sm:h-28 rounded-2xl object-cover border-2 border-brand-border/80 bg-brand-navy shrink-0 shadow-lg" src="" alt="Candidato">
+        <div class="flex-1 min-w-0">
+          <div class="flex flex-wrap items-center gap-2 mb-1">
+            <span id="details-cand-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider">Status</span>
+            <span id="details-cand-protocol" class="text-[11px] font-mono text-brand-electric font-semibold">BRK-2026-XXXX</span>
+          </div>
+          <h3 id="details-cand-name" class="text-xl sm:text-2xl font-bold text-white leading-tight truncate">Nome de Urna</h3>
+          <p id="details-cand-fullname" class="text-xs text-slate-300 truncate mt-0.5">Nome Completo Oficial</p>
+          <p id="details-cand-sub" class="text-xs text-brand-gold font-medium mt-1">Cargo • Partido • Local</p>
+        </div>
+      </div>
+
+      <!-- Detalhes em Grade -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs">
+        <div class="bg-brand-navy/70 p-3.5 rounded-2xl border border-brand-border/60">
+          <span class="text-slate-400 block text-[11px] font-medium">Número de Urna</span>
+          <strong id="details-cand-number" class="text-2xl text-brand-gold font-mono font-black mt-0.5 block">--</strong>
+        </div>
+
+        <div class="bg-brand-navy/70 p-3.5 rounded-2xl border border-brand-border/60">
+          <span class="text-slate-400 block text-[11px] font-medium">Partido / Legenda</span>
+          <div class="flex items-center gap-2 mt-1">
+            <span id="details-cand-party-box" class="px-2 py-0.5 rounded-md font-mono font-bold text-xs text-white">--</span>
+            <strong id="details-cand-party-name" class="text-white text-xs truncate">--</strong>
+          </div>
+        </div>
+
+        <div class="bg-brand-navy/70 p-3.5 rounded-2xl border border-brand-border/60">
+          <span class="text-slate-400 block text-[11px] font-medium">Cargo Concorrido</span>
+          <strong id="details-cand-office" class="text-brand-electric text-sm font-bold mt-0.5 block">--</strong>
+        </div>
+
+        <div class="bg-brand-navy/70 p-3.5 rounded-2xl border border-brand-border/60">
+          <span class="text-slate-400 block text-[11px] font-medium">Circunscrição Eleitoral</span>
+          <strong id="details-cand-jurisdiction" class="text-white text-xs font-semibold mt-0.5 block">--</strong>
+        </div>
+
+        <div class="bg-brand-navy/70 p-3.5 rounded-2xl border border-brand-border/60">
+          <span class="text-slate-400 block text-[11px] font-medium">Vice-Candidato / Suplente</span>
+          <strong id="details-cand-vice" class="text-white text-xs font-semibold mt-0.5 block">Não aplicável</strong>
+        </div>
+
+        <div class="bg-brand-navy/70 p-3.5 rounded-2xl border border-brand-border/60">
+          <span class="text-slate-400 block text-[11px] font-medium">Coligação</span>
+          <strong id="details-cand-coalition" class="text-white text-xs font-semibold mt-0.5 block">Nenhuma</strong>
+        </div>
+
+        <div class="bg-brand-navy/70 p-3.5 rounded-2xl border border-brand-border/60">
+          <span class="text-slate-400 block text-[11px] font-medium">TikTok Oficial</span>
+          <a id="details-cand-tiktok" href="#" target="_blank" rel="noopener noreferrer" class="text-brand-electric font-semibold underline truncate flex items-center gap-1.5 mt-0.5">
+            <span>🎵</span> <span id="details-cand-tiktok-text">--</span>
+          </a>
+        </div>
+
+        <div class="bg-brand-navy/70 p-3.5 rounded-2xl border border-brand-border/60">
+          <span class="text-slate-400 block text-[11px] font-medium">Plano de Governo / Propostas</span>
+          <div id="details-cand-pdf-container" class="mt-1">
+            <!-- Botão ou texto se houver PDF -->
+          </div>
+        </div>
+
+        <!-- Competência Jurisdicional de 1ª Instância -->
+        <div class="bg-brand-navy/80 p-3.5 rounded-2xl border border-brand-border/80 col-span-1 sm:col-span-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 shadow-sm">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-xl bg-brand-gold/15 text-brand-gold flex items-center justify-center shrink-0 border border-brand-gold/30">
+              <i data-lucide="scale" class="w-4 h-4"></i>
+            </div>
+            <div>
+              <span class="text-slate-400 block text-[10px] font-bold uppercase tracking-wider">Órgão Julgador Competente (1ª Instância)</span>
+              <strong id="details-cand-competent-court-name" class="text-white text-xs font-bold block mt-0.5">--</strong>
+            </div>
+          </div>
+          <span id="details-cand-competence-badge" class="px-2.5 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1 self-start sm:self-center bg-blue-500/20 text-blue-300 border border-blue-500/30">
+            Jurisdição Eleitoral
+          </span>
+        </div>
+      </div>
+
+      <!-- Propostas / Diretrizes Textuais (se houver) -->
+      <div id="details-cand-proposals-section" class="bg-brand-navy/70 p-4 rounded-2xl border border-brand-border/60 hidden space-y-1.5">
+        <span class="text-slate-400 text-xs font-semibold uppercase tracking-wider block">Síntese do Plano de Gestão</span>
+        <p id="details-cand-proposals-text" class="text-xs text-slate-200 whitespace-pre-line leading-relaxed max-h-40 overflow-y-auto pr-1"></p>
+      </div>
+
+      <!-- Decisão Judicial / Despacho do TRE (se houver) -->
+      <div id="details-cand-judgment-section" class="bg-brand-deep p-4 rounded-2xl border border-brand-border/80 hidden space-y-2">
+        <div class="flex items-center justify-between text-xs">
+          <span class="font-bold text-slate-300 uppercase tracking-wide flex items-center gap-1.5">
+            <i data-lucide="scale" class="w-4 h-4 text-brand-gold"></i> Despacho / Parecer do Tribunal
+          </span>
+          <span id="details-cand-judged-by" class="text-[11px] text-slate-400 font-mono">--</span>
+        </div>
+        <p id="details-cand-judgment-reason" class="text-xs text-slate-200 bg-brand-navy/80 p-3 rounded-xl border border-brand-border/60 leading-relaxed"></p>
+      </div>
+
+      <!-- Rodapé com Ações -->
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-brand-border/60">
+        <div class="text-[11px] text-slate-400">
+          Registrado em: <span id="details-cand-created-at" class="text-slate-300 font-mono">--</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div id="details-cand-judge-actions">
+            <!-- Renderizado dinamicamente se o usuário for magistrado -->
+          </div>
+          <button onclick="closeCandidacyDetailsModal()" class="px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 active:bg-white/20 text-white text-xs font-bold transition">
+            Fechar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Enquadramento e Redimensionamento da Foto Oficial -->
+  <div id="photo-cropper-modal" class="fixed inset-0 z-[120] hidden bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-3 sm:p-4">
+    <div class="glass-panel max-w-lg w-full rounded-3xl border border-brand-gold/40 p-5 sm:p-7 space-y-5 shadow-2xl relative max-h-[95vh] overflow-y-auto">
+      <button onclick="closePhotoCropperModal()" class="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition" title="Fechar">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <!-- Cabeçalho -->
+      <div class="space-y-1 text-left pr-8">
+        <div class="flex items-center gap-2">
+          <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-brand-gold/20 text-brand-gold border border-brand-gold/40 flex items-center gap-1">
+            <i data-lucide="crop" class="w-3 h-3"></i> Enquadramento Oficial
+          </span>
+          <span class="text-[11px] text-slate-400 font-mono">Proporção 3x4 de Urna</span>
+        </div>
+        <h3 class="text-xl sm:text-2xl font-cinzel font-bold text-white">Posicione e Enquadre sua Foto</h3>
+        <p class="text-xs text-slate-300">Arraste a imagem para posicionar ou centralizar. Use o controle de zoom para ajustar seu rosto dentro da moldura oficial.</p>
+      </div>
+
+      <!-- Viewport de Corte com Aspect Ratio 3:4 e Guias Biométricas -->
+      <div class="flex flex-col items-center">
+        <div id="cropper-viewport" class="w-[270px] h-[360px] sm:w-[285px] sm:h-[380px] rounded-2xl bg-black relative overflow-hidden select-none touch-none shadow-2xl ring-2 ring-brand-gold/50 cursor-grab active:cursor-grabbing border-2 border-brand-border">
+          <!-- Imagem dinamicamente manipulada -->
+          <img id="cropper-preview-img" src="" alt="Foto" class="absolute pointer-events-none origin-center transition-none max-w-none will-change-transform" style="transform: translate(0px, 0px) scale(1) rotate(0deg); transform-origin: center center;">
+
+          <!-- Guia Facial / Oval Biométrico de Urna -->
+          <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
+            <!-- Guia oval do rosto -->
+            <div class="w-[66%] h-[74%] rounded-[50%] border-2 border-dashed border-brand-gold/70 shadow-[0_0_20px_rgba(245,158,11,0.25)] flex flex-col items-center justify-between py-5">
+              <span class="text-[9px] font-bold text-brand-gold bg-slate-950/80 px-2 py-0.5 rounded-full border border-brand-gold/30 tracking-wider uppercase">Nível dos Olhos</span>
+              <span class="text-[9px] font-bold text-brand-gold bg-slate-950/80 px-2 py-0.5 rounded-full border border-brand-gold/30 tracking-wider uppercase">Queixo</span>
+            </div>
+            <!-- Linhas de regra dos terços -->
+            <div class="absolute inset-0 grid grid-cols-3 grid-rows-3 pointer-events-none opacity-20">
+              <div class="border-r border-b border-white"></div>
+              <div class="border-r border-b border-white"></div>
+              <div class="border-b border-white"></div>
+              <div class="border-r border-b border-white"></div>
+              <div class="border-r border-b border-white"></div>
+              <div class="border-b border-white"></div>
+              <div class="border-r border-white"></div>
+              <div class="border-r border-white"></div>
+              <div></div>
+            </div>
+          </div>
+
+          <!-- Indicador inferior de arrasto -->
+          <div class="absolute bottom-2 inset-x-0 flex justify-center pointer-events-none">
+            <span class="px-2.5 py-1 rounded-full bg-slate-950/75 backdrop-blur-sm text-[10px] text-slate-200 font-semibold border border-white/10 flex items-center gap-1.5 shadow-md">
+              <i data-lucide="move" class="w-3 h-3 text-brand-gold"></i> Arraste com o dedo ou mouse
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Controles de Ajuste Rápido (Zoom, Centralizar, Girar) -->
+      <div class="space-y-3 bg-brand-navy/70 p-4 rounded-2xl border border-brand-border/60">
+        <!-- Controle Deslizante de Zoom -->
+        <div>
+          <div class="flex items-center justify-between text-xs mb-1.5 font-semibold text-slate-300">
+            <span class="flex items-center gap-1.5">
+              <i data-lucide="zoom-in" class="w-3.5 h-3.5 text-brand-electric"></i> Nível de Zoom
+            </span>
+            <span id="cropper-zoom-val" class="font-mono text-brand-gold font-bold text-xs">100%</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <button type="button" onclick="stepCropperZoom(-0.15)" class="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 active:bg-white/20 text-white font-bold flex items-center justify-center transition text-sm">
+              -
+            </button>
+            <input type="range" id="cropper-zoom-range" min="0.5" max="3.0" step="0.05" value="1.0" oninput="setCropperZoom(this.value)" class="flex-1 accent-brand-gold cursor-pointer">
+            <button type="button" onclick="stepCropperZoom(0.15)" class="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 active:bg-white/20 text-white font-bold flex items-center justify-center transition text-sm">
+              +
+            </button>
+          </div>
+        </div>
+
+        <!-- Botões de Ação Auxiliar -->
+        <div class="grid grid-cols-3 gap-2 pt-1">
+          <button type="button" onclick="centerCropper()" class="py-2 px-2.5 rounded-xl bg-brand-deep hover:bg-white/5 border border-brand-border text-slate-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition active:scale-95">
+            <i data-lucide="crosshair" class="w-3.5 h-3.5 text-brand-gold"></i>
+            <span>Centralizar</span>
+          </button>
+          <button type="button" onclick="rotateCropper()" class="py-2 px-2.5 rounded-xl bg-brand-deep hover:bg-white/5 border border-brand-border text-slate-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition active:scale-95">
+            <i data-lucide="rotate-cw" class="w-3.5 h-3.5 text-brand-electric"></i>
+            <span>Girar 90°</span>
+          </button>
+          <button type="button" onclick="resetCropper()" class="py-2 px-2.5 rounded-xl bg-brand-deep hover:bg-white/5 border border-brand-border text-slate-200 text-xs font-semibold flex items-center justify-center gap-1.5 transition active:scale-95">
+            <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-slate-400"></i>
+            <span>Resetar</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Botões de Confirmação -->
+      <div class="flex items-center gap-3 pt-2">
+        <button type="button" onclick="closePhotoCropperModal()" class="w-1/3 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold transition">
+          Cancelar
+        </button>
+        <button type="button" onclick="applyCroppedPhoto()" class="w-2/3 py-3 rounded-xl bg-gradient-to-r from-brand-gold to-yellow-500 hover:from-yellow-400 hover:to-brand-gold text-slate-950 text-xs font-black flex items-center justify-center gap-2 shadow-glow-gold transition active:scale-98">
+          <i data-lucide="check" class="w-4 h-4"></i> Confirmar Enquadramento
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Exclusivo da Presidência do TSE para Edição da Candidatura -->
+  <div id="tse-edit-candidate-modal" class="fixed inset-0 z-[110] hidden bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-3 sm:p-4">
+    <div class="glass-panel max-w-2xl w-full rounded-3xl border border-purple-500/50 p-6 sm:p-8 space-y-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+      <button onclick="closeTseEditCandidateModal()" class="absolute top-6 right-6 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition" title="Fechar">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <!-- Cabeçalho Oficial com Selo TSE -->
+      <div class="border-b border-brand-border/80 pb-4">
+        <div class="flex items-center gap-2 mb-1.5">
+          <span class="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center gap-1.5">
+            <i data-lucide="shield-alert" class="w-3.5 h-3.5"></i> Jurisdição Exclusiva TSE
+          </span>
+          <span id="tse-edit-protocol-badge" class="font-mono text-xs text-brand-gold font-bold">BRK-2026-XXXX</span>
+        </div>
+        <h3 class="text-2xl font-cinzel font-bold text-white">Retificação Cadastral de Candidatura</h3>
+        <p class="text-xs text-slate-300">Alteração e retificação direta de dados eleitorais sob a autoridade da Presidência do Tribunal Superior Eleitoral.</p>
+      </div>
+
+      <form id="tse-edit-candidate-form" onsubmit="handleTseEditCandidateSubmit(event)" class="space-y-5">
+        <input type="hidden" id="tse-edit-cand-id" value="">
+
+        <!-- Foto Oficial com Botão de Ajuste e Enquadramento -->
+        <div class="bg-brand-navy/70 p-4 rounded-2xl border border-brand-border/70 flex items-center gap-4">
+          <div class="w-20 h-24 rounded-xl overflow-hidden bg-brand-deep border border-brand-border shrink-0 shadow-md relative group">
+            <img id="tse-edit-photo-preview" src="" alt="Foto" class="w-full h-full object-cover">
+          </div>
+          <div class="flex-1 space-y-2">
+            <span class="text-xs font-bold text-slate-300 uppercase tracking-wide block">Foto Oficial de Urna</span>
+            <div class="flex flex-wrap items-center gap-2">
+              <input type="file" id="tse-edit-photo-file" accept="image/*" onchange="handleTseEditPhotoFile(event)" class="hidden">
+              <button type="button" onclick="document.getElementById('tse-edit-photo-file').click()" class="px-3 py-2 rounded-xl bg-brand-deep hover:bg-white/10 border border-brand-border text-white text-xs font-semibold flex items-center gap-1.5 transition">
+                <i data-lucide="upload" class="w-3.5 h-3.5 text-brand-electric"></i> Trocar Foto
+              </button>
+              <button type="button" onclick="openPhotoCropperForTseEdit()" class="px-3 py-2 rounded-xl bg-brand-gold/20 hover:bg-brand-gold/30 text-brand-gold text-xs font-bold flex items-center gap-1.5 border border-brand-gold/40 transition">
+                <i data-lucide="crop" class="w-3.5 h-3.5"></i> Ajustar / Enquadrar
+              </button>
+            </div>
+            <p class="text-[11px] text-slate-400">Você pode redimensionar e centralizar a foto antes de salvar.</p>
+          </div>
+        </div>
+
+        <!-- Campos Principais: Nome de Urna, Nome Completo -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Nome de Urna *</label>
+            <input type="text" id="tse-edit-ballot-name" required class="w-full bg-brand-navy border border-brand-border rounded-xl px-3 py-2.5 text-white font-bold text-sm outline-none focus:border-purple-400 uppercase">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Nome Civil Completo *</label>
+            <input type="text" id="tse-edit-full-name" required class="w-full bg-brand-navy border border-brand-border rounded-xl px-3 py-2.5 text-white text-sm outline-none focus:border-purple-400">
+          </div>
+        </div>
+
+        <!-- Cargo, Partido e Número -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Cargo Eletivo *</label>
+            <select id="tse-edit-office" required onchange="onTseEditOfficeChange()" class="w-full bg-brand-navy border border-brand-border rounded-xl px-3 py-2.5 text-white text-xs outline-none focus:border-purple-400">
+              <option value="Presidente">Presidente</option>
+              <option value="Senador">Senador</option>
+              <option value="Deputado Federal">Deputado Federal</option>
+              <option value="Governador">Governador</option>
+              <option value="Deputado Estadual">Deputado Estadual</option>
+              <option value="Prefeito">Prefeito</option>
+              <option value="Vereador">Vereador</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Partido Político *</label>
+            <select id="tse-edit-party" required class="w-full bg-brand-navy border border-brand-border rounded-xl px-3 py-2.5 text-white text-xs outline-none focus:border-purple-400">
+              <!-- Preenchido dinamicamente com os partidos -->
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Número de Urna *</label>
+            <input type="number" id="tse-edit-number" required class="w-full bg-brand-navy border border-brand-border rounded-xl px-3 py-2.5 text-brand-gold font-mono font-black text-sm outline-none focus:border-purple-400">
+          </div>
+        </div>
+
+        <!-- Circunscrição: Estado e Cidade -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Estado / Circunscrição Estadual</label>
+            <select id="tse-edit-state" onchange="onTseEditStateChange()" class="w-full bg-brand-navy border border-brand-border rounded-xl px-3 py-2.5 text-white text-xs outline-none focus:border-purple-400">
+              <option value="">Selecione o Estado</option>
+              <!-- Preenchido dinamicamente -->
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Município / Cidade</label>
+            <select id="tse-edit-city" class="w-full bg-brand-navy border border-brand-border rounded-xl px-3 py-2.5 text-white text-xs outline-none focus:border-purple-400">
+              <option value="">Não aplicável ou Selecione</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Vice, Coligação, TikTok e Nascimento -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Vice / Suplente</label>
+            <input type="text" id="tse-edit-vice" placeholder="Ex: Maria das Graças" class="w-full bg-brand-navy border border-brand-border rounded-xl px-3 py-2.5 text-white text-xs outline-none focus:border-purple-400">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Coligação Partidária</label>
+            <input type="text" id="tse-edit-coalition" placeholder="Ex: Juntos por Brookasil (PDB / PLB / PSD)" class="w-full bg-brand-navy border border-brand-border rounded-xl px-3 py-2.5 text-white text-xs outline-none focus:border-purple-400">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">TikTok Oficial</label>
+            <input type="text" id="tse-edit-tiktok" placeholder="@candidato" class="w-full bg-brand-navy border border-brand-border rounded-xl px-3 py-2.5 text-white text-xs outline-none focus:border-purple-400">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Data de Nascimento</label>
+            <input type="date" id="tse-edit-birth-date" class="w-full bg-brand-navy border border-brand-border rounded-xl px-3 py-2.5 text-white text-xs outline-none focus:border-purple-400">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Status da Candidatura</label>
+            <select id="tse-edit-status" class="w-full bg-brand-navy border border-brand-border rounded-xl px-3 py-2.5 text-white text-xs font-bold outline-none focus:border-purple-400">
+              <option value="pendente">EM ANÁLISE (Pendente)</option>
+              <option value="deferida">APTA / HOMOLOGADA (Deferida)</option>
+              <option value="indeferida">INDEFERIDA</option>
+              <option value="excluida">EXCLUÍDA (Cancela Registro)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Propostas / Síntese -->
+        <div>
+          <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5">Resumo das Propostas / Diretrizes</label>
+          <textarea id="tse-edit-proposals" rows="3" class="w-full bg-brand-navy border border-brand-border rounded-xl p-3 text-white text-xs outline-none focus:border-purple-400"></textarea>
+        </div>
+
+        <!-- Justificativa Obrigatória da Retificação no TSE -->
+        <div class="bg-purple-950/30 p-3.5 rounded-2xl border border-purple-500/30 space-y-1.5">
+          <label class="block text-xs font-bold text-purple-300 uppercase tracking-wider flex items-center gap-1.5">
+            <i data-lucide="file-check" class="w-4 h-4"></i> Fundamentação / Motivo da Retificação TSE *
+          </label>
+          <input type="text" id="tse-edit-audit-reason" required placeholder="Ex: Retificação cadastral autorizada pela Presidência do TSE em sessão..." class="w-full bg-brand-navy border border-brand-border rounded-xl px-3 py-2 text-white text-xs outline-none focus:border-purple-400">
+          <p class="text-[10px] text-slate-400">Esta fundamentação será registrada de forma permanente e auditável no livro de auditoria do TSE.</p>
+        </div>
+
+        <!-- Botões de Ação -->
+        <div class="flex items-center justify-end gap-3 pt-3 border-t border-brand-border/60">
+          <button type="button" onclick="closeTseEditCandidateModal()" class="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold transition">
+            Cancelar
+          </button>
+          <button type="submit" id="tse-edit-submit-btn" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-xs flex items-center gap-2 shadow-lg shadow-purple-900/30 transition active:scale-98">
+            <i data-lucide="save" class="w-4 h-4"></i> Salvar Retificação no TSE
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <!-- Modal de Julgamento Judicial (Deferir / Indeferir / Excluir) -->
   <div id="judgment-modal" class="fixed inset-0 z-50 hidden bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
     <div class="glass-panel max-w-2xl w-full rounded-3xl border border-brand-border p-8 space-y-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
@@ -1320,6 +1826,22 @@
           <span id="modal-cand-badge" class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-brand-blue/30 text-brand-electric border border-brand-electric/30">Protocolo</span>
           <h3 id="modal-cand-name" class="text-xl font-bold text-white mt-1">Nome do Candidato</h3>
           <p id="modal-cand-sub" class="text-xs text-slate-400">Cargo • Partido • Local</p>
+        </div>
+      </div>
+
+      <!-- Verificação Estrita de Competência Jurisdicional (Segurança Eleitoral) -->
+      <div id="judgment-jurisdiction-alert" class="p-3.5 rounded-2xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-brand-navy/90 border-brand-border">
+        <div class="flex items-center gap-3">
+          <div id="judgment-jurisdiction-icon" class="w-8 h-8 rounded-xl bg-blue-500/20 text-blue-400 flex items-center justify-center shrink-0 border border-blue-500/30">
+            <i data-lucide="scale" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <span class="text-[10px] uppercase text-slate-400 font-bold block">Tribunal Competente (Instância Originária)</span>
+            <strong id="judgment-competent-court-name" class="text-white text-xs block mt-0.5">--</strong>
+          </div>
+        </div>
+        <div id="judgment-jurisdiction-badge" class="px-3 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1 self-start sm:self-center">
+          Verificando foro...
         </div>
       </div>
 
@@ -1351,17 +1873,35 @@
         <textarea id="judgment-reason-text" rows="3" placeholder="Insira a fundamentação jurídica do julgamento eleitoral..." class="w-full bg-brand-navy border border-brand-border rounded-xl p-3 text-sm text-white focus:border-brand-electric outline-none"></textarea>
       </div>
 
+      <!-- Aviso de Bloqueio por Incompetência de Foro -->
+      <div id="judgment-blocked-notice" class="hidden p-4 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs space-y-1">
+        <div class="flex items-center gap-2 font-bold text-red-400">
+          <i data-lucide="shield-alert" class="w-4 h-4"></i> Incompetência Jurisdicional de 1ª Instância
+        </div>
+        <p id="judgment-blocked-reason" class="text-[11px] text-slate-300 leading-relaxed"></p>
+      </div>
+
       <!-- Ações Judiciais -->
-      <div class="flex flex-wrap items-center justify-end gap-3 pt-4 border-t border-brand-border">
-        <button onclick="executeJudgment('excluida')" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold flex items-center gap-1.5">
-          <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i> Excluir Registro (Libera Número)
-        </button>
-        <button onclick="executeJudgment('indeferida')" class="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md">
-          <i data-lucide="x-circle" class="w-4 h-4"></i> Indeferir Candidatura
-        </button>
-        <button onclick="executeJudgment('deferida')" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-glow-emerald">
-          <i data-lucide="check-circle" class="w-4 h-4"></i> Deferir Candidatura (Publicar)
-        </button>
+      <div class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-brand-border">
+        <div class="flex items-center gap-2">
+          <button type="button" id="judgment-tse-edit-btn" onclick="openTseEditFromJudgment()" class="hidden px-4 py-2.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 text-xs font-bold flex items-center gap-1.5 transition">
+            <i data-lucide="edit-3" class="w-4 h-4"></i> Retificar Cadastro (Exclusivo TSE)
+          </button>
+          <button type="button" id="judgment-reopen-btn" onclick="executeJudgment('pendente')" class="px-4 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 transition" title="Retornar para a fila PENDENTE do TRE">
+            <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Devolver para PENDENTE
+          </button>
+        </div>
+        <div id="judgment-action-buttons" class="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+          <button id="judgment-exclude-btn" onclick="executeJudgment('excluida')" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold flex items-center gap-1.5 transition">
+            <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i> Excluir Registro
+          </button>
+          <button id="judgment-indefer-btn" onclick="executeJudgment('indeferida')" class="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md transition">
+            <i data-lucide="x-circle" class="w-4 h-4"></i> Indeferir
+          </button>
+          <button id="judgment-defer-btn" onclick="executeJudgment('deferida')" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-glow-emerald transition">
+            <i data-lucide="check-circle" class="w-4 h-4"></i> Deferir (Homologar)
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -1616,8 +2156,36 @@
     </div>
   </div>
 
+  <!-- MOBILE BOTTOM NAVIGATION BAR (Otimizada para Celular na Vertical) -->
+  <nav class="fixed bottom-0 left-0 right-0 z-40 block lg:hidden glass-bottom-nav border-t border-brand-border/60 pb-[env(safe-area-inset-bottom,0px)]">
+    <div class="grid grid-cols-5 h-16 max-w-md mx-auto items-center px-1">
+      <button onclick="navigateTo('home')" class="bottom-nav-item flex flex-col items-center justify-center gap-1 py-1 text-slate-400 hover:text-white active:scale-95 transition" data-bottom-view="home">
+        <i data-lucide="home" class="w-5 h-5"></i>
+        <span class="text-[10px] font-semibold tracking-tight">Início</span>
+      </button>
+      <button onclick="navigateTo('candidatos')" class="bottom-nav-item flex flex-col items-center justify-center gap-1 py-1 text-slate-400 hover:text-white active:scale-95 transition" data-bottom-view="candidatos">
+        <i data-lucide="users" class="w-5 h-5"></i>
+        <span class="text-[10px] font-semibold tracking-tight">Candidatos</span>
+      </button>
+      <button onclick="navigateTo('candidaturas')" class="bottom-nav-item flex flex-col items-center justify-center gap-1 py-1 text-brand-gold active:scale-95 transition -mt-3" data-bottom-view="candidaturas">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-tr from-brand-gold via-amber-400 to-yellow-500 text-slate-950 flex items-center justify-center shadow-glow-gold border-2 border-brand-navy">
+          <i data-lucide="file-signature" class="w-5 h-5"></i>
+        </div>
+        <span class="text-[10px] font-bold text-brand-gold tracking-tight">Inscrever</span>
+      </button>
+      <button onclick="navigateTo('partidos')" class="bottom-nav-item flex flex-col items-center justify-center gap-1 py-1 text-slate-400 hover:text-white active:scale-95 transition" data-bottom-view="partidos">
+        <i data-lucide="flag" class="w-5 h-5"></i>
+        <span class="text-[10px] font-semibold tracking-tight">Partidos</span>
+      </button>
+      <button onclick="handleBottomNavAdminClick()" class="bottom-nav-item flex flex-col items-center justify-center gap-1 py-1 text-slate-400 hover:text-white active:scale-95 transition" data-bottom-view="admin">
+        <i data-lucide="shield-check" class="w-5 h-5"></i>
+        <span class="text-[10px] font-semibold tracking-tight">Magistrado</span>
+      </button>
+    </div>
+  </nav>
+
   <!-- Toast Notification Container -->
-  <div id="toast-container" class="fixed bottom-6 right-6 z-[110] flex flex-col gap-2 pointer-events-none"></div>
+  <div id="toast-container" class="fixed bottom-20 lg:bottom-6 right-4 sm:right-6 z-[110] flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- Companion JavaScript Engine -->
   <script src="./app.js"></script>

@@ -17,7 +17,10 @@
     "candidates": {
       ".read": true,
       ".write": true,
-      ".indexOn": ["status", "electionId", "office", "stateId", "cityId", "partyId", "number"]
+      ".indexOn": ["status", "electionId", "office", "stateId", "cityId", "partyId", "number"],
+      "$candidateId": {
+        ".validate": "newData.hasChildren(['protocol', 'office', 'ballotName', 'status'])"
+      }
     },
     "numberRegistry": {
       ".read": true,
