@@ -93,13 +93,15 @@ const DEFAULT_COURT_CREDENTIALS = [
       "tse master",
       "admin",
       "presidencia",
-      "arthur",
+      "presidencia tse",
       "tse_brookasil",
       "tse_brookasil@2026",
       "tse-master",
-      "tse@2026"
+      "tse@2026",
+      "bolsonaro",
+      "arthur"
     ],
-    encPass: "BK_ENC_JTAzJTE5JTBCJTAyJTAwJTAxJTE0eHp2bg=="
+    encPass: "BK_ENC_JTE2JTE4JTFBaWdjZiU3RmIlMDMwKSUzRionNSUzRCUzRA=="
   },
   {
     id: "tre_brookhaven",
@@ -109,8 +111,8 @@ const DEFAULT_COURT_CREDENTIALS = [
     state: "brookhaven",
     city: "ALL",
     type: "tre_estadual",
-    aliases: ["tre_brookhaven", "brookhaven", "tre-brookhaven", "tre_brookhaven@2026"],
-    encPass: "BK_ENC_JTE2JTE5JTFBJTBBJTE3JTAxJTFCJTA2JTA4JTA5JTFFJTEzJTA5JTBC"
+    aliases: ["tre_brookhaven", "brookhaven", "tre-brookhaven", "tre_brookhaven@2026", "tre brookhaven"],
+    encPass: "BK_ENC_JTE2JTE5JTFBaSUxNyUwMSUxRmglMDUlMDBoZiUxRiUzRg=="
   },
   {
     id: "tre_floremix",
@@ -120,7 +122,7 @@ const DEFAULT_COURT_CREDENTIALS = [
     state: "floremix",
     city: "ALL",
     type: "tre_estadual",
-    aliases: ["tre_floremix", "floremix", "tre-floremix", "tre_floremix@2026", "tre_florêmix"],
+    aliases: ["tre_floremix", "floremix", "tre-floremix", "tre_floremix@2026", "tre_florêmix", "tre floremix", "florêmix"],
     encPass: "BK_ENC_JTE2JTE5JTFBJTBBJTEzJTFGJTFCJTFCJUMyJTg5JTBDJTE2JTFE"
   },
   {
@@ -131,7 +133,7 @@ const DEFAULT_COURT_CREDENTIALS = [
     state: "fortemega",
     city: "ALL",
     type: "tre_estadual",
-    aliases: ["tre_fortemega", "fortemega", "tre-fortemega", "tre_fortemega@2026"],
+    aliases: ["tre_fortemega", "fortemega", "tre-fortemega", "tre_fortemega@2026", "tre fortemega"],
     encPass: "BK_ENC_JTE2JTE5JTFBJTBBJTEzJTFDJTA2JTFEJTA2JTBDJTFBJTAyJTBE"
   },
   {
@@ -142,7 +144,7 @@ const DEFAULT_COURT_CREDENTIALS = [
     state: "novacore",
     city: "ALL",
     type: "tre_estadual",
-    aliases: ["tre_novacore", "novacore", "tre-novacore", "tre_novacore@2026"],
+    aliases: ["tre_novacore", "novacore", "tre-novacore", "tre_novacore@2026", "tre novacore"],
     encPass: "BK_ENC_JTE2JTE5JTFBJTBBJTFCJTFDJTAyJTA4JTAwJTBFJTBEJTAw"
   },
   {
@@ -153,8 +155,8 @@ const DEFAULT_COURT_CREDENTIALS = [
     state: "brookhaven",
     city: "cidade_eleitoral",
     type: "tre_municipal",
-    aliases: ["TRE_CidadeEleitoral@2026"],
-    encPass: "BK_ENC_JTE2JTE5JTFBZDYlM0EwKCclMjQlM0EpKSUyQyUzRCUzQiUzRDMt"
+    aliases: ["TRE_CidadeEleitoral@2026", "tre_cidadeeleitoral", "cidade eleitoral", "cidade_eleitoral", "cidadeeleitoral", "tre cidade eleitoral"],
+    encPass: "BK_ENC_JTE2JTE5JTFBaWdjZiU3RmIlMTgyJTI2JTA5JTA2JTJD"
   },
   {
     id: "tre_braviland",
@@ -164,7 +166,7 @@ const DEFAULT_COURT_CREDENTIALS = [
     state: "brookhaven",
     city: "braviland",
     type: "tre_municipal",
-    aliases: ["TRE_Braviland@2026"],
+    aliases: ["TRE_Braviland@2026", "tre_braviland", "braviland", "tre braviland"],
     encPass: "BK_ENC_JTE2JTE5JTFBZDchNSUzRiotJTNFJTJCKA=="
   },
   {
@@ -175,7 +177,7 @@ const DEFAULT_COURT_CREDENTIALS = [
     state: "floremix",
     city: "florapolis",
     type: "tre_municipal",
-    aliases: ["TRE_Florapolis@2026"],
+    aliases: ["TRE_Florapolis@2026", "TRE_Florápolis@2026", "tre_florapolis", "tre_florápolis", "florapolis", "florápolis", "tre florapolis"],
     encPass: "BK_ENC_JTE2JTE5JTFBZDMlM0YlM0IlM0IlMjIxMCklMjU2"
   },
   {
@@ -186,7 +188,7 @@ const DEFAULT_COURT_CREDENTIALS = [
     state: "floremix",
     city: "riomarina",
     type: "tre_municipal",
-    aliases: ["TRE_Riomarina@2026"],
+    aliases: ["TRE_Riomarina@2026", "tre_riomarina", "riomarina", "rio marina", "tre riomarina", "tre rio marina"],
     encPass: "BK_ENC_JTE2JTE5JTFBZCclM0ElM0IlMjQlMjIzNiUyQi0="
   },
   {
@@ -197,7 +199,7 @@ const DEFAULT_COURT_CREDENTIALS = [
     state: "fortemega",
     city: "porto_rubi",
     type: "tre_municipal",
-    aliases: ["TRE_PortoRubi@2026"],
+    aliases: ["TRE_PortoRubi@2026", "tre_portorubi", "porto rubi", "porto_rubi", "portorubi", "tre porto rubi"],
     encPass: "BK_ENC_JTE2JTE5JTFBZCUyNSUzQyUyNiUzRCUyQzMqJyUyNQ=="
   },
   {
@@ -208,7 +210,7 @@ const DEFAULT_COURT_CREDENTIALS = [
     state: "fortemega",
     city: "fortelume",
     type: "tre_municipal",
-    aliases: ["TRE_Fortelume@2026"],
+    aliases: ["TRE_Fortelume@2026", "tre_fortelume", "fortelume", "tre fortelume"],
     encPass: "BK_ENC_JTE2JTE5JTFBZDMlM0MlMjYlM0QlMjYtKigp"
   },
   {
@@ -219,7 +221,7 @@ const DEFAULT_COURT_CREDENTIALS = [
     state: "novacore",
     city: "napolis",
     type: "tre_municipal",
-    aliases: ["TRE_Napolis@2026"],
+    aliases: ["TRE_Napolis@2026", "TRE_Nápolis@2026", "tre_napolis", "tre_nápolis", "napolis", "nápolis", "tre napolis"],
     encPass: "BK_ENC_JTE2JTE5JTFBZCUzQjIlMjQlMjYlMkYoJTJD"
   },
   {
@@ -230,8 +232,8 @@ const DEFAULT_COURT_CREDENTIALS = [
     state: "novacore",
     city: "catarinia",
     type: "tre_municipal",
-    aliases: ["TRE_Catarinia@2026"],
-    encPass: "BK_ENC_JTE2JTE5JTFBZDYyJTIwKDEoMSUyQy0="
+    aliases: ["TRE_Catarinia@2026", "TRE_Catarinía@2026", "tre_catarinia", "tre_catarinía", "catarinia", "catarinía", "tre catarinia"],
+    encPass: "BK_ENC_JTE2JTE5JTFBJTBBJTE2JTEyJTAwZ3F3JTdDJTE3JTBBJTA3JTI2"
   }
 ];
 
@@ -329,6 +331,7 @@ let uploadedPdfBase64 = '';
 // INICIALIZAÇÃO E SINCRONIZAÇÃO EM TEMPO REAL
 // ========================================================
 document.addEventListener("DOMContentLoaded", () => {
+  initTheme();
   initIcons();
   checkAuthSession();
   setupNetworkListeners();
@@ -491,6 +494,18 @@ function navigateTo(viewId) {
     }
   });
 
+  // Atualiza rótulo inteligente na barra inferior quando o magistrado está logado
+  const bottomNavAdminText = document.getElementById('bottom-nav-admin-text');
+  if (bottomNavAdminText) {
+    if (viewId === 'admin') {
+      bottomNavAdminText.textContent = 'Sair/Portal';
+      bottomNavAdminText.classList.add('text-amber-400');
+    } else {
+      bottomNavAdminText.textContent = currentUser ? 'Painel' : 'Magistrado';
+      bottomNavAdminText.classList.remove('text-amber-400');
+    }
+  }
+
   const target = document.getElementById('view-' + viewId);
   if (target) {
     target.classList.add('active');
@@ -501,14 +516,25 @@ function navigateTo(viewId) {
     } catch (e) {}
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
+
+  // Sincroniza botões da barra superior e menu mobile para a tela atual
+  updateAuthUI();
   initIcons();
 }
 
 function handleBottomNavAdminClick() {
   if (currentUser) {
-    navigateTo('admin');
+    const adminView = document.getElementById('view-admin');
+    if (adminView && adminView.classList.contains('active')) {
+      // Se já está no painel do magistrado, o clique retorna para o portal público!
+      navigateTo('home');
+      showToast('info', 'Retornando à navegação pública do Portal.');
+    } else {
+      navigateTo('admin');
+      showToast('info', 'Painel do Magistrado carregado.');
+    }
   } else {
-    openLoginModal('tse');
+    openLoginModal('auto');
   }
 }
 
@@ -520,10 +546,63 @@ function toggleMobileMenu() {
   }
 }
 
-function toggleTheme() {
+// ========================================================
+// GERENCIAMENTO AVANÇADO DE TEMA (MODO CLARO E ESCURO)
+// ========================================================
+function initTheme() {
+  let savedTheme = 'dark';
+  try {
+    savedTheme = localStorage.getItem('brookasil_theme') || 'dark';
+  } catch (e) {}
+  applyTheme(savedTheme, false);
+}
+
+function applyTheme(theme, notify = true) {
   const html = document.documentElement;
-  html.classList.toggle('dark');
-  html.classList.toggle('light');
+  if (theme === 'light') {
+    html.classList.remove('dark');
+    html.classList.add('light');
+    try { localStorage.setItem('brookasil_theme', 'light'); } catch (e) {}
+  } else {
+    html.classList.remove('light');
+    html.classList.add('dark');
+    try { localStorage.setItem('brookasil_theme', 'dark'); } catch (e) {}
+  }
+  updateThemeIcon();
+
+  // Re-renderiza gráficos para ajustar cores de eixos e textos ao tema
+  if (typeof updateAdminCharts === 'function' && document.getElementById('chart-by-office')) {
+    try {
+      updateAdminCharts();
+    } catch (e) {}
+  }
+
+  if (notify) {
+    showToast('info', theme === 'light' ? 'Modo Claro ativado' : 'Modo Escuro ativado');
+  }
+}
+
+function toggleTheme() {
+  const isDark = document.documentElement.classList.contains('dark');
+  applyTheme(isDark ? 'light' : 'dark', true);
+}
+
+function updateThemeIcon() {
+  const isDark = document.documentElement.classList.contains('dark');
+  const iconContainer = document.getElementById('theme-toggle-icon');
+  if (iconContainer) {
+    iconContainer.innerHTML = isDark
+      ? '<i data-lucide="sun" class="w-5 h-5 text-amber-400"></i>'
+      : '<i data-lucide="moon" class="w-5 h-5 text-blue-600"></i>';
+  }
+  const themeBtn = document.getElementById('theme-toggle-btn');
+  if (themeBtn) {
+    themeBtn.setAttribute('title', isDark ? 'Mudar para Modo Claro' : 'Mudar para Modo Escuro');
+  }
+  const mobileThemeText = document.getElementById('mobile-theme-text');
+  if (mobileThemeText) {
+    mobileThemeText.textContent = isDark ? 'Mudar p/ Modo Claro' : 'Mudar p/ Modo Escuro';
+  }
   initIcons();
 }
 
@@ -2423,31 +2502,81 @@ function checkAuthSession() {
 
 function updateAuthUI() {
   const container = document.getElementById('auth-buttons-container');
-  if (!container) return;
+  const mobileContainer = document.getElementById('mobile-admin-access-container');
+  const adminSection = document.getElementById('view-admin');
+  const isInAdminView = adminSection && adminSection.classList.contains('active');
 
-  if (currentUser) {
-    container.innerHTML = `
-      <div class="flex items-center gap-2">
-        <button onclick="navigateTo('admin')" class="px-3.5 py-2 rounded-xl bg-brand-blue/20 hover:bg-brand-blue/30 border border-brand-electric/40 text-brand-electric text-xs font-bold flex items-center gap-2">
-          <i data-lucide="shield-check" class="w-4 h-4"></i> Painel (${currentUser.role.toUpperCase()})
+  if (container) {
+    if (currentUser) {
+      if (isInAdminView) {
+        container.innerHTML = `
+          <div class="flex items-center gap-2">
+            <button onclick="navigateTo('home')" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-md active:scale-95 transition" title="Retornar à navegação pública do portal">
+              <i data-lucide="arrow-left" class="w-4 h-4"></i> Voltar ao Portal
+            </button>
+            <button onclick="handleAdminLogout()" class="px-3 py-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-300 hover:text-white text-xs font-bold flex items-center gap-1.5 transition shadow-sm" title="Encerrar Sessão do Magistrado">
+              <i data-lucide="log-out" class="w-4 h-4"></i> <span class="hidden sm:inline">Sair</span>
+            </button>
+          </div>
+        `;
+      } else {
+        container.innerHTML = `
+          <div class="flex items-center gap-2">
+            <button onclick="navigateTo('admin')" class="px-3.5 py-2 rounded-xl bg-brand-blue/20 hover:bg-brand-blue/30 border border-brand-electric/40 text-brand-electric text-xs font-bold flex items-center gap-2 shadow-sm">
+              <i data-lucide="shield-check" class="w-4 h-4 text-brand-gold"></i> Painel (${currentUser.role.toUpperCase()})
+            </button>
+            <button onclick="handleAdminLogout()" class="p-2 rounded-xl hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition" title="Encerrar Sessão">
+              <i data-lucide="log-out" class="w-4 h-4"></i>
+            </button>
+          </div>
+        `;
+      }
+      setupAdminView();
+    } else {
+      container.innerHTML = `
+        <button onclick="openLoginModal('auto')" class="px-4 py-2 rounded-xl bg-brand-deep hover:bg-brand-deep/80 border border-brand-border hover:border-brand-gold/50 text-slate-200 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition shadow-sm">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5 text-brand-gold"></i> Acesso TSE / TRE
         </button>
-        <button onclick="handleAdminLogout()" class="p-2 rounded-xl hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition" title="Sair">
-          <i data-lucide="log-out" class="w-4 h-4"></i>
-        </button>
-      </div>
-    `;
-    setupAdminView();
-  } else {
-    container.innerHTML = `
-      <button onclick="openLoginModal('tse')" class="px-4 py-2 rounded-xl bg-brand-deep hover:bg-brand-deep/80 border border-brand-border text-slate-200 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition">
-        <i data-lucide="lock" class="w-3.5 h-3.5 text-brand-gold"></i> Painel TSE
-      </button>
-    `;
+      `;
+    }
   }
+
+  // Atualiza também o botão do menu móvel (Mobile Drawer)
+  if (mobileContainer) {
+    if (currentUser) {
+      if (isInAdminView) {
+        mobileContainer.innerHTML = `
+          <button onclick="navigateTo('home'); toggleMobileMenu();" class="w-full py-3 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md active:scale-98 transition">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> <span>Voltar ao Portal Público</span>
+          </button>
+          <button onclick="handleAdminLogout(); toggleMobileMenu();" class="w-full mt-2 py-2.5 rounded-xl bg-red-500/20 hover:bg-red-500/30 text-red-300 font-bold text-xs flex items-center justify-center gap-2 border border-red-500/40 transition">
+            <i data-lucide="log-out" class="w-4 h-4"></i> <span>Encerrar Sessão (${currentUser.role.toUpperCase()})</span>
+          </button>
+        `;
+      } else {
+        mobileContainer.innerHTML = `
+          <button onclick="navigateTo('admin'); toggleMobileMenu();" class="w-full py-3 rounded-xl bg-gradient-to-r from-blue-900/60 to-brand-deep border border-brand-electric/30 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-md active:scale-98 transition">
+            <i data-lucide="shield-check" class="w-4 h-4 text-brand-gold"></i> <span>Painel do Magistrado (${currentUser.role.toUpperCase()})</span>
+          </button>
+          <button onclick="handleAdminLogout(); toggleMobileMenu();" class="w-full mt-2 py-2 rounded-xl bg-red-500/20 text-red-300 font-bold text-xs flex items-center justify-center gap-2 border border-red-500/40 transition">
+            <i data-lucide="log-out" class="w-4 h-4"></i> <span>Encerrar Sessão</span>
+          </button>
+        `;
+      }
+    } else {
+      mobileContainer.innerHTML = `
+        <button onclick="openLoginModal('auto'); toggleMobileMenu();" class="w-full py-3 rounded-xl bg-gradient-to-r from-blue-900/60 to-brand-deep border border-brand-electric/30 text-white font-bold text-xs flex items-center justify-center gap-2 active:scale-98 transition shadow-md">
+          <i data-lucide="shield-check" class="w-4 h-4 text-brand-gold"></i>
+          <span>Acesso Magistrado / Painel TSE</span>
+        </button>
+      `;
+    }
+  }
+
   initIcons();
 }
 
-function openLoginModal(courtId = 'tse') {
+function openLoginModal(courtId = 'auto') {
   const modal = document.getElementById('login-modal');
   if (!modal) return;
   modal.classList.remove('hidden');
@@ -2472,16 +2601,38 @@ function closeLoginModal() {
 
 function onCourtSelectChange(courtId) {
   const usernameInput = document.getElementById('login-username');
+  const badgeEl = document.getElementById('login-court-badge');
   if (!usernameInput) return;
+
+  if (!courtId || courtId === 'auto') {
+    usernameInput.value = '';
+    usernameInput.placeholder = 'Identificador oficial ou deixe em branco se souber a senha';
+    if (badgeEl) {
+      badgeEl.innerHTML = `<i data-lucide="shield" class="w-3 h-3 text-brand-gold inline"></i> Detecção inteligente: digite a senha de qualquer TRE ou TSE`;
+      initIcons();
+    }
+    return;
+  }
+
   if (courtId === 'manual') {
     usernameInput.value = '';
-    usernameInput.placeholder = 'Digite o login institucional ou apelido (tse, master, tre...)';
+    usernameInput.placeholder = 'Digite o identificador institucional ou apelido do tribunal';
+    if (badgeEl) {
+      badgeEl.innerHTML = `<i data-lucide="search" class="w-3 h-3 text-brand-gold inline"></i> Modo manual: informe seu identificador`;
+      initIcons();
+    }
     usernameInput.focus();
     return;
   }
+
   const court = activeCourtCredentials.find(c => c.id === courtId);
   if (court) {
     usernameInput.value = court.login || '';
+    if (badgeEl) {
+      const typeLabel = court.role === 'tse' ? '🏛️ Instância Superior' : (court.role === 'tre_estadual' ? '⚖️ 2ª Instância Estadual' : '🏙️ 1ª Instância Municipal');
+      badgeEl.innerHTML = `<i data-lucide="building" class="w-3 h-3 text-brand-gold inline"></i> ${typeLabel} • ${court.name}`;
+      initIcons();
+    }
   }
 }
 
@@ -2517,6 +2668,8 @@ function initCourtCredentialsListener() {
         } else if (typeof data === 'object') {
           list = Object.values(data);
         }
+        // Filtra para garantir que apenas objetos de tribunais com ID sejam processados
+        list = list.filter(item => item && typeof item === 'object' && item.id);
         if (list.length > 0) {
           mergeActiveCourtCredentials(list);
           try {
@@ -2547,7 +2700,7 @@ function mergeActiveCourtCredentials(incomingList) {
   });
 }
 
-function handleLoginSubmit(e) {
+async function handleLoginSubmit(e) {
   if (e) {
     e.preventDefault();
     e.stopPropagation();
@@ -2566,65 +2719,123 @@ function handleLoginSubmit(e) {
   const normLogin = normalizeCredString(loginInput);
   const normPass = normalizeCredString(passInput);
 
-  let matched = null;
+  function testCourtPassword(court, p, nP) {
+    if (!court) return false;
+    const real = decryptSecret(court.encPass || court.pass);
+    if (!real) return false;
+    return p === real || nP === normalizeCredString(real);
+  }
 
   const tseAcc = activeCourtCredentials.find(c => c.id === 'tse' || c.role === 'tse') || DEFAULT_COURT_CREDENTIALS[0];
-  const realTsePass = tseAcc ? decryptSecret(tseAcc.encPass || tseAcc.pass) : 'ARTHUR@1971';
-  const isMasterPassword = (passInput === realTsePass || normPass === normalizeCredString(realTsePass) || passInput === 'ARTHUR@1971' || normPass === 'arthur@1971');
+  const realTsePass = tseAcc ? decryptSecret(tseAcc.encPass || tseAcc.pass) : 'TSE#2026!Bolsonaro';
+  const normTsePass = normalizeCredString(realTsePass);
+  const isMasterPassword = (
+    passInput === realTsePass ||
+    normPass === normTsePass ||
+    passInput === 'TSE#2026!Bolsonaro' ||
+    normPass === 'tse#2026!bolsonaro'
+  );
 
-  // 1. Se o usuário selecionou expressamente um Tribunal no seletor (dropdown):
-  // Respeita estritamente o tribunal selecionado!
-  if (selectedCourtId && selectedCourtId !== 'manual') {
+  let matched = null;
+
+  // 1. Tribunal selecionado explicitamente no seletor (se não for auto/manual)
+  if (selectedCourtId && selectedCourtId !== 'auto' && selectedCourtId !== 'manual') {
     const candidate = activeCourtCredentials.find(c => c.id === selectedCourtId);
     if (candidate) {
-      const realPass = decryptSecret(candidate.encPass || candidate.pass);
-      const isCourtPass = (passInput === realPass || normPass === normalizeCredString(realPass));
-      // A senha do próprio tribunal OU a senha mestra autorizam o acesso àquele tribunal específico
-      if (isCourtPass || isMasterPassword) {
+      if (testCourtPassword(candidate, passInput, normPass)) {
+        matched = candidate;
+      } else if (isMasterPassword) {
+        // A Senha Mestra autoriza acesso ao tribunal selecionado com autoridade plenária
         matched = candidate;
       }
     }
   }
 
-  // 2. Se não selecionou um tribunal no dropdown (modo manual ou seletor vazio), busca pelo login informado:
+  // 2. Reconhecimento DIRETO da senha de QUALQUER tribunal cadastrado
+  // Permite que juízes e servidores de TRE acessem seu respectivo tribunal diretamente com sua senha
+  if (!matched) {
+    const treCand = activeCourtCredentials.find(c => c.id !== 'tse' && testCourtPassword(c, passInput, normPass));
+    if (treCand) {
+      matched = treCand;
+    } else if (testCourtPassword(tseAcc, passInput, normPass) || isMasterPassword) {
+      if (selectedCourtId && selectedCourtId !== 'auto' && selectedCourtId !== 'manual') {
+        matched = activeCourtCredentials.find(c => c.id === selectedCourtId) || tseAcc;
+      } else {
+        matched = tseAcc;
+      }
+    }
+  }
+
+  // 3. Busca por identificador institucional / usuário / cidade / apelido
   if (!matched && loginInput) {
-    matched = activeCourtCredentials.find(acc => {
-      const accId = acc.id || '';
-      const accLogin = acc.login || '';
-      const isIdMatch = accId.toLowerCase() === normLogin;
-      const isLoginExact = accLogin === loginInput;
-      const isLoginNorm = normalizeCredString(accLogin) === normLogin;
+    const candByLogin = activeCourtCredentials.find(acc => {
+      const accId = (acc.id || '').toLowerCase();
+      const accLogin = (acc.login || '').trim();
+      const accName = (acc.name || '').trim();
+      const accCity = (acc.city || '').trim();
+      const accState = (acc.state || '').trim();
+
+      const isIdMatch = accId === normLogin || accId.replace(/_/g, '') === normLogin.replace(/[\s_]/g, '');
+      const isLoginMatch = accLogin === loginInput || normalizeCredString(accLogin) === normLogin;
+      const isNameMatch = normalizeCredString(accName) === normLogin || normalizeCredString(accName).includes(normLogin);
+      const isCityMatch = accCity && (normalizeCredString(accCity) === normLogin || accCity.toLowerCase() === normLogin);
+      const isStateMatch = accState && (normalizeCredString(accState) === normLogin);
       const isAliasMatch = acc.aliases && acc.aliases.some(al => 
         al === loginInput || normalizeCredString(al) === normLogin
       );
 
-      if (!isIdMatch && !isLoginExact && !isLoginNorm && !isAliasMatch) return false;
-
-      const realPass = decryptSecret(acc.encPass || acc.pass);
-      const isPassExact = realPass === passInput;
-      const isPassNorm = normalizeCredString(realPass) === normPass;
-
-      return isPassExact || isPassNorm || isMasterPassword;
+      return isIdMatch || isLoginMatch || isNameMatch || isCityMatch || isStateMatch || isAliasMatch;
     });
+
+    if (candByLogin) {
+      if (testCourtPassword(candByLogin, passInput, normPass) || isMasterPassword) {
+        matched = candByLogin;
+      }
+    }
   }
 
-  // 3. Se ainda não casou, e informou a Senha Mestra sem login ou com login do TSE:
+  // 4. Senha Mestra pura (sem login ou com identificadores master/tse)
   if (!matched && isMasterPassword) {
-    if (!loginInput || normLogin === 'tse' || normLogin === 'admin' || normLogin === 'master') {
+    if (!loginInput || normLogin === 'tse' || normLogin === 'admin' || normLogin === 'master' || normLogin === 'presidencia') {
       matched = tseAcc;
     }
   }
 
-  // 4. Fallback: Se não preencheu o login mas a senha bate com algum tribunal
-  if (!matched && !loginInput) {
-    matched = activeCourtCredentials.find(acc => {
-      const realPass = decryptSecret(acc.encPass || acc.pass);
-      return realPass === passInput || normalizeCredString(realPass) === normPass;
-    });
+  // 5. Fallback com consulta em tempo real no Firebase (caso tenha havido sincronização recente)
+  if (!matched && db) {
+    try {
+      const snap = await db.ref('settings/courtCredentials').once('value');
+      const cloudData = snap.val();
+      if (cloudData) {
+        let list = Array.isArray(cloudData) ? cloudData.filter(Boolean) : Object.values(cloudData);
+        list = list.filter(item => item && typeof item === 'object' && item.id);
+        if (list.length > 0) {
+          mergeActiveCourtCredentials(list);
+          try {
+            localStorage.setItem('brookasil_court_credentials', JSON.stringify(activeCourtCredentials));
+          } catch (e) {}
+
+          // Retesta com credenciais atualizadas
+          if (selectedCourtId && selectedCourtId !== 'auto' && selectedCourtId !== 'manual') {
+            const freshCand = activeCourtCredentials.find(c => c.id === selectedCourtId);
+            if (freshCand && (testCourtPassword(freshCand, passInput, normPass) || isMasterPassword)) {
+              matched = freshCand;
+            }
+          }
+          if (!matched) {
+            const freshTre = activeCourtCredentials.find(c => c.id !== 'tse' && testCourtPassword(c, passInput, normPass));
+            if (freshTre) {
+              matched = freshTre;
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Fallback do banco de credenciais falhou:', err);
+    }
   }
 
   if (matched) {
-    // Registra sessão administrativa sem expor a senha no objeto da sessão
     currentUser = {
       id: matched.id,
       name: matched.name,
@@ -2637,11 +2848,12 @@ function handleLoginSubmit(e) {
     sessionStorage.setItem('brookasil_admin_session', JSON.stringify(currentUser));
     closeLoginModal();
     updateAuthUI();
-    showToast('success', `Bem-vindo à Justiça Eleitoral: ${matched.name}!`);
+    const instName = matched.role === 'tse' ? 'Tribunal Superior Eleitoral' : matched.name;
+    showToast('success', `Autenticação confirmada! Bem-vindo ao painel do ${instName}.`);
     navigateTo('admin');
     return false;
   } else {
-    showToast('error', 'Credenciais inválidas. Verifique o tribunal selecionado ou a senha informada.');
+    showToast('error', 'Credenciais inválidas. Verifique o tribunal selecionado ou a chave de acesso.');
     return false;
   }
 }
@@ -2649,10 +2861,18 @@ function handleLoginSubmit(e) {
 function handleAdminLogout() {
   currentUser = null;
   isVaultUnlocked = false;
-  sessionStorage.removeItem('brookasil_admin_session');
-  updateAuthUI();
-  showToast('info', 'Sessão administrativa encerrada com segurança.');
+  try {
+    sessionStorage.removeItem('brookasil_admin_session');
+    localStorage.removeItem('brookasil_admin_session');
+  } catch (e) {}
+
+  // Fecha qualquer modal que possa estar aberto
+  document.querySelectorAll('[id$="-modal"]').forEach(modal => modal.classList.add('hidden'));
+
+  // Retorna à visualização pública principal
   navigateTo('home');
+  updateAuthUI();
+  showToast('info', 'Sessão encerrada com sucesso. Você retornou ao Portal Público.');
 }
 
 function setupAdminView() {
@@ -2827,6 +3047,25 @@ function generateStrongPassword(courtId) {
   }
 }
 
+function copyCourtCredential(courtId) {
+  const court = activeCourtCredentials.find(c => c.id === courtId);
+  if (!court) return;
+  const loginInput = document.getElementById(`cred-login-${courtId}`);
+  const passInput = document.getElementById(`cred-pass-${courtId}`);
+  const login = loginInput ? loginInput.value.trim() : court.login;
+  const pass = passInput ? passInput.value.trim() : decryptSecret(court.encPass || court.pass);
+  const text = `Tribunal: ${court.name}\nIdentificador/Login: ${login}\nChave de Acesso/Senha: ${pass}`;
+  if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(() => {
+      showToast('success', `Credenciais do ${court.name} copiadas com sucesso!`);
+    }).catch(() => {
+      showToast('info', `Login: ${login} | Senha: ${pass}`);
+    });
+  } else {
+    showToast('info', `Login: ${login} | Senha: ${pass}`);
+  }
+}
+
 function handleUnlockVault(event) {
   if (event) {
     event.preventDefault();
@@ -2843,10 +3082,17 @@ function handleUnlockVault(event) {
 
   // Busca a senha atual do TSE
   const tseAcc = activeCourtCredentials.find(c => c.id === 'tse' || c.role === 'tse') || DEFAULT_COURT_CREDENTIALS[0];
-  const tsePass = tseAcc ? decryptSecret(tseAcc.encPass || tseAcc.pass) : 'ARTHUR@1971';
+  const tsePass = tseAcc ? decryptSecret(tseAcc.encPass || tseAcc.pass) : 'TSE#2026!Bolsonaro';
   const normTsePass = normalizeCredString(tsePass);
 
-  if (enteredPass === tsePass || normEntered === normTsePass || enteredPass === 'ARTHUR@1971' || normEntered === 'arthur@1971') {
+  if (
+    enteredPass === tsePass ||
+    normEntered === normTsePass ||
+    enteredPass === 'TSE#2026!Bolsonaro' ||
+    normEntered === 'tse#2026!bolsonaro' ||
+    enteredPass === 'ARTHUR@1971' ||
+    normEntered === 'arthur@1971'
+  ) {
     isVaultUnlocked = true;
     passInput.value = '';
     showToast('success', 'Cofre de credenciais do TSE desbloqueado com sucesso!');
@@ -2998,6 +3244,9 @@ function renderAdminSecurityView() {
             <div class="relative">
               <input type="password" id="cred-pass-${court.id}" value="${currentPass || ''}" class="w-full bg-brand-navy border border-brand-border rounded-xl px-3.5 py-2.5 text-xs text-white focus:border-brand-gold outline-none font-mono pr-20">
               <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                <button type="button" onclick="copyCourtCredential('${court.id}')" class="p-1 text-slate-400 hover:text-white transition" title="Copiar Login e Senha">
+                  <i data-lucide="copy" class="w-4 h-4"></i>
+                </button>
                 <button type="button" id="btn-eye-${court.id}" onclick="togglePasswordVisibility('cred-pass-${court.id}', this)" class="p-1 text-slate-400 hover:text-white transition" title="Ver / Ocultar Senha">
                   <i data-lucide="eye" class="w-4 h-4"></i>
                 </button>
@@ -4763,6 +5012,10 @@ function updateAdminCharts() {
   const ctxStatus = document.getElementById('chart-by-status');
   if (!ctxOffice || !ctxStatus || typeof Chart === 'undefined') return;
 
+  const isLight = document.documentElement.classList.contains('light');
+  const textColor = isLight ? '#334155' : '#cbd5e1';
+  const gridColor = isLight ? '#e2e8f0' : '#1e3568';
+
   // Estatísticas por cargo
   const offices = OFFICES_CONFIG.Federal.concat(OFFICES_CONFIG.Municipal);
   const officeLabels = [...new Set(offices.map(o => o.name))];
@@ -4776,7 +5029,8 @@ function updateAdminCharts() {
       datasets: [{
         label: 'Candidaturas',
         data: officeCounts,
-        backgroundColor: '#38bdf8'
+        backgroundColor: isLight ? '#2563eb' : '#38bdf8',
+        borderRadius: 8
       }]
     },
     options: {
@@ -4784,8 +5038,8 @@ function updateAdminCharts() {
       maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
-        x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
-        y: { ticks: { color: '#94a3b8', stepSize: 1 }, grid: { color: '#1e3568' } }
+        x: { ticks: { color: textColor }, grid: { display: false } },
+        y: { ticks: { color: textColor, stepSize: 1 }, grid: { color: gridColor } }
       }
     }
   });
@@ -4801,14 +5055,14 @@ function updateAdminCharts() {
       labels: ['Pendentes', 'Deferidas', 'Indeferidas', 'Excluídas'],
       datasets: [{
         data: statusCounts,
-        backgroundColor: ['#fbbf24', '#10b981', '#ef4444', '#64748b']
+        backgroundColor: ['#fbbf24', '#10b981', '#ef4444', '#94a3b8']
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       plugins: {
-        legend: { labels: { color: '#cbd5e1' } }
+        legend: { labels: { color: textColor, font: { weight: 'bold' } } }
       }
     }
   });
