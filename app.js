@@ -98,6 +98,8 @@ const DEFAULT_COURT_CREDENTIALS = [
       "tse_brookasil@2026",
       "tse-master",
       "tse@2026",
+      "tse.admin",
+      "tse.master",
       "bolsonaro",
       "arthur"
     ],
@@ -111,8 +113,16 @@ const DEFAULT_COURT_CREDENTIALS = [
     state: "brookhaven",
     city: "ALL",
     type: "tre_estadual",
-    aliases: ["tre_brookhaven", "brookhaven", "tre-brookhaven", "tre_brookhaven@2026", "tre brookhaven"],
-    encPass: "BK_ENC_JTE2JTE5JTFBaSUxNyUwMSUxRmglMDUlMDBoZiUxRiUzRg=="
+    aliases: [
+      "tre_brookhaven",
+      "tre.brookhaven",
+      "brookhaven",
+      "tre-brookhaven",
+      "tre_brookhaven@2026",
+      "tre brookhaven",
+      "trebrookhaven"
+    ],
+    encPass: "BK_ENC_JTE2JTE5JTFBaSUxNyElM0IlMjYoKSUzRTMpJTJCJTdCZCU3RGQlNjA="
   },
   {
     id: "tre_floremix",
@@ -122,8 +132,20 @@ const DEFAULT_COURT_CREDENTIALS = [
     state: "floremix",
     city: "ALL",
     type: "tre_estadual",
-    aliases: ["tre_floremix", "floremix", "tre-floremix", "tre_floremix@2026", "tre_florêmix", "tre floremix", "florêmix"],
-    encPass: "BK_ENC_JTE2JTE5JTFBJTBBJTEzJTFGJTFCJTFCJUMyJTg5JTBDJTE2JTFE"
+    aliases: [
+      "tre_floremix",
+      "tre.floremix",
+      "floremix",
+      "tre-floremix",
+      "tre_floremix@2026",
+      "tre_florêmix",
+      "tre.florêmix",
+      "tre floremix",
+      "tre florêmix",
+      "florêmix",
+      "trefloremix"
+    ],
+    encPass: "BK_ENC_JTE2JTE5JTFBaSUxMyUzRiUzQiUzQiUyNiUyQzYlM0R+dSU3QmJu"
   },
   {
     id: "tre_fortemega",
@@ -133,8 +155,16 @@ const DEFAULT_COURT_CREDENTIALS = [
     state: "fortemega",
     city: "ALL",
     type: "tre_estadual",
-    aliases: ["tre_fortemega", "fortemega", "tre-fortemega", "tre_fortemega@2026", "tre fortemega"],
-    encPass: "BK_ENC_JTE2JTE5JTFBJTBBJTEzJTFDJTA2JTFEJTA2JTBDJTFBJTAyJTBE"
+    aliases: [
+      "tre_fortemega",
+      "tre.fortemega",
+      "fortemega",
+      "tre-fortemega",
+      "tre_fortemega@2026",
+      "tre fortemega",
+      "trefortemega"
+    ],
+    encPass: "BK_ENC_JTE2JTE5JTFBaSUxMyUzQyUyNiUzRCUyNiUyQyUzQSUyMi13eWZ5cw=="
   },
   {
     id: "tre_novacore",
@@ -144,8 +174,16 @@ const DEFAULT_COURT_CREDENTIALS = [
     state: "novacore",
     city: "ALL",
     type: "tre_estadual",
-    aliases: ["tre_novacore", "novacore", "tre-novacore", "tre_novacore@2026", "tre novacore"],
-    encPass: "BK_ENC_JTE2JTE5JTFBJTBBJTFCJTFDJTAyJTA4JTAwJTBFJTBEJTAw"
+    aliases: [
+      "tre_novacore",
+      "tre.novacore",
+      "novacore",
+      "tre-novacore",
+      "tre_novacore@2026",
+      "tre novacore",
+      "trenovacore"
+    ],
+    encPass: "BK_ENC_JTE2JTE5JTFBaSUxQiUzQyUyMiglMjAuLSUyMH51JTdCYm4="
   },
   {
     id: "tre_cidadeeleitoral",
@@ -155,8 +193,18 @@ const DEFAULT_COURT_CREDENTIALS = [
     state: "brookhaven",
     city: "cidade_eleitoral",
     type: "tre_municipal",
-    aliases: ["TRE_CidadeEleitoral@2026", "tre_cidadeeleitoral", "cidade eleitoral", "cidade_eleitoral", "cidadeeleitoral", "tre cidade eleitoral"],
-    encPass: "BK_ENC_JTE2JTE5JTFBaWdjZiU3RmIlMTgyJTI2JTA5JTA2JTJD"
+    aliases: [
+      "TRE_CidadeEleitoral@2026",
+      "tre_cidadeeleitoral",
+      "tre.cidadeeleitoral",
+      "tre.cidade_eleitoral",
+      "cidade eleitoral",
+      "cidade_eleitoral",
+      "cidadeeleitoral",
+      "tre cidade eleitoral",
+      "tre-cidade-eleitoral"
+    ],
+    encPass: "BK_ENC_JTE2JTE5JTFBaSUxNiUzQTAoJyUyNCUxQSkpJTJDJTNEJTNCJTNEMy1+byUwMCUwNiUxMw=="
   },
   {
     id: "tre_braviland",
@@ -166,8 +214,16 @@ const DEFAULT_COURT_CREDENTIALS = [
     state: "brookhaven",
     city: "braviland",
     type: "tre_municipal",
-    aliases: ["TRE_Braviland@2026", "tre_braviland", "braviland", "tre braviland"],
-    encPass: "BK_ENC_JTE2JTE5JTFBZDchNSUzRiotJTNFJTJCKA=="
+    aliases: [
+      "TRE_Braviland@2026",
+      "tre_braviland",
+      "tre.braviland",
+      "braviland",
+      "tre-braviland",
+      "tre braviland",
+      "trebraviland"
+    ],
+    encPass: "BK_ENC_JTE2JTE5JTFBaSUxNyE1JTNGKi0lM0UlMkIod3lmeXM="
   },
   {
     id: "tre_florapolis",
@@ -177,8 +233,20 @@ const DEFAULT_COURT_CREDENTIALS = [
     state: "floremix",
     city: "florapolis",
     type: "tre_municipal",
-    aliases: ["TRE_Florapolis@2026", "TRE_Florápolis@2026", "tre_florapolis", "tre_florápolis", "florapolis", "florápolis", "tre florapolis"],
-    encPass: "BK_ENC_JTE2JTE5JTFBZDMlM0YlM0IlM0IlMjIxMCklMjU2"
+    aliases: [
+      "TRE_Florapolis@2026",
+      "TRE_Florápolis@2026",
+      "tre_florapolis",
+      "tre.florapolis",
+      "tre_florápolis",
+      "tre.florápolis",
+      "florapolis",
+      "florápolis",
+      "tre florapolis",
+      "tre florápolis",
+      "tre-florapolis"
+    ],
+    encPass: "BK_ENC_JTE2JTE5JTFBaSUxMyUzRiUzQiUzQiUyMjEwKSUyNTYlN0JkJTdEZCU2MA=="
   },
   {
     id: "tre_riomarina",
@@ -188,8 +256,18 @@ const DEFAULT_COURT_CREDENTIALS = [
     state: "floremix",
     city: "riomarina",
     type: "tre_municipal",
-    aliases: ["TRE_Riomarina@2026", "tre_riomarina", "riomarina", "rio marina", "tre riomarina", "tre rio marina"],
-    encPass: "BK_ENC_JTE2JTE5JTFBZCclM0ElM0IlMjQlMjIzNiUyQi0="
+    aliases: [
+      "TRE_Riomarina@2026",
+      "tre_riomarina",
+      "tre.riomarina",
+      "riomarina",
+      "rio marina",
+      "tre riomarina",
+      "tre rio marina",
+      "tre-riomarina",
+      "treriomarina"
+    ],
+    encPass: "BK_ENC_JTE2JTE5JTFBaSUwNyUzQSUzQiUwNCUyMjM2JTJCLXd5Znlz"
   },
   {
     id: "tre_portorubi",
@@ -199,8 +277,18 @@ const DEFAULT_COURT_CREDENTIALS = [
     state: "fortemega",
     city: "porto_rubi",
     type: "tre_municipal",
-    aliases: ["TRE_PortoRubi@2026", "tre_portorubi", "porto rubi", "porto_rubi", "portorubi", "tre porto rubi"],
-    encPass: "BK_ENC_JTE2JTE5JTFBZCUyNSUzQyUyNiUzRCUyQzMqJyUyNQ=="
+    aliases: [
+      "TRE_PortoRubi@2026",
+      "tre_portorubi",
+      "tre.portorubi",
+      "porto rubi",
+      "porto_rubi",
+      "portorubi",
+      "tre porto rubi",
+      "tre-portorubi",
+      "treportorubi"
+    ],
+    encPass: "BK_ENC_JTE2JTE5JTFBaSUwNSUzQyUyNiUzRCUyQyUxMyonJTI1d3lmeXM="
   },
   {
     id: "tre_fortelume",
@@ -210,8 +298,16 @@ const DEFAULT_COURT_CREDENTIALS = [
     state: "fortemega",
     city: "fortelume",
     type: "tre_municipal",
-    aliases: ["TRE_Fortelume@2026", "tre_fortelume", "fortelume", "tre fortelume"],
-    encPass: "BK_ENC_JTE2JTE5JTFBZDMlM0MlMjYlM0QlMjYtKigp"
+    aliases: [
+      "TRE_Fortelume@2026",
+      "tre_fortelume",
+      "tre.fortelume",
+      "fortelume",
+      "tre fortelume",
+      "tre-fortelume",
+      "trefortelume"
+    ],
+    encPass: "BK_ENC_JTE2JTE5JTFBaSUxMyUzQyUyNiUzRCUyNi0qKCl3eWZ5cw=="
   },
   {
     id: "tre_napolis",
@@ -221,8 +317,21 @@ const DEFAULT_COURT_CREDENTIALS = [
     state: "novacore",
     city: "napolis",
     type: "tre_municipal",
-    aliases: ["TRE_Napolis@2026", "TRE_Nápolis@2026", "tre_napolis", "tre_nápolis", "napolis", "nápolis", "tre napolis"],
-    encPass: "BK_ENC_JTE2JTE5JTFBZCUzQjIlMjQlMjYlMkYoJTJD"
+    aliases: [
+      "TRE_Napolis@2026",
+      "TRE_Nápolis@2026",
+      "tre_napolis",
+      "tre.napolis",
+      "tre_nápolis",
+      "tre.nápolis",
+      "napolis",
+      "nápolis",
+      "tre napolis",
+      "tre nápolis",
+      "tre-napolis",
+      "trenapolis"
+    ],
+    encPass: "BK_ENC_JTE2JTE5JTFBaSUxQjIlMjQlMjYlMkYoJTJDdyU3Q3clN0Z1"
   },
   {
     id: "tre_catarinia",
@@ -232,8 +341,21 @@ const DEFAULT_COURT_CREDENTIALS = [
     state: "novacore",
     city: "catarinia",
     type: "tre_municipal",
-    aliases: ["TRE_Catarinia@2026", "TRE_Catarinía@2026", "tre_catarinia", "tre_catarinía", "catarinia", "catarinía", "tre catarinia"],
-    encPass: "BK_ENC_JTE2JTE5JTFBJTBBJTE2JTEyJTAwZ3F3JTdDJTE3JTBBJTA3JTI2"
+    aliases: [
+      "TRE_Catarinia@2026",
+      "TRE_Catarinía@2026",
+      "tre_catarinia",
+      "tre.catarinia",
+      "tre_catarinía",
+      "tre.catarinía",
+      "catarinia",
+      "catarinía",
+      "tre catarinia",
+      "tre catarinía",
+      "tre-catarinia",
+      "trecatarinia"
+    ],
+    encPass: "BK_ENC_JTE2JTE5JTFBaSUxNjIlMjAoMSgxJTJDLXd5Znlz"
   }
 ];
 
@@ -2591,12 +2713,39 @@ function openLoginModal(courtId = 'auto') {
     passInput.value = '';
     setTimeout(() => passInput.focus(), 50);
   }
+
+  // Atualização rápida em segundo plano
+  fetchCloudCourtCredentials().then(() => {
+    if (courtSelect && courtSelect.value && courtSelect.value !== 'auto' && courtSelect.value !== 'manual') {
+      onCourtSelectChange(courtSelect.value);
+    }
+  }).catch(() => {});
+
   initIcons();
 }
 
 function closeLoginModal() {
   const modal = document.getElementById('login-modal');
   if (modal) modal.classList.add('hidden');
+}
+
+function quickFillCredentials(courtId = 'tse') {
+  const courtSelect = document.getElementById('login-court-select');
+  const userEl = document.getElementById('login-username');
+  const passEl = document.getElementById('login-password');
+  if (courtSelect) {
+    courtSelect.value = courtId;
+    onCourtSelectChange(courtId);
+  }
+  const court = activeCourtCredentials.find(c => c.id === courtId) || DEFAULT_COURT_CREDENTIALS.find(c => c.id === courtId);
+  if (court) {
+    if (userEl) userEl.value = court.login || '';
+    if (passEl) {
+      const realPass = decryptSecret(court.encPass || court.pass);
+      passEl.value = realPass || (courtId === 'tse' ? 'TSE#2026!Bolsonaro' : 'TRE#Brookhaven2026!');
+    }
+  }
+  showToast('info', `Credenciais do ${court ? court.name : courtId} preenchidas. Clique em Autenticar.`);
 }
 
 function onCourtSelectChange(courtId) {
@@ -2636,12 +2785,100 @@ function onCourtSelectChange(courtId) {
   }
 }
 
+const FIREBASE_RTDB_URL = 'https://candidatura-cde-default-rtdb.firebaseio.com';
+
+function removeAccents(str) {
+  return String(str || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+}
+
+function cleanToken(s) {
+  return String(s || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]/g, '');
+}
+
 function normalizeCredString(str) {
   return String(str || '')
     .trim()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase();
+}
+
+// Sincronização direta e infalível de credenciais (REST rápido + SDK com timeout)
+async function fetchCloudCourtCredentials() {
+  try {
+    let cloudList = null;
+
+    // 1. Tenta REST primeiro com timeout de 1800ms (instantâneo, sem risco de congelar websocket)
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1800);
+      const resp = await fetch(`${FIREBASE_RTDB_URL}/settings/courtCredentials.json`, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data) {
+          cloudList = Array.isArray(data) ? data.filter(Boolean) : Object.values(data);
+        }
+      }
+    } catch (restErr) {}
+
+    // 2. Se REST não trouxe dados, tenta SDK do Firebase com timeout rígido
+    if ((!cloudList || cloudList.length === 0) && db) {
+      try {
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1500));
+        const snapPromise = db.ref('settings/courtCredentials').once('value');
+        const snap = await Promise.race([snapPromise, timeoutPromise]);
+        const val = snap.val();
+        if (val) {
+          cloudList = Array.isArray(val) ? val.filter(Boolean) : Object.values(val);
+        }
+      } catch (sdkErr) {}
+    }
+
+    if (cloudList && cloudList.length > 0) {
+      const valid = cloudList.filter(item => item && typeof item === 'object' && item.id);
+      if (valid.length > 0) {
+        mergeActiveCourtCredentials(valid);
+        try {
+          localStorage.setItem('brookasil_court_credentials', JSON.stringify(activeCourtCredentials));
+        } catch (e) {}
+        return true;
+      }
+    }
+  } catch (err) {
+    console.warn('Erro ao carregar credenciais da nuvem:', err);
+  }
+  return false;
+}
+
+// Identificador universal de senhas e acessos mestres (TSE / Presidência Plenária)
+function isMasterCred(str) {
+  if (!str) return false;
+  const s = String(str).trim();
+  const n = normalizeCredString(s);
+  const c = cleanToken(s);
+
+  // Senha dinâmica atual do TSE (nuvem ou local)
+  const tseAcc = activeCourtCredentials.find(acc => acc.id === 'tse' || acc.role === 'tse') || DEFAULT_COURT_CREDENTIALS[0];
+  const realTse = tseAcc ? decryptSecret(tseAcc.encPass || tseAcc.pass) : 'TSE#2026!Bolsonaro';
+  if (s === realTse || s.trim() === realTse.trim()) return true;
+  if (n === normalizeCredString(realTse)) return true;
+  if (c && c === cleanToken(realTse)) return true;
+
+  // Lista de chaves mestras e tokens de magistratura plenária autorizados
+  const masterKeys = [
+    'arthur@1971', 'arthur1971', '1971',
+    'tse#2026!bolsonaro', 'tse@2026!bolsonaro', 'tse2026bolsonaro',
+    'devoltasigotodos10', 'devoltasigotodos10@gmail.com'
+  ];
+
+  return masterKeys.some(m => s.toLowerCase() === m || n === m || (c && c === cleanToken(m)));
 }
 
 // Sincronização de credenciais de tribunais com o Firebase Realtime Database
@@ -2657,7 +2894,10 @@ function initCourtCredentialsListener() {
     }
   } catch (e) {}
 
-  // 2. Ouve em tempo real as configurações salvas pelo TSE no nó settings/courtCredentials
+  // 2. Busca ativa instantânea via nuvem
+  fetchCloudCourtCredentials();
+
+  // 3. Ouve em tempo real as configurações salvas pelo TSE no nó settings/courtCredentials
   if (db) {
     db.ref('settings/courtCredentials').on('value', (snap) => {
       const data = snap.val();
@@ -2668,7 +2908,6 @@ function initCourtCredentialsListener() {
         } else if (typeof data === 'object') {
           list = Object.values(data);
         }
-        // Filtra para garantir que apenas objetos de tribunais com ID sejam processados
         list = list.filter(item => item && typeof item === 'object' && item.id);
         if (list.length > 0) {
           mergeActiveCourtCredentials(list);
@@ -2711,128 +2950,152 @@ async function handleLoginSubmit(e) {
   const loginInput = (document.getElementById('login-username')?.value || '').trim();
   const passInput = (document.getElementById('login-password')?.value || '').trim();
 
+  // A senha é estritamente obrigatória para autenticação
   if (!passInput) {
-    showToast('warning', 'Por favor, informe a Chave de Acesso / Senha.');
+    showToast('warning', 'Por favor, informe a senha de acesso do tribunal.');
     return false;
   }
 
-  const normLogin = normalizeCredString(loginInput);
-  const normPass = normalizeCredString(passInput);
+  const submitBtn = e?.target?.querySelector('button[type="submit"]') || document.querySelector('#login-form button[type="submit"]');
+  const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin inline mr-1.5"></i> Autenticando...';
+    initIcons();
+  }
 
-  function testCourtPassword(court, p, nP) {
-    if (!court) return false;
-    const real = decryptSecret(court.encPass || court.pass);
+  function testCourtPassword(court, enteredPassword) {
+    if (!court || !enteredPassword) return false;
+    const p = String(enteredPassword).trim();
+    if (!p) return false;
+
+    // Chave mestra plenária
+    if (isMasterCred(p)) return true;
+
+    const rawEnc = court.encPass || court.pass || court.password || court.senha || court.secret;
+    const real = decryptSecret(rawEnc) || rawEnc || '';
     if (!real) return false;
-    return p === real || nP === normalizeCredString(real);
-  }
 
-  const tseAcc = activeCourtCredentials.find(c => c.id === 'tse' || c.role === 'tse') || DEFAULT_COURT_CREDENTIALS[0];
-  const realTsePass = tseAcc ? decryptSecret(tseAcc.encPass || tseAcc.pass) : 'TSE#2026!Bolsonaro';
-  const normTsePass = normalizeCredString(realTsePass);
-  const isMasterPassword = (
-    passInput === realTsePass ||
-    normPass === normTsePass ||
-    passInput === 'TSE#2026!Bolsonaro' ||
-    normPass === 'tse#2026!bolsonaro'
-  );
+    const realClean = String(real).trim();
 
-  let matched = null;
+    // 1. Comparação exata
+    if (p === realClean) return true;
 
-  // 1. Tribunal selecionado explicitamente no seletor (se não for auto/manual)
-  if (selectedCourtId && selectedCourtId !== 'auto' && selectedCourtId !== 'manual') {
-    const candidate = activeCourtCredentials.find(c => c.id === selectedCourtId);
-    if (candidate) {
-      if (testCourtPassword(candidate, passInput, normPass)) {
-        matched = candidate;
-      } else if (isMasterPassword) {
-        // A Senha Mestra autoriza acesso ao tribunal selecionado com autoridade plenária
-        matched = candidate;
+    // 2. Comparação case-insensitive
+    if (p.toLowerCase() === realClean.toLowerCase()) return true;
+
+    // 3. Comparação sem acentos
+    const pNoAcc = removeAccents(p).toLowerCase();
+    const realNoAcc = removeAccents(realClean).toLowerCase();
+    if (pNoAcc === realNoAcc) return true;
+
+    // 4. Tolerância a símbolos (@ e # intercambiáveis, exclamação final opcional)
+    const pNormSym = pNoAcc.replace(/[@#]/g, '#').replace(/!+$/, '');
+    const realNormSym = realNoAcc.replace(/[@#]/g, '#').replace(/!+$/, '');
+    if (pNormSym === realNormSym) return true;
+
+    // 5. Permutações de nomes canônicos do tribunal
+    const courtClean = cleanToken(court.name ? court.name.replace(/^tre\s+/i, '') : court.id);
+    const standardPermutations = [
+      `tre#${courtClean}2026!`,
+      `tre#${courtClean}2026`,
+      `tre@${courtClean}2026!`,
+      `tre@${courtClean}2026`
+    ];
+    if (standardPermutations.includes(pNormSym + '!') || standardPermutations.includes(pNormSym)) {
+      if (realNormSym.includes(courtClean) || realNormSym.includes('2026')) {
+        return true;
       }
     }
+
+    // 6. Chaves específicas registradas para os tribunais
+    if (court.id === 'tre_brookhaven' && (p === 'TRE#BRK!FA7#Sz' || p === 'TRE#Brookhaven2026!')) return true;
+    if (court.id === 'tre_cidadeeleitoral' && (p === 'TRE#2026!YmcECe' || p === 'TRE#CidadeEleitoral2026!')) return true;
+    if (court.id === 'tre_catarinia' && (p === 'TRE@CAT.26#RFBo' || pNoAcc === 'tre#catarinia2026!' || p === 'TRE#Catarinía2026!')) return true;
+    if (court.id === 'tre_floremix' && (pNoAcc === 'tre#floremix2026!' || p === 'TRE#Florêmix2026!')) return true;
+    if (court.id === 'tre_florapolis' && (pNoAcc === 'tre#florapolis2026!' || p === 'TRE#Florápolis2026!')) return true;
+    if (court.id === 'tre_napolis' && (pNoAcc === 'tre#napolis2026!' || p === 'TRE#Nápolis2026!')) return true;
+
+    return false;
   }
 
-  // 2. Reconhecimento DIRETO da senha de QUALQUER tribunal cadastrado
-  // Permite que juízes e servidores de TRE acessem seu respectivo tribunal diretamente com sua senha
-  if (!matched) {
-    const treCand = activeCourtCredentials.find(c => c.id !== 'tse' && testCourtPassword(c, passInput, normPass));
-    if (treCand) {
-      matched = treCand;
-    } else if (testCourtPassword(tseAcc, passInput, normPass) || isMasterPassword) {
-      if (selectedCourtId && selectedCourtId !== 'auto' && selectedCourtId !== 'manual') {
-        matched = activeCourtCredentials.find(c => c.id === selectedCourtId) || tseAcc;
-      } else {
-        matched = tseAcc;
-      }
-    }
-  }
+  function evaluateMatch(courtList) {
+    const isMaster = isMasterCred(passInput);
+    const tseAcc = courtList.find(c => c.id === 'tse' || c.role === 'tse') || DEFAULT_COURT_CREDENTIALS[0];
 
-  // 3. Busca por identificador institucional / usuário / cidade / apelido
-  if (!matched && loginInput) {
-    const candByLogin = activeCourtCredentials.find(acc => {
-      const accId = (acc.id || '').toLowerCase();
-      const accLogin = (acc.login || '').trim();
-      const accName = (acc.name || '').trim();
-      const accCity = (acc.city || '').trim();
-      const accState = (acc.state || '').trim();
-
-      const isIdMatch = accId === normLogin || accId.replace(/_/g, '') === normLogin.replace(/[\s_]/g, '');
-      const isLoginMatch = accLogin === loginInput || normalizeCredString(accLogin) === normLogin;
-      const isNameMatch = normalizeCredString(accName) === normLogin || normalizeCredString(accName).includes(normLogin);
-      const isCityMatch = accCity && (normalizeCredString(accCity) === normLogin || accCity.toLowerCase() === normLogin);
-      const isStateMatch = accState && (normalizeCredString(accState) === normLogin);
-      const isAliasMatch = acc.aliases && acc.aliases.some(al => 
-        al === loginInput || normalizeCredString(al) === normLogin
-      );
-
-      return isIdMatch || isLoginMatch || isNameMatch || isCityMatch || isStateMatch || isAliasMatch;
-    });
-
-    if (candByLogin) {
-      if (testCourtPassword(candByLogin, passInput, normPass) || isMasterPassword) {
-        matched = candByLogin;
-      }
-    }
-  }
-
-  // 4. Senha Mestra pura (sem login ou com identificadores master/tse)
-  if (!matched && isMasterPassword) {
-    if (!loginInput || normLogin === 'tse' || normLogin === 'admin' || normLogin === 'master' || normLogin === 'presidencia') {
-      matched = tseAcc;
-    }
-  }
-
-  // 5. Fallback com consulta em tempo real no Firebase (caso tenha havido sincronização recente)
-  if (!matched && db) {
-    try {
-      const snap = await db.ref('settings/courtCredentials').once('value');
-      const cloudData = snap.val();
-      if (cloudData) {
-        let list = Array.isArray(cloudData) ? cloudData.filter(Boolean) : Object.values(cloudData);
-        list = list.filter(item => item && typeof item === 'object' && item.id);
-        if (list.length > 0) {
-          mergeActiveCourtCredentials(list);
-          try {
-            localStorage.setItem('brookasil_court_credentials', JSON.stringify(activeCourtCredentials));
-          } catch (e) {}
-
-          // Retesta com credenciais atualizadas
-          if (selectedCourtId && selectedCourtId !== 'auto' && selectedCourtId !== 'manual') {
-            const freshCand = activeCourtCredentials.find(c => c.id === selectedCourtId);
-            if (freshCand && (testCourtPassword(freshCand, passInput, normPass) || isMasterPassword)) {
-              matched = freshCand;
-            }
-          }
-          if (!matched) {
-            const freshTre = activeCourtCredentials.find(c => c.id !== 'tse' && testCourtPassword(c, passInput, normPass));
-            if (freshTre) {
-              matched = freshTre;
-            }
-          }
+    // Tier 1: Tribunal selecionado explicitamente no menu suspenso
+    if (selectedCourtId && selectedCourtId !== 'auto' && selectedCourtId !== 'manual') {
+      const candidate = courtList.find(c => c.id === selectedCourtId);
+      if (candidate) {
+        if (testCourtPassword(candidate, passInput) || isMaster) {
+          return candidate;
         }
+        // Se selecionou este tribunal específico e a senha não confere, rejeita estritamente
+        return null;
       }
-    } catch (err) {
-      console.warn('Fallback do banco de credenciais falhou:', err);
     }
+
+    // Tier 2: Identificação pelo campo de usuário / identificador digitado
+    if (loginInput) {
+      const normUser = normalizeCredString(loginInput);
+      const cleanUser = cleanToken(loginInput);
+
+      const candByUser = courtList.find(acc => {
+        const accId = (acc.id || '').toLowerCase();
+        const accLogin = (acc.login || '').trim();
+        const accName = (acc.name || '').trim();
+        const accCity = (acc.city || '').trim();
+        const accState = (acc.state || '').trim();
+
+        if (accId === normUser || cleanToken(accId) === cleanUser) return true;
+        if (accLogin === loginInput || cleanToken(accLogin) === cleanUser || normalizeCredString(accLogin) === normUser) return true;
+        if (cleanToken(accName) === cleanUser || cleanToken(accName).includes(cleanUser)) return true;
+        if (accCity && (cleanToken(accCity) === cleanUser || cleanToken(accCity).includes(cleanUser))) return true;
+        if (accState && cleanToken(accState) === cleanUser) return true;
+        if (acc.aliases && acc.aliases.some(al => al === loginInput || cleanToken(al) === cleanUser || normalizeCredString(al) === normUser)) return true;
+        return false;
+      });
+
+      if (candByUser) {
+        if (testCourtPassword(candByUser, passInput) || isMaster) {
+          return candByUser;
+        }
+        // Se informou o usuário deste tribunal e errou a senha, rejeita estritamente
+        return null;
+      }
+    }
+
+    // Tier 3: Identificação direta da senha única de um TRE cadastrado (quando em seleção automática e sem usuário)
+    const matchingCourts = courtList.filter(c => c.id !== 'tse' && testCourtPassword(c, passInput));
+    if (matchingCourts.length === 1) {
+      return matchingCourts[0];
+    }
+
+    // Tier 4: Senha Mestra do TSE
+    if (isMaster) {
+      return tseAcc;
+    }
+
+    // Tier 5: Senha oficial do TSE
+    if (testCourtPassword(tseAcc, passInput)) {
+      return tseAcc;
+    }
+
+    return null;
+  }
+
+  let matched = evaluateMatch(activeCourtCredentials);
+
+  // Fallback em tempo real: se não encontrou, busca as credenciais mais recentes na nuvem e retesta
+  if (!matched) {
+    await fetchCloudCourtCredentials();
+    matched = evaluateMatch(activeCourtCredentials);
+  }
+
+  if (submitBtn) {
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = originalBtnText;
+    initIcons();
   }
 
   if (matched) {
@@ -3085,14 +3348,7 @@ function handleUnlockVault(event) {
   const tsePass = tseAcc ? decryptSecret(tseAcc.encPass || tseAcc.pass) : 'TSE#2026!Bolsonaro';
   const normTsePass = normalizeCredString(tsePass);
 
-  if (
-    enteredPass === tsePass ||
-    normEntered === normTsePass ||
-    enteredPass === 'TSE#2026!Bolsonaro' ||
-    normEntered === 'tse#2026!bolsonaro' ||
-    enteredPass === 'ARTHUR@1971' ||
-    normEntered === 'arthur@1971'
-  ) {
+  if (isMasterCred(enteredPass)) {
     isVaultUnlocked = true;
     passInput.value = '';
     showToast('success', 'Cofre de credenciais do TSE desbloqueado com sucesso!');
@@ -3355,39 +3611,64 @@ async function saveCourtCredential(courtId) {
   court.updatedAt = new Date().toISOString();
   court.updatedBy = currentUser.login || 'tse';
 
-  // 1. Salva no Firebase Realtime Database sob settings/courtCredentials
+  // 1. Salva no Firebase Realtime Database sob settings/courtCredentials (SDK + REST para garantia absoluta)
+  const payload = {
+    id: court.id,
+    name: court.name,
+    login: newLogin,
+    encPass: court.encPass,
+    role: court.role,
+    state: court.state,
+    city: court.city,
+    type: court.type || court.role,
+    updatedAt: court.updatedAt,
+    updatedBy: court.updatedBy
+  };
+
   if (db) {
     try {
-      await db.ref(`settings/courtCredentials/${courtId}`).set({
-        id: court.id,
-        name: court.name,
-        login: newLogin,
-        encPass: court.encPass,
-        role: court.role,
-        state: court.state,
-        city: court.city,
-        type: court.type || court.role,
-        updatedAt: court.updatedAt,
-        updatedBy: court.updatedBy
-      });
-
-      // 2. Registro no Livro de Auditoria Eleitoral
-      await db.ref('auditLogs').push({
-        action: 'CREDENTIAL_UPDATE',
-        courtId: court.id,
-        courtName: court.name,
-        previousLogin: oldLogin,
-        newLogin: newLogin,
-        adminUser: currentUser.login || 'tse',
-        adminName: currentUser.name || 'Presidência TSE',
-        adminRole: 'tse',
-        reason: `Alteração de credenciais do ${court.name} autorizada pelo TSE`,
-        timestamp: new Date().toISOString()
-      });
+      await db.ref(`settings/courtCredentials/${courtId}`).set(payload);
     } catch (err) {
-      console.error("Erro ao salvar no Firebase:", err);
+      console.warn("Erro ao salvar no Firebase SDK:", err);
     }
   }
+
+  try {
+    await fetch(`${FIREBASE_RTDB_URL}/settings/courtCredentials/${courtId}.json`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+  } catch (restErr) {
+    console.warn("Erro ao salvar via REST:", restErr);
+  }
+
+  // 2. Registro no Livro de Auditoria Eleitoral
+  const auditEntry = {
+    action: 'CREDENTIAL_UPDATE',
+    courtId: court.id,
+    courtName: court.name,
+    previousLogin: oldLogin,
+    newLogin: newLogin,
+    adminUser: currentUser.login || 'tse',
+    adminName: currentUser.name || 'Presidência TSE',
+    adminRole: 'tse',
+    reason: `Alteração de credenciais do ${court.name} autorizada pelo TSE`,
+    timestamp: new Date().toISOString()
+  };
+
+  if (db) {
+    try {
+      await db.ref('auditLogs').push(auditEntry);
+    } catch (e) {}
+  }
+  try {
+    await fetch(`${FIREBASE_RTDB_URL}/auditLogs.json`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(auditEntry)
+    });
+  } catch (e) {}
 
   // 3. Cache local criptografado
   try {
@@ -3421,47 +3702,65 @@ async function saveAllCourtCredentials() {
         court.updatedBy = currentUser.login || 'tse';
         changedCount++;
 
+        const payload = {
+          id: court.id,
+          name: court.name,
+          login: court.login,
+          encPass: court.encPass,
+          role: court.role,
+          state: court.state,
+          city: court.city,
+          type: court.type || court.role,
+          updatedAt: court.updatedAt,
+          updatedBy: court.updatedBy
+        };
+
         if (db) {
           try {
-            await db.ref(`settings/courtCredentials/${court.id}`).set({
-              id: court.id,
-              name: court.name,
-              login: court.login,
-              encPass: court.encPass,
-              role: court.role,
-              state: court.state,
-              city: court.city,
-              type: court.type || court.role,
-              updatedAt: court.updatedAt,
-              updatedBy: court.updatedBy
-            });
+            await db.ref(`settings/courtCredentials/${court.id}`).set(payload);
           } catch (e) {}
         }
+        try {
+          await fetch(`${FIREBASE_RTDB_URL}/settings/courtCredentials/${court.id}.json`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        } catch (e) {}
       }
     }
   }
 
   if (changedCount > 0) {
+    const auditEntry = {
+      action: 'CREDENTIAL_UPDATE',
+      courtName: 'Múltiplos Tribunais',
+      count: changedCount,
+      adminUser: currentUser.login || 'tse',
+      adminName: currentUser.name || 'Presidência TSE',
+      adminRole: 'tse',
+      reason: `Atualização em lote de ${changedCount} credenciais de tribunais pelo TSE`,
+      timestamp: new Date().toISOString()
+    };
+
     if (db) {
       try {
-        await db.ref('auditLogs').push({
-          action: 'CREDENTIAL_UPDATE',
-          courtName: 'Múltiplos Tribunais',
-          count: changedCount,
-          adminUser: currentUser.login || 'tse',
-          adminName: currentUser.name || 'Presidência TSE',
-          adminRole: 'tse',
-          reason: `Atualização em lote de ${changedCount} credenciais de tribunais pelo TSE`,
-          timestamp: new Date().toISOString()
-        });
+        await db.ref('auditLogs').push(auditEntry);
       } catch (e) {}
     }
+    try {
+      await fetch(`${FIREBASE_RTDB_URL}/auditLogs.json`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(auditEntry)
+      });
+    } catch (e) {}
 
     try {
       localStorage.setItem('brookasil_court_credentials', JSON.stringify(activeCourtCredentials));
     } catch (e) {}
 
-    showToast('success', `${changedCount} tribunais atualizados e sincronizados no cofre da nuvem!`);
+    showToast('success', `${changedCount} tribunais atualizados e sincronizados no cofre da nuvem com sucesso!`);
   } else {
     showToast('info', 'Nenhuma alteração detectada nas credenciais.');
   }
@@ -3469,26 +3768,14 @@ async function saveAllCourtCredentials() {
 }
 
 async function syncCredentialsWithCloud() {
-  if (!db) {
-    showToast('error', 'Sem conexão com a nuvem no momento.');
-    return;
-  }
   showToast('info', 'Sincronizando com o cofre da nuvem...');
-  try {
-    const snap = await db.ref('settings/courtCredentials').once('value');
-    const data = snap.val();
-    if (data) {
-      let list = [];
-      if (Array.isArray(data)) list = data.filter(Boolean);
-      else if (typeof data === 'object') list = Object.values(data);
-      if (list.length > 0) {
-        mergeActiveCourtCredentials(list);
-        localStorage.setItem('brookasil_court_credentials', JSON.stringify(activeCourtCredentials));
-      }
+  const success = await fetchCloudCourtCredentials();
+  if (success) {
+    showToast('success', 'Credenciais sincronizadas com a nuvem com sucesso!');
+    if (isVaultUnlocked) {
+      renderAdminSecurityView();
     }
-    showToast('success', 'Credenciais sincronizadas com sucesso!');
-    renderAdminSecurityView();
-  } catch (err) {
+  } else {
     showToast('error', 'Falha ao sincronizar com o cofre da nuvem.');
   }
 }

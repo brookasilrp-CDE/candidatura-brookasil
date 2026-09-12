@@ -1618,7 +1618,7 @@
         <p class="text-xs text-slate-400">Tribunal Superior Eleitoral & Tribunais Regionais</p>
       </div>
 
-      <form onsubmit="handleLoginSubmit(event); return false;" action="javascript:void(0);" class="space-y-4">
+      <form id="login-form" onsubmit="handleLoginSubmit(event); return false;" action="javascript:void(0);" class="space-y-4">
         <div>
           <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
             <span>Tribunal / Instância</span>
@@ -1670,14 +1670,14 @@
             <span class="text-[10px] text-brand-gold font-mono font-normal">Senha do TRE ou Senha Mestra</span>
           </label>
           <div class="relative">
-            <input type="password" id="login-password" required autocomplete="current-password" placeholder="Digite a senha do tribunal ou senha mestra" class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-2.5 text-white text-xs focus:border-brand-gold outline-none pr-10">
+            <input type="password" id="login-password" autocomplete="current-password" placeholder="Digite a senha do tribunal ou senha mestra" class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-2.5 text-white text-xs focus:border-brand-gold outline-none pr-10">
             <button type="button" onclick="togglePasswordVisibility('login-password', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1" title="Mostrar/ocultar senha">
               <i data-lucide="eye" class="w-4 h-4"></i>
             </button>
           </div>
         </div>
 
-        <button type="submit" class="w-full py-3.5 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-brand-gold via-amber-400 to-yellow-500 hover:to-brand-gold transition shadow-glow-gold text-sm flex items-center justify-center gap-2 mt-2">
+        <button type="submit" class="w-full py-3.5 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-brand-gold via-amber-400 to-yellow-500 hover:to-brand-gold transition shadow-glow-gold text-sm flex items-center justify-center gap-2 mt-3 cursor-pointer active:scale-98">
           <i data-lucide="lock" class="w-4 h-4"></i> Autenticar no Painel
         </button>
       </form>
