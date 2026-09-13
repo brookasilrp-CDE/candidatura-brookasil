@@ -1164,11 +1164,11 @@
     <!-- ============================================== -->
     <section id="view-admin" class="view-section space-y-6">
       <!-- Sticky Quick-Return & Exit Banner for Magistrate -->
-      <div class="sticky top-20 z-30 p-3 sm:p-4 rounded-2xl glass-panel border border-brand-electric/30 shadow-xl backdrop-blur-xl flex flex-wrap items-center justify-between gap-3">
-        <div class="flex items-center gap-2">
-          <button onclick="navigateTo('home')" class="px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white font-bold text-xs flex items-center gap-2 shadow-md active:scale-95 transition">
-            <i data-lucide="arrow-left" class="w-4 h-4"></i>
-            <span>Voltar ao Portal Público</span>
+      <div class="sticky top-16 sm:top-20 z-30 p-2.5 sm:p-4 rounded-xl sm:rounded-2xl glass-panel border border-brand-electric/30 shadow-xl backdrop-blur-xl flex items-center justify-between gap-2">
+        <div class="flex items-center gap-1.5 sm:gap-2">
+          <button onclick="navigateTo('home')" class="px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-700 hover:from-blue-500 hover:to-indigo-600 text-white font-bold text-xs flex items-center gap-1.5 sm:gap-2 shadow-md active:scale-95 transition min-h-[40px]">
+            <i data-lucide="arrow-left" class="w-4 h-4 shrink-0"></i>
+            <span>Portal<span class="hidden sm:inline">&nbsp;Público</span></span>
           </button>
           <button onclick="navigateTo('candidatos')" class="hidden sm:flex px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-xs font-semibold items-center gap-1.5 transition">
             <i data-lucide="users" class="w-3.5 h-3.5 text-brand-electric"></i> Ver Candidatos
@@ -1178,68 +1178,69 @@
           </button>
         </div>
 
-        <div class="flex items-center gap-2.5">
+        <div class="flex items-center gap-1.5 sm:gap-2.5">
           <div class="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-400/10 border border-amber-400/30 text-amber-300 text-xs font-medium">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
             <span>Painel do Magistrado Ativo</span>
           </div>
-          <button onclick="refreshAdminData()" class="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition" title="Sincronizar com Firebase">
+          <button onclick="refreshAdminData()" class="px-2.5 sm:px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition min-h-[40px]" title="Sincronizar com Firebase">
             <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-brand-electric"></i> <span class="hidden sm:inline">Atualizar</span>
           </button>
-          <button onclick="handleAdminLogout()" class="px-4 py-2.5 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-300 hover:text-white text-xs font-bold flex items-center gap-2 shadow-sm active:scale-95 transition" title="Sair do Painel e Desconectar">
-            <i data-lucide="log-out" class="w-4 h-4"></i>
-            <span>Encerrar Sessão</span>
+          <button onclick="handleAdminLogout()" class="px-3 sm:px-4 py-2 sm:py-2.5 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-300 hover:text-white text-xs font-bold flex items-center gap-1.5 sm:gap-2 shadow-sm active:scale-95 transition min-h-[40px]" title="Sair do Painel e Desconectar">
+            <i data-lucide="log-out" class="w-4 h-4 shrink-0"></i>
+            <span class="hidden sm:inline">Encerrar Sessão</span>
+            <span class="sm:hidden">Sair</span>
           </button>
         </div>
       </div>
 
       <!-- Admin Top Bar -->
-      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-panel p-6 rounded-3xl border border-brand-border">
-        <div class="flex items-center gap-4">
-          <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-brand-blue to-indigo-900 border border-brand-electric/40 flex items-center justify-center text-white shadow-glow-blue flex-shrink-0">
-            <i data-lucide="shield-alert" class="w-7 h-7 text-brand-gold"></i>
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-panel p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-brand-border">
+        <div class="flex items-center gap-3 sm:gap-4">
+          <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-brand-blue to-indigo-900 border border-brand-electric/40 flex items-center justify-center text-white shadow-glow-blue flex-shrink-0">
+            <i data-lucide="shield-alert" class="w-6 h-6 sm:w-7 sm:h-7 text-brand-gold"></i>
           </div>
           <div>
             <div class="flex items-center gap-2">
-              <span id="admin-user-badge" class="px-2.5 py-0.5 rounded-full text-xs font-bold uppercase bg-brand-gold/20 text-brand-gold border border-brand-gold/30">TSE</span>
-              <span id="admin-user-jurisdiction" class="text-xs text-slate-400">Jurisdição: Nacional</span>
+              <span id="admin-user-badge" class="px-2.5 py-0.5 rounded-full text-[10px] sm:text-xs font-bold uppercase bg-brand-gold/20 text-brand-gold border border-brand-gold/30">TSE</span>
+              <span id="admin-user-jurisdiction" class="text-[11px] sm:text-xs text-slate-400">Jurisdição: Nacional</span>
             </div>
-            <h2 id="admin-user-name" class="text-2xl font-cinzel font-bold text-white mt-1">Tribunal Superior Eleitoral</h2>
+            <h2 id="admin-user-name" class="text-xl sm:text-2xl font-cinzel font-bold text-white mt-1">Tribunal Superior Eleitoral</h2>
           </div>
         </div>
 
-        <div class="flex flex-wrap items-center gap-2 sm:gap-3">
-          <button onclick="navigateTo('home')" class="px-3.5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-brand-border text-xs font-semibold text-slate-200 hover:text-white flex items-center gap-1.5 transition">
-            <i data-lucide="home" class="w-4 h-4 text-brand-gold"></i> Ir para o Início
+        <div class="flex flex-wrap items-center gap-2 sm:gap-3 pt-2 md:pt-0 border-t border-brand-border/60 md:border-t-0">
+          <button onclick="navigateTo('home')" class="flex-1 sm:flex-none px-3.5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-brand-border text-xs font-semibold text-slate-200 hover:text-white flex items-center justify-center gap-1.5 transition min-h-[40px]">
+            <i data-lucide="home" class="w-4 h-4 text-brand-gold"></i> <span>Início</span>
           </button>
-          <button onclick="refreshAdminData()" class="px-3.5 py-2.5 rounded-xl bg-brand-deep hover:bg-brand-deep/80 border border-brand-border text-xs font-semibold text-white flex items-center gap-1.5 transition">
-            <i data-lucide="refresh-cw" class="w-4 h-4 text-brand-electric"></i> Atualizar Dados
+          <button onclick="refreshAdminData()" class="flex-1 sm:flex-none px-3.5 py-2.5 rounded-xl bg-brand-deep hover:bg-brand-deep/80 border border-brand-border text-xs font-semibold text-white flex items-center justify-center gap-1.5 transition min-h-[40px]">
+            <i data-lucide="refresh-cw" class="w-4 h-4 text-brand-electric"></i> <span>Atualizar</span>
           </button>
-          <button onclick="handleAdminLogout()" class="px-4 py-2.5 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-xs font-semibold text-red-300 hover:text-white flex items-center gap-2 transition">
-            <i data-lucide="log-out" class="w-4 h-4"></i> Encerrar Sessão
+          <button onclick="handleAdminLogout()" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-xs font-semibold text-red-300 hover:text-white flex items-center justify-center gap-2 transition min-h-[40px]">
+            <i data-lucide="log-out" class="w-4 h-4"></i> <span>Encerrar Sessão</span>
           </button>
         </div>
       </div>
 
       <!-- Admin Navigation Tabs -->
-      <div class="flex items-center gap-2 border-b border-brand-border pb-2 overflow-x-auto">
-        <button onclick="switchAdminTab('candidaturas')" class="admin-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition bg-brand-blue text-white whitespace-nowrap" data-tab="candidaturas">
-          <i data-lucide="inbox" class="w-3.5 h-3.5 inline mr-1"></i> Julgamento de Candidaturas
+      <div class="flex items-center gap-1.5 sm:gap-2 border-b border-brand-border pb-2 overflow-x-auto no-scrollbar -mx-1 px-1 sm:mx-0 sm:px-0">
+        <button onclick="switchAdminTab('candidaturas')" class="admin-tab-btn px-3 sm:px-4 py-2.5 sm:py-2 rounded-xl text-xs font-bold transition bg-brand-blue text-white whitespace-nowrap min-h-[40px]" data-tab="candidaturas">
+          <i data-lucide="inbox" class="w-3.5 h-3.5 inline mr-1"></i> Julgamento
         </button>
-        <button onclick="switchAdminTab('estatisticas')" class="admin-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition text-slate-300 hover:bg-white/5 whitespace-nowrap" data-tab="estatisticas">
-          <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 inline mr-1"></i> Gráficos & Estatísticas
+        <button onclick="switchAdminTab('estatisticas')" class="admin-tab-btn px-3 sm:px-4 py-2.5 sm:py-2 rounded-xl text-xs font-bold transition text-slate-300 hover:bg-white/5 whitespace-nowrap min-h-[40px]" data-tab="estatisticas">
+          <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 inline mr-1"></i> Estatísticas
         </button>
-        <button id="admin-tab-eleicoes-btn" onclick="switchAdminTab('eleicoes')" class="admin-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition text-slate-300 hover:bg-white/5 whitespace-nowrap" data-tab="eleicoes">
-          <i data-lucide="settings-2" class="w-3.5 h-3.5 inline mr-1"></i> Gestão de Eleições (TSE)
+        <button id="admin-tab-eleicoes-btn" onclick="switchAdminTab('eleicoes')" class="admin-tab-btn px-3 sm:px-4 py-2.5 sm:py-2 rounded-xl text-xs font-bold transition text-slate-300 hover:bg-white/5 whitespace-nowrap min-h-[40px]" data-tab="eleicoes">
+          <i data-lucide="settings-2" class="w-3.5 h-3.5 inline mr-1"></i> Eleições (TSE)
         </button>
-        <button id="admin-tab-partidos-btn" onclick="switchAdminTab('partidos')" class="admin-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition text-slate-300 hover:bg-white/5 whitespace-nowrap" data-tab="partidos">
-          <i data-lucide="flag" class="w-3.5 h-3.5 inline mr-1"></i> Gestão de Partidos (TSE)
+        <button id="admin-tab-partidos-btn" onclick="switchAdminTab('partidos')" class="admin-tab-btn px-3 sm:px-4 py-2.5 sm:py-2 rounded-xl text-xs font-bold transition text-slate-300 hover:bg-white/5 whitespace-nowrap min-h-[40px]" data-tab="partidos">
+          <i data-lucide="flag" class="w-3.5 h-3.5 inline mr-1"></i> Partidos (TSE)
         </button>
-        <button id="admin-tab-seguranca-btn" onclick="switchAdminTab('seguranca')" class="admin-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition text-amber-300 hover:bg-amber-400/10 border border-amber-500/30 whitespace-nowrap" data-tab="seguranca">
-          <i data-lucide="shield-check" class="w-3.5 h-3.5 inline mr-1 text-brand-gold"></i> Gestão de Acessos & Credenciais (TSE)
+        <button id="admin-tab-seguranca-btn" onclick="switchAdminTab('seguranca')" class="admin-tab-btn px-3 sm:px-4 py-2.5 sm:py-2 rounded-xl text-xs font-bold transition text-amber-300 hover:bg-amber-400/10 border border-amber-500/30 whitespace-nowrap min-h-[40px]" data-tab="seguranca">
+          <i data-lucide="shield-check" class="w-3.5 h-3.5 inline mr-1 text-brand-gold"></i> Credenciais (TSE)
         </button>
-        <button onclick="switchAdminTab('auditoria')" class="admin-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition text-slate-300 hover:bg-white/5 whitespace-nowrap" data-tab="auditoria">
-          <i data-lucide="file-clock" class="w-3.5 h-3.5 inline mr-1"></i> Logs de Auditoria
+        <button onclick="switchAdminTab('auditoria')" class="admin-tab-btn px-3 sm:px-4 py-2.5 sm:py-2 rounded-xl text-xs font-bold transition text-slate-300 hover:bg-white/5 whitespace-nowrap min-h-[40px]" data-tab="auditoria">
+          <i data-lucide="file-clock" class="w-3.5 h-3.5 inline mr-1"></i> Auditoria
         </button>
       </div>
 
@@ -1324,9 +1325,9 @@
         </div>
 
         <!-- Candidacies Table (Desktop) & Mobile Cards (Vertical Phone) -->
-        <div class="glass-panel rounded-3xl border border-brand-border overflow-hidden shadow-2xl">
+        <div class="glass-panel rounded-2xl sm:rounded-3xl border border-brand-border overflow-hidden shadow-2xl">
           <!-- Mobile Cards View for Vertical Phones -->
-          <div id="admin-candidacies-mobile-list" class="block md:hidden divide-y divide-brand-border/60 p-3 space-y-3">
+          <div id="admin-candidacies-mobile-list" class="block md:hidden p-3 sm:p-4 space-y-3.5">
             <!-- Rendered by JS for vertical phone screens -->
           </div>
 
@@ -1604,17 +1605,17 @@
   <!-- ============================================== -->
 
   <!-- Modal de Login Administrativo -->
-  <div id="login-modal" class="fixed inset-0 z-50 hidden bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="glass-panel max-w-md w-full rounded-3xl border border-brand-border p-8 space-y-6 shadow-2xl relative">
-      <button onclick="closeLoginModal()" class="absolute top-6 right-6 text-slate-400 hover:text-white p-1">
+  <div id="login-modal" class="fixed inset-0 z-50 hidden bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
+    <div class="glass-panel max-w-md w-full rounded-2xl sm:rounded-3xl border border-brand-border p-5 sm:p-8 space-y-5 sm:space-y-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+      <button onclick="closeLoginModal()" class="absolute top-5 right-5 sm:top-6 sm:right-6 text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition" title="Fechar">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
 
       <div class="text-center space-y-2">
-        <div class="w-14 h-14 rounded-2xl bg-brand-deep border border-brand-gold/40 mx-auto flex items-center justify-center text-brand-gold shadow-glow-gold">
-          <i data-lucide="shield-check" class="w-7 h-7"></i>
+        <div class="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-brand-deep border border-brand-gold/40 mx-auto flex items-center justify-center text-brand-gold shadow-glow-gold">
+          <i data-lucide="shield-check" class="w-6 h-6 sm:w-7 sm:h-7"></i>
         </div>
-        <h3 class="text-2xl font-cinzel font-bold text-white">Acesso Institucional</h3>
+        <h3 class="text-xl sm:text-2xl font-cinzel font-bold text-white">Acesso Institucional</h3>
         <p class="text-xs text-slate-400">Tribunal Superior Eleitoral & Tribunais Regionais</p>
       </div>
 
@@ -1624,7 +1625,7 @@
             <span>Tribunal / Instância</span>
             <span class="text-[10px] text-brand-gold font-normal">TSE ou TRE</span>
           </label>
-          <select id="login-court-select" onchange="onCourtSelectChange(this.value)" class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-2.5 text-white text-xs focus:border-brand-gold outline-none">
+          <select id="login-court-select" onchange="onCourtSelectChange(this.value)" class="w-full bg-brand-navy border border-brand-border rounded-xl px-3.5 py-3 sm:py-2.5 text-white text-xs focus:border-brand-gold outline-none min-h-[44px]">
             <option value="auto" selected>🌐 Seleção Automática (Identificar por Senha ou Usuário)</option>
             <optgroup label="Instância Superior">
               <option value="tse">🏛️ Tribunal Superior Eleitoral (TSE / Presidência Master)</option>
@@ -1661,23 +1662,23 @@
             <span>Identificador / Usuário</span>
             <span class="text-[10px] text-slate-400 font-normal">Opcional se souber a senha</span>
           </label>
-          <input type="text" id="login-username" value="" autocomplete="username" placeholder="Identificador oficial ou deixe em branco" class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-2.5 text-white text-xs focus:border-brand-gold outline-none">
+          <input type="text" id="login-username" value="" autocomplete="username" placeholder="Identificador oficial ou deixe em branco" class="w-full bg-brand-navy border border-brand-border rounded-xl px-3.5 py-3 sm:py-2.5 text-white text-xs focus:border-brand-gold outline-none min-h-[44px]">
         </div>
 
         <div>
           <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-1.5 flex items-center justify-between">
             <span>Chave de Acesso / Senha</span>
-            <span class="text-[10px] text-brand-gold font-mono font-normal">Senha do TRE ou Senha Mestra</span>
+            <span class="text-[10px] text-brand-gold font-mono font-normal">Senha do TRE ou Senha do TSE</span>
           </label>
           <div class="relative">
-            <input type="password" id="login-password" autocomplete="current-password" placeholder="Digite a senha do tribunal ou senha mestra" class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-2.5 text-white text-xs focus:border-brand-gold outline-none pr-10">
-            <button type="button" onclick="togglePasswordVisibility('login-password', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-1" title="Mostrar/ocultar senha">
+            <input type="password" id="login-password" autocomplete="current-password" placeholder="Digite a senha do tribunal ou do TSE" class="w-full bg-brand-navy border border-brand-border rounded-xl px-3.5 py-3 sm:py-2.5 text-white text-xs focus:border-brand-gold outline-none pr-11 min-h-[44px]">
+            <button type="button" onclick="togglePasswordVisibility('login-password', this)" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white p-2 min-h-[40px] min-w-[40px] flex items-center justify-center" title="Mostrar/ocultar senha">
               <i data-lucide="eye" class="w-4 h-4"></i>
             </button>
           </div>
         </div>
 
-        <button type="submit" class="w-full py-3.5 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-brand-gold via-amber-400 to-yellow-500 hover:to-brand-gold transition shadow-glow-gold text-sm flex items-center justify-center gap-2 mt-3 cursor-pointer active:scale-98">
+        <button type="submit" class="w-full py-3.5 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-brand-gold via-amber-400 to-yellow-500 hover:to-brand-gold transition shadow-glow-gold text-sm flex items-center justify-center gap-2 mt-3 cursor-pointer active:scale-98 min-h-[46px]">
           <i data-lucide="lock" class="w-4 h-4"></i> Autenticar no Painel
         </button>
       </form>
@@ -1695,9 +1696,9 @@
   </div>
 
   <!-- Modal de Visualização da Ficha Completa da Candidatura (Público & Oficial) -->
-  <div id="candidacy-details-modal" class="fixed inset-0 z-50 hidden bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="glass-panel max-w-2xl w-full rounded-3xl border border-brand-border/80 p-6 sm:p-8 space-y-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-      <button onclick="closeCandidacyDetailsModal()" class="absolute top-6 right-6 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition" title="Fechar">
+  <div id="candidacy-details-modal" class="fixed inset-0 z-50 hidden bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
+    <div class="glass-panel max-w-2xl w-full rounded-2xl sm:rounded-3xl border border-brand-border/80 p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+      <button onclick="closeCandidacyDetailsModal()" class="absolute top-4 right-4 sm:top-6 sm:right-6 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition" title="Fechar">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
 
@@ -1835,7 +1836,7 @@
 
       <!-- Viewport de Corte com Aspect Ratio 3:4 e Guias Biométricas -->
       <div class="flex flex-col items-center">
-        <div id="cropper-viewport" class="w-[270px] h-[360px] sm:w-[285px] sm:h-[380px] rounded-2xl bg-black relative overflow-hidden select-none touch-none shadow-2xl ring-2 ring-brand-gold/50 cursor-grab active:cursor-grabbing border-2 border-brand-border">
+        <div id="cropper-viewport" class="w-[240px] h-[320px] sm:w-[285px] sm:h-[380px] rounded-2xl bg-black relative overflow-hidden select-none touch-none shadow-2xl ring-2 ring-brand-gold/50 cursor-grab active:cursor-grabbing border-2 border-brand-border">
           <!-- Imagem dinamicamente manipulada -->
           <img id="cropper-preview-img" src="" alt="Foto" class="absolute pointer-events-none origin-center transition-none max-w-none will-change-transform" style="transform: translate(0px, 0px) scale(1) rotate(0deg); transform-origin: center center;">
 
@@ -1921,8 +1922,8 @@
 
   <!-- Modal Exclusivo da Presidência do TSE para Edição da Candidatura -->
   <div id="tse-edit-candidate-modal" class="fixed inset-0 z-[110] hidden bg-slate-950/90 backdrop-blur-xl flex items-center justify-center p-3 sm:p-4">
-    <div class="glass-panel max-w-2xl w-full rounded-3xl border border-purple-500/50 p-6 sm:p-8 space-y-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
-      <button onclick="closeTseEditCandidateModal()" class="absolute top-6 right-6 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition" title="Fechar">
+    <div class="glass-panel max-w-2xl w-full rounded-2xl sm:rounded-3xl border border-purple-500/50 p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+      <button onclick="closeTseEditCandidateModal()" class="absolute top-5 right-5 sm:top-6 sm:right-6 text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-white/10 transition" title="Fechar">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
 
@@ -2064,11 +2065,11 @@
         </div>
 
         <!-- Botões de Ação -->
-        <div class="flex items-center justify-end gap-3 pt-3 border-t border-brand-border/60">
-          <button type="button" onclick="closeTseEditCandidateModal()" class="px-4 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold transition">
+        <div class="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 pt-3 border-t border-brand-border/60">
+          <button type="button" onclick="closeTseEditCandidateModal()" class="w-full sm:w-auto px-4 py-3 sm:py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-bold transition min-h-[44px]">
             Cancelar
           </button>
-          <button type="submit" id="tse-edit-submit-btn" class="px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-xs flex items-center gap-2 shadow-lg shadow-purple-900/30 transition active:scale-98">
+          <button type="submit" id="tse-edit-submit-btn" class="w-full sm:w-auto px-6 py-3 sm:py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-purple-900/30 transition active:scale-98 min-h-[44px]">
             <i data-lucide="save" class="w-4 h-4"></i> Salvar Retificação no TSE
           </button>
         </div>
@@ -2077,9 +2078,10 @@
   </div>
 
   <!-- Modal de Julgamento Judicial (Deferir / Indeferir / Excluir) -->
-  <div id="judgment-modal" class="fixed inset-0 z-50 hidden bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-4">
-    <div class="glass-panel max-w-2xl w-full rounded-3xl border border-brand-border p-8 space-y-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
-      <button onclick="closeJudgmentModal()" class="absolute top-6 right-6 text-slate-400 hover:text-white">
+  <!-- Modal de Julgamento do Magistrado Eleitoral -->
+  <div id="judgment-modal" class="fixed inset-0 z-50 hidden bg-slate-950/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4">
+    <div class="glass-panel max-w-2xl w-full rounded-2xl sm:rounded-3xl border border-brand-border p-4 sm:p-6 md:p-8 space-y-4 sm:space-y-6 shadow-2xl relative max-h-[92vh] overflow-y-auto">
+      <button onclick="closeJudgmentModal()" class="absolute top-5 right-5 sm:top-6 sm:right-6 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition" title="Fechar">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
 
@@ -2145,23 +2147,23 @@
       </div>
 
       <!-- Ações Judiciais -->
-      <div class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-brand-border">
-        <div class="flex items-center gap-2">
-          <button type="button" id="judgment-tse-edit-btn" onclick="openTseEditFromJudgment()" class="hidden px-4 py-2.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 text-xs font-bold flex items-center gap-1.5 transition">
+      <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-brand-border">
+        <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <button type="button" id="judgment-tse-edit-btn" onclick="openTseEditFromJudgment()" class="hidden w-full sm:w-auto px-4 py-3 sm:py-2.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-95 min-h-[44px]">
             <i data-lucide="edit-3" class="w-4 h-4"></i> Retificar Cadastro (Exclusivo TSE)
           </button>
-          <button type="button" id="judgment-reopen-btn" onclick="executeJudgment('pendente')" class="px-4 py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center gap-1.5 transition" title="Retornar para a fila PENDENTE do TRE">
+          <button type="button" id="judgment-reopen-btn" onclick="executeJudgment('pendente')" class="w-full sm:w-auto px-4 py-3 sm:py-2.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-95 min-h-[44px]" title="Retornar para a fila PENDENTE do TRE">
             <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Devolver para PENDENTE
           </button>
         </div>
-        <div id="judgment-action-buttons" class="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
-          <button id="judgment-exclude-btn" onclick="executeJudgment('excluida')" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold flex items-center gap-1.5 transition">
+        <div id="judgment-action-buttons" class="grid grid-cols-1 sm:flex sm:flex-wrap items-stretch sm:items-center justify-end gap-2 sm:gap-3">
+          <button id="judgment-exclude-btn" onclick="executeJudgment('excluida')" class="w-full sm:w-auto px-4 py-3 sm:py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center justify-center gap-1.5 transition active:scale-95 min-h-[44px]">
             <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i> Excluir Registro
           </button>
-          <button id="judgment-indefer-btn" onclick="executeJudgment('indeferida')" class="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-md transition">
+          <button id="judgment-indefer-btn" onclick="executeJudgment('indeferida')" class="w-full sm:w-auto px-5 py-3 sm:py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-md transition active:scale-95 min-h-[44px]">
             <i data-lucide="x-circle" class="w-4 h-4"></i> Indeferir
           </button>
-          <button id="judgment-defer-btn" onclick="executeJudgment('deferida')" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1.5 shadow-glow-emerald transition">
+          <button id="judgment-defer-btn" onclick="executeJudgment('deferida')" class="w-full sm:w-auto px-6 py-3 sm:py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-glow-emerald transition active:scale-95 min-h-[44px]">
             <i data-lucide="check-circle" class="w-4 h-4"></i> Deferir (Homologar)
           </button>
         </div>

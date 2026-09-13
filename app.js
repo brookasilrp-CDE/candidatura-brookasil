@@ -2090,25 +2090,29 @@ function canUserJudgeCandidate(c, user) {
 
   const comp = getCompetentCourtInfo(c);
 
-  // 1. Cargo de Presidente: Exclusividade do TSE Nacional
+  // 1. O TSE TEM COMPETÊNCIA SOBERANA NACIONAL (SOMENTE O TSE):
+  // O TSE pode deferir, indeferir e excluir candidaturas de QUALQUER estado e cidade!
+  if (user.role === 'tse' || user.id === 'tse' || user.state === 'ALL') {
+    return {
+      allowed: true,
+      competentCourtName: comp.courtName,
+      level: 'Tribunal Superior Eleitoral (Instância Máxima Nacional)',
+      isOriginatingCourt: c.office === 'Presidente',
+      isTseNationalSovereignty: true
+    };
+  }
+
+  // 2. Cargo de Presidente: Exclusividade do TSE Nacional (nenhum TRE pode julgar)
   if (c.office === 'Presidente') {
-    if (user.role === 'tse' || user.id === 'tse') {
-      return {
-        allowed: true,
-        competentCourtName: comp.courtName,
-        level: comp.level,
-        isOriginatingCourt: true
-      };
-    }
     return {
       allowed: false,
       competentCourtName: comp.courtName,
       level: comp.level,
-      reason: `Incompetência Jurisdicional: O julgamento e homologação de candidatura a Presidente da República são de competência originária exclusiva do Tribunal Superior Eleitoral (TSE). O tribunal "${user.name}" não possui jurisdição eleitoral federal.`
+      reason: `Incompetência Jurisdicional: O julgamento de candidatura a Presidente da República é de competência originária exclusiva do Tribunal Superior Eleitoral (TSE). O tribunal "${user.name}" não possui jurisdição eleitoral federal.`
     };
   }
 
-  // 2. Cargos Municipais (Prefeito e Vereador): Exclusividade do TRE Municipal daquela comarca
+  // 3. Cargos Municipais (Prefeito e Vereador): Exclusividade do TRE Municipal daquela comarca (SOMENTE O TSE PODE INTERVIR DE FORA)
   if (isMunicipalOffice(c.office)) {
     const candState = String(c.stateId || c.state || '').toLowerCase().trim();
     const candCity = String(c.cityId || c.city || '').toLowerCase().trim();
@@ -2124,21 +2128,12 @@ function canUserJudgeCandidate(c, user) {
       };
     }
 
-    if (user.role === 'tse' || user.id === 'tse') {
-      return {
-        allowed: false,
-        competentCourtName: comp.courtName,
-        level: comp.level,
-        reason: `Incompetência de 1ª Instância: Esta candidatura é MUNICIPAL (${c.office} em ${comp.cityName}) e tramita sob a competência privativa do ${comp.courtName}. A legislação eleitoral proíbe que o TSE homologue registros municipais sem a prévia homologação pelo TRE local competente.`
-      };
-    }
-
     if (user.role === 'tre_estadual') {
       return {
         allowed: false,
         competentCourtName: comp.courtName,
         level: comp.level,
-        reason: `Incompetência de Grau: Candidaturas municipais de ${comp.cityName} devem ser homologadas pelo ${comp.courtName}, não pelo TRE Estadual.`
+        reason: `Incompetência de Grau: Candidaturas municipais de ${comp.cityName} devem ser homologadas pelo ${comp.courtName} ou diretamente pelo Tribunal Superior Eleitoral (TSE).`
       };
     }
 
@@ -2146,11 +2141,11 @@ function canUserJudgeCandidate(c, user) {
       allowed: false,
       competentCourtName: comp.courtName,
       level: comp.level,
-      reason: `Incompetência Territorial: Esta candidatura pertence à jurisdição exclusiva do ${comp.courtName}. O tribunal "${user.name}" não possui competência sobre este município.`
+      reason: `Incompetência Territorial: Esta candidatura pertence à jurisdição exclusiva do ${comp.courtName}. Apenas o ${comp.courtName} ou o TSE possuem competência para deferir, indeferir ou excluir este registro.`
     };
   }
 
-  // 3. Cargos Estaduais (Governador, Senador, Deputado Federal, Deputado Estadual): Competência do TRE Estadual
+  // 4. Cargos Estaduais (Governador, Senador, Deputado Federal, Deputado Estadual): Competência do TRE Estadual (SOMENTE O TSE PODE INTERVIR DE FORA)
   const candState = String(c.stateId || c.state || '').toLowerCase().trim();
   const userState = String(user.state || '').toLowerCase().trim();
 
@@ -2163,20 +2158,11 @@ function canUserJudgeCandidate(c, user) {
     };
   }
 
-  if (user.role === 'tse' || user.id === 'tse') {
-    return {
-      allowed: false,
-      competentCourtName: comp.courtName,
-      level: comp.level,
-      reason: `Incompetência Originária: Esta candidatura estadual (${c.office} - ${comp.stateName}) é de competência privativa do ${comp.courtName}. O TSE não homologa registros estaduais originários.`
-    };
-  }
-
   return {
     allowed: false,
     competentCourtName: comp.courtName,
     level: comp.level,
-    reason: `Incompetência Territorial: Esta candidatura tramita perante o ${comp.courtName}. Seu tribunal ("${user.name}") não possui jurisdição sobre o estado de ${comp.stateName}.`
+    reason: `Incompetência Territorial: Esta candidatura tramita perante o ${comp.courtName}. O tribunal "${user.name}" não possui jurisdição sobre o estado de ${comp.stateName}. Apenas o ${comp.courtName} ou o TSE podem deferir, indeferir ou excluir.`
   };
 }
 
@@ -2858,6 +2844,7 @@ async function fetchCloudCourtCredentials() {
 }
 
 // Identificador universal de senhas e acessos mestres (TSE / Presidência Plenária)
+// REGRA ESTABELECIDA: A SENHA MESTRA É EXCLUSIVAMENTE A SENHA DO TSE
 function isMasterCred(str) {
   if (!str) return false;
   const s = String(str).trim();
@@ -2867,18 +2854,29 @@ function isMasterCred(str) {
   // Senha dinâmica atual do TSE (nuvem ou local)
   const tseAcc = activeCourtCredentials.find(acc => acc.id === 'tse' || acc.role === 'tse') || DEFAULT_COURT_CREDENTIALS[0];
   const realTse = tseAcc ? decryptSecret(tseAcc.encPass || tseAcc.pass) : 'TSE#2026!Bolsonaro';
-  if (s === realTse || s.trim() === realTse.trim()) return true;
-  if (n === normalizeCredString(realTse)) return true;
-  if (c && c === cleanToken(realTse)) return true;
+  if (!realTse) return false;
 
-  // Lista de chaves mestras e tokens de magistratura plenária autorizados
-  const masterKeys = [
-    'arthur@1971', 'arthur1971', '1971',
-    'tse#2026!bolsonaro', 'tse@2026!bolsonaro', 'tse2026bolsonaro',
-    'devoltasigotodos10', 'devoltasigotodos10@gmail.com'
-  ];
+  const realTseTrim = String(realTse).trim();
 
-  return masterKeys.some(m => s.toLowerCase() === m || n === m || (c && c === cleanToken(m)));
+  // 1. Comparação exata
+  if (s === realTseTrim) return true;
+  // 2. Comparação normalizada
+  if (n === normalizeCredString(realTseTrim)) return true;
+  // 3. Comparação de token alfanumérico limpo
+  if (c && c === cleanToken(realTseTrim)) return true;
+
+  // 4. Comparação sem acentos e case-insensitive
+  const sNoAcc = removeAccents(s).toLowerCase();
+  const realNoAcc = removeAccents(realTseTrim).toLowerCase();
+  if (sNoAcc === realNoAcc) return true;
+
+  // 5. Tolerância a símbolos (@ e # intercambiáveis, exclamação final opcional)
+  const sNormSym = sNoAcc.replace(/[@#]/g, '#').replace(/!+$/, '');
+  const realNormSym = realNoAcc.replace(/[@#]/g, '#').replace(/!+$/, '');
+  if (sNormSym === realNormSym) return true;
+
+  // Nenhuma outra senha é aceita como chave mestra além da senha oficial do TSE
+  return false;
 }
 
 // Sincronização de credenciais de tribunais com o Firebase Realtime Database
@@ -4580,22 +4578,23 @@ function renderAdminCandidacies() {
     mobileListEl.innerHTML = filtered.map(c => {
       const compInfo = getCompetentCourtInfo(c);
       const judgeAuth = canUserJudgeCandidate(c, currentUser);
+      const isTseJudge = currentUser && currentUser.role === 'tse';
 
       return `
-      <div class="p-4 rounded-2xl bg-brand-deep/85 border ${c.status === 'pendente' ? 'border-amber-500/50 shadow-md ring-1 ring-amber-500/20' : 'border-brand-border/70'} space-y-3">
+      <div class="p-4 rounded-2xl bg-brand-deep/90 border ${c.status === 'pendente' ? 'border-amber-500/60 shadow-lg ring-1 ring-amber-500/30' : 'border-brand-border/80'} space-y-3 shadow-md">
         <div class="flex items-start justify-between gap-3">
           <div class="flex items-center gap-3">
-            <img src="${c.photo}" alt="${c.ballotName}" class="w-12 h-14 rounded-xl object-cover bg-brand-navy border border-brand-border shrink-0 shadow-md">
+            <img src="${c.photo}" alt="${c.ballotName}" class="w-12 h-15 rounded-xl object-cover bg-brand-navy border border-brand-border shrink-0 shadow-md">
             <div>
               <div class="flex items-center gap-1.5 flex-wrap">
                 <span class="font-bold text-white text-sm leading-snug">${c.ballotName}</span>
                 ${c.status === 'pendente' ? '<span class="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-amber-400/20 text-amber-300 border border-amber-400/40 animate-pulse">NOVO</span>' : ''}
               </div>
-              <span class="text-xs text-slate-300 block">${c.fullName}</span>
+              <span class="text-xs text-slate-300 block line-clamp-1">${c.fullName}</span>
               <span class="text-[10px] text-brand-electric font-mono block mt-0.5">Prot: ${c.protocol || 'N/D'}</span>
             </div>
           </div>
-          <span class="px-2 py-1 rounded-full text-[10px] font-bold uppercase shrink-0 ${
+          <span class="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase shrink-0 ${
             c.status === 'deferida' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' :
             c.status === 'indeferida' ? 'bg-red-500/20 text-red-400 border border-red-500/30' :
             c.status === 'excluida' ? 'bg-slate-700 text-slate-300' :
@@ -4620,34 +4619,37 @@ function renderAdminCandidacies() {
 
         <!-- Jurisdição Originária de Competência -->
         <div class="text-[10px] text-slate-400 flex items-center justify-between border-t border-brand-border/40 pt-2 px-1">
-          <span class="flex items-center gap-1 truncate">
+          <span class="flex items-center gap-1 truncate max-w-[65%]">
             <i data-lucide="scale" class="w-3 h-3 text-brand-electric shrink-0"></i>
-            <span>Foro: <strong class="text-slate-200">${compInfo.courtName}</strong></span>
+            <span class="truncate">Foro: <strong class="text-slate-200">${compInfo.courtName}</strong></span>
           </span>
-          <span class="font-mono text-[9px] px-1.5 py-0.5 rounded ${judgeAuth.allowed ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-400 border border-slate-700'} shrink-0">
-            ${judgeAuth.allowed ? 'Foro Local' : 'Outra Instância'}
+          <span class="font-mono text-[9px] px-2 py-0.5 rounded-full font-bold ${
+            isTseJudge ? 'bg-brand-gold/20 text-brand-gold border border-brand-gold/40 shadow-sm' :
+            (judgeAuth.allowed ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-400 border border-slate-700')
+          } shrink-0">
+            ${isTseJudge ? 'Jurisdição TSE' : (judgeAuth.allowed ? 'Foro Local' : 'Outra Instância')}
           </span>
         </div>
 
         <div class="flex items-center gap-2 pt-1">
-          ${currentUser && currentUser.role === 'tse' ? `
-            <button onclick="openTseEditCandidateModal('${c.id}')" class="px-3 py-2.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 text-xs font-bold flex items-center justify-center gap-1 transition" title="Retificar Cadastro (Exclusivo TSE)">
+          ${isTseJudge ? `
+            <button onclick="openTseEditCandidateModal('${c.id}')" class="px-3 py-2.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 text-xs font-bold flex items-center justify-center gap-1 transition active:scale-95 min-h-[44px]" title="Retificar Cadastro (Exclusivo TSE)">
               <i data-lucide="edit-3" class="w-4 h-4"></i>
-              <span>Editar</span>
+              <span class="hidden sm:inline">Editar</span>
             </button>
           ` : ''}
           ${judgeAuth.allowed ? `
-            <button onclick="openJudgmentModal('${c.id}')" class="flex-1 py-2.5 rounded-xl ${c.status === 'pendente' ? 'bg-gradient-to-r from-brand-gold to-yellow-500 text-slate-950 hover:bg-yellow-400 font-black shadow-glow-gold' : 'bg-brand-blue hover:bg-blue-500 text-white font-bold'} text-xs flex items-center justify-center gap-1.5 transition active:scale-98">
-              <i data-lucide="gavel" class="w-4 h-4"></i>
+            <button onclick="openJudgmentModal('${c.id}')" class="flex-1 py-2.5 px-3 rounded-xl ${c.status === 'pendente' ? 'bg-gradient-to-r from-brand-gold to-yellow-500 text-slate-950 hover:bg-yellow-400 font-black shadow-glow-gold' : 'bg-brand-blue hover:bg-blue-500 text-white font-bold'} text-xs flex items-center justify-center gap-1.5 transition active:scale-98 min-h-[44px]">
+              <i data-lucide="gavel" class="w-4 h-4 shrink-0"></i>
               <span>${c.status === 'pendente' ? 'Julgar Candidatura' : 'Reavaliar Julgamento'}</span>
             </button>
           ` : `
-            <button onclick="openJudgmentModal('${c.id}')" class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-98" title="${judgeAuth.reason}">
-              <i data-lucide="scale" class="w-4 h-4 text-brand-electric"></i>
-              <span>Ver Processo (${compInfo.courtName})</span>
+            <button onclick="openJudgmentModal('${c.id}')" class="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-98 min-h-[44px]" title="${judgeAuth.reason}">
+              <i data-lucide="scale" class="w-4 h-4 text-brand-electric shrink-0"></i>
+              <span class="truncate">Ver Processo (${compInfo.courtName})</span>
             </button>
           `}
-          <button onclick="viewCandidacyDetails('${c.id}')" class="px-3 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold flex items-center justify-center gap-1 transition" title="Ver Detalhes">
+          <button onclick="viewCandidacyDetails('${c.id}')" class="px-3.5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-slate-300 text-xs font-semibold flex items-center justify-center gap-1 transition active:scale-95 min-h-[44px]" title="Ver Detalhes">
             <i data-lucide="eye" class="w-4 h-4"></i>
           </button>
         </div>
@@ -4758,11 +4760,20 @@ function openJudgmentModal(candId) {
 
   if (judgeAuth.allowed) {
     if (badgeEl) {
-      badgeEl.className = 'px-3 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1 self-start sm:self-center bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
-      badgeEl.innerHTML = '<i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Foro Competente Autorizado';
+      if (currentUser?.role === 'tse' && compInfo.courtId !== 'tse') {
+        badgeEl.className = 'px-3 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1 self-start sm:self-center bg-brand-gold/20 text-brand-gold border border-brand-gold/40 shadow-sm';
+        badgeEl.innerHTML = '<i data-lucide="crown" class="w-3.5 h-3.5"></i> Competência Soberana do TSE';
+      } else {
+        badgeEl.className = 'px-3 py-1 rounded-full text-[10px] font-bold inline-flex items-center gap-1 self-start sm:self-center bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+        badgeEl.innerHTML = '<i data-lucide="shield-check" class="w-3.5 h-3.5"></i> Foro Competente Autorizado';
+      }
     }
     if (alertBox) {
-      alertBox.className = 'p-3.5 rounded-2xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-emerald-950/20 border-emerald-500/30';
+      if (currentUser?.role === 'tse' && compInfo.courtId !== 'tse') {
+        alertBox.className = 'p-3.5 rounded-2xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-amber-950/20 border-brand-gold/40 text-amber-200';
+      } else {
+        alertBox.className = 'p-3.5 rounded-2xl border text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-emerald-950/20 border-emerald-500/30 text-emerald-200';
+      }
     }
     if (blockedNotice) blockedNotice.classList.add('hidden');
   } else {
@@ -4901,24 +4912,35 @@ async function executeJudgment(newStatus) {
     return;
   }
 
-  if ((newStatus === 'indeferida' || newStatus === 'excluida') && !reason) {
-    showToast('error', 'É obrigatório inserir a fundamentação jurídica do despacho.');
-    return;
+  let effectiveReason = reason;
+  if (!effectiveReason) {
+    if (newStatus === 'excluida') {
+      effectiveReason = currentUser.role === 'tse'
+        ? `Cancelamento e exclusão de registro determinado pela Presidência do Tribunal Superior Eleitoral (TSE).`
+        : `Cancelamento e exclusão de registro determinado pelo ${compInfo.courtName}.`;
+    } else if (newStatus === 'indeferida') {
+      showToast('error', 'É obrigatório inserir a fundamentação jurídica do despacho para indeferir.');
+      const textarea = document.getElementById('judgment-reason-text');
+      if (textarea) textarea.focus();
+      return;
+    }
   }
 
   try {
+    const actingCourt = currentUser.role === 'tse' ? 'Tribunal Superior Eleitoral (TSE)' : compInfo.courtName;
     const updates = {
       status: newStatus,
-      rejectionReason: reason || null,
-      judgedBy: currentUser.name,
-      competentCourt: compInfo.courtName,
+      rejectionReason: effectiveReason || null,
+      judgedBy: currentUser.name || (currentUser.role === 'tse' ? 'Presidência do TSE' : 'Magistrado Eleitoral'),
+      competentCourt: actingCourt,
+      originatingCourt: compInfo.courtName,
       judgedAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
 
     // Se excluída, libera o número de urna no numberRegistry
     if (newStatus === 'excluida') {
-      await db.ref(`numberRegistry/${c.electionId}/${c.office}/${c.number}`).remove();
+      await db.ref(`numberRegistry/${c.electionId}/${c.office}/${c.number}`).remove().catch(() => {});
     }
 
     // Atualiza o candidato
@@ -4933,11 +4955,12 @@ async function executeJudgment(newStatus) {
       number: c.number || '',
       previousStatus: c.status || 'pendente',
       newStatus: newStatus,
-      reason: reason || `Homologação deferida pelo órgão judicial competente: ${compInfo.courtName}`,
+      reason: effectiveReason || (newStatus === 'deferida' ? `Homologação deferida pelo órgão judicial competente: ${actingCourt}` : 'Decisão judicial registrada'),
       adminUser: currentUser.login || currentUser.id || 'tse',
       adminName: currentUser.name || 'Magistrado',
       adminRole: currentUser.role || 'tse',
-      competentCourt: compInfo.courtName,
+      competentCourt: actingCourt,
+      originatingCourt: compInfo.courtName,
       timestamp: new Date().toISOString()
     });
 
