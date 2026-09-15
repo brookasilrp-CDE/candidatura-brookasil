@@ -1,0 +1,391 @@
+{
+  "federal_2026": {
+    "Prefeito": {
+      "15": {
+        "ballotName": "MICHEL CONRADO AYPERI",
+        "candidateId": "-P10I_1YqWEWRmTUXpNM",
+        "partyAcronym": "MDB",
+        "reservedAt": "2026-09-10T16:17:50.010Z",
+        "reservedByTse": true
+      },
+      "22": {
+        "ballotName": "JOSÉ ISAC",
+        "candidateId": "-P0yBfv7_PFTENxz8rMP",
+        "partyAcronym": "PL",
+        "reservedAt": "2026-09-13T02:27:12.604Z",
+        "reservedByTse": true
+      },
+      "40": {
+        "ballotName": "PEDRO EDUARDO",
+        "candidateId": "-P1Smal1mSlvzb91rwft",
+        "partyAcronym": "PSB",
+        "reservedAt": "2026-09-14T23:53:35.322Z",
+        "reservedByTse": true
+      },
+      "brookhaven_braviland": {
+        "12": {
+          "candidateId": "-P1S7HUelyXbQ43SRx94",
+          "protocol": "CAND-2026-770050",
+          "reservedAt": "2026-09-13T23:36:35.423Z"
+        },
+        "13": {
+          "candidateId": "-P0yrIX1isX2XYUwefu6",
+          "protocol": "CAND-2026-625759",
+          "reservedAt": "2026-09-08T02:33:43.887Z"
+        },
+        "14": {
+          "candidateId": "-P0yu-pstJzHhImwjW3K",
+          "protocol": "CAND-2026-947766",
+          "reservedAt": "2026-09-08T02:45:33.116Z"
+        },
+        "15": {
+          "candidateId": "-P1Mx33zrqUf3B9YFIak",
+          "protocol": "CAND-2026-400027",
+          "reservedAt": "2026-09-12T23:29:23.250Z"
+        }
+      },
+      "brookhaven_cidade_eleitoral": {
+        "13": {
+          "candidateId": "-P0yBfv7_PFTENxz8rMP",
+          "protocol": "CAND-2026-171070",
+          "reservedAt": "2026-09-07T23:27:31.274Z"
+        },
+        "14": {
+          "candidateId": "-P0yKk7Q_QhHX9WGE8YT",
+          "protocol": "CAND-2026-609186",
+          "reservedAt": "2026-09-08T00:07:08.543Z"
+        },
+        "15": {
+          "candidateId": "-P16HocitknfGixfhZ-M",
+          "protocol": "CAND-2026-467760",
+          "reservedAt": "2026-09-09T17:50:54.502Z"
+        },
+        "17": {
+          "candidateId": "-P10TaNuSgkGbA7ry6Nm",
+          "protocol": "CAND-2026-501903",
+          "reservedAt": "2026-09-08T14:44:38.913Z"
+        },
+        "22": {
+          "candidateId": "-P1NZrXWprKyoaW9PZ_y",
+          "protocol": "CAND-2026-441548",
+          "reservedAt": "2026-09-13T02:23:18.968Z"
+        },
+        "45": {
+          "candidateId": "-P1Q3WidZDAiXFV5vNNZ",
+          "protocol": "CAND-2026-990411",
+          "reservedAt": "2026-09-13T14:00:51.218Z"
+        }
+      },
+      "floremix_florapolis": {
+        "14": {
+          "candidateId": "-P150hwlEHlbXgHmvPM9",
+          "protocol": "CAND-2026-547507",
+          "reservedAt": "2026-09-09T11:56:34.098Z"
+        },
+        "15": {
+          "candidateId": "-P10I_1YqWEWRmTUXpNM",
+          "protocol": "CAND-2026-987084",
+          "reservedAt": "2026-09-08T13:56:30.355Z"
+        },
+        "22": {
+          "candidateId": "-P178MsKBSH9o2Ujx1HZ",
+          "protocol": "CAND-2026-271284",
+          "reservedAt": "2026-09-09T21:49:14.239Z"
+        },
+        "40": {
+          "candidateId": "-P1NLeRv4ArVnIalBvTg",
+          "protocol": "CAND-2026-814792",
+          "reservedAt": "2026-09-13T01:21:13.783Z"
+        },
+        "75": {
+          "candidateId": "-P1LsRFJ9kDZAj3ujFSu",
+          "protocol": "CAND-2026-991264",
+          "reservedAt": "2026-09-12T18:29:38.027Z"
+        }
+      },
+      "floremix_riomarina": {
+        "15": {
+          "candidateId": "-P0y2FMIOsfDaCvadWvt",
+          "protocol": "CAND-2026-445554",
+          "reservedAt": "2026-09-07T22:46:19.422Z"
+        },
+        "75": {
+          "candidateId": "-P0yY-SHx3K1tZoqatkk",
+          "protocol": "CAND-2026-617307",
+          "reservedAt": "2026-09-08T01:05:02.539Z"
+        }
+      },
+      "fortemega_fortelume": {
+        "12": {
+          "candidateId": "-P1BIrasHfX_hlhAgt65",
+          "protocol": "CAND-2026-698113",
+          "reservedAt": "2026-09-10T17:13:35.303Z"
+        },
+        "15": {
+          "candidateId": "-P1Sn2Y-tOmYCuc_fp3O",
+          "protocol": "CAND-2026-663063",
+          "reservedAt": "2026-09-14T02:43:41.959Z"
+        },
+        "40": {
+          "candidateId": "-P1Smal1mSlvzb91rwft",
+          "protocol": "CAND-2026-452767",
+          "reservedAt": "2026-09-14T02:41:30.170Z"
+        },
+        "45": {
+          "candidateId": "-P1Req93O_mFx-aBMd5V",
+          "protocol": "CAND-2026-671996",
+          "reservedAt": "2026-09-13T21:27:53.360Z"
+        },
+        "75": {
+          "candidateId": "-P0y3jyCPez9dcewOPq2",
+          "protocol": "CAND-2026-839796",
+          "reservedAt": "2026-09-07T22:52:50.420Z"
+        }
+      },
+      "fortemega_porto_rubi": {
+        "14": {
+          "candidateId": "-P0yQgtd7m6x41NJbOSu",
+          "protocol": "CAND-2026-468705",
+          "reservedAt": "2026-09-08T00:33:03.484Z"
+        },
+        "15": {
+          "candidateId": "-P0y6RCnCVh79XsvGSu3",
+          "protocol": "CAND-2026-528065",
+          "reservedAt": "2026-09-07T23:04:35.731Z"
+        },
+        "48": {
+          "candidateId": "-P1RqWH-WS4zvskjeKsU",
+          "protocol": "CAND-2026-541586",
+          "reservedAt": "2026-09-13T22:19:37.765Z"
+        },
+        "75": {
+          "candidateId": "-P11AoFMuiE3dqY5NsUG",
+          "protocol": "CAND-2026-676114",
+          "reservedAt": "2026-09-08T18:02:12.099Z"
+        }
+      },
+      "novacore_catarinia": {
+        "22": {
+          "candidateId": "-P1SPW1Tfj3RVuurak33",
+          "protocol": "CAND-2026-386013",
+          "reservedAt": "2026-09-14T00:54:03.667Z"
+        },
+        "75": {
+          "candidateId": "-P12cHK0XgTJPusfaPD2",
+          "protocol": "CAND-2026-992596",
+          "reservedAt": "2026-09-09T00:46:13.549Z"
+        }
+      },
+      "novacore_napolis": {
+        "14": {
+          "candidateId": "-P12PIHBBwNCR0hN8q5g",
+          "protocol": "CAND-2026-222677",
+          "reservedAt": "2026-09-08T23:45:05.330Z"
+        },
+        "75": {
+          "candidateId": "-P1I3xtSuPmVazFHQcgo",
+          "protocol": "CAND-2026-897930",
+          "reservedAt": "2026-09-12T00:45:49.296Z"
+        }
+      }
+    },
+    "Vereador": {
+      "20202": {
+        "ballotName": "LIVIA",
+        "candidateId": "-P1Mxk89IplHeiofMqgt",
+        "partyAcronym": "PODE",
+        "reservedAt": "2026-09-12T23:34:18.687Z",
+        "reservedByTse": true
+      },
+      "40400": {
+        "ballotName": "JOÃO CAMPOS FILHO",
+        "candidateId": "-P1C6TRP-6m5_QL1SFpp",
+        "partyAcronym": "PSB",
+        "reservedAt": "2026-09-10T21:01:16.910Z",
+        "reservedByTse": true
+      },
+      "45677": {
+        "ballotName": "PEDRO",
+        "candidateId": "-P1N2RRHe5nOeC7xiyVO",
+        "partyAcronym": "PSDB",
+        "reservedAt": "2026-09-14T00:49:57.485Z",
+        "reservedByTse": true
+      },
+      "67426": {
+        "ballotName": "KASAN",
+        "candidateId": "-P1NmX8ZfIIH2qcPzUhB",
+        "partyAcronym": "PRNB",
+        "reservedAt": "2026-09-13T17:35:18.004Z",
+        "reservedByTse": true
+      },
+      "75000": {
+        "ballotName": "LUIZ DO BROOKHAVEN",
+        "candidateId": "-P1NEABjQqYLhR_HM8ob",
+        "partyAcronym": "PNTB",
+        "reservedAt": "2026-09-13T02:14:43.700Z",
+        "reservedByTse": true
+      },
+      "75075": {
+        "ballotName": "LUCAS CARNEIRO",
+        "candidateId": "-P1NExGZyKlRFIqY5FhM",
+        "partyAcronym": "PNTB",
+        "reservedAt": "2026-09-13T02:03:37.035Z",
+        "reservedByTse": true
+      },
+      "brookhaven_braviland": {
+        "14444": {
+          "candidateId": "-P1NEI3QeVyQpeMezdfa",
+          "protocol": "CAND-2026-632674",
+          "reservedAt": "2026-09-13T00:49:03.025Z"
+        }
+      },
+      "brookhaven_cidade_eleitoral": {
+        "14000": {
+          "candidateId": "-P0yIPciOIz3Zt6gFjGX",
+          "protocol": "CAND-2026-216205",
+          "reservedAt": "2026-09-07T23:56:53.868Z"
+        },
+        "14014": {
+          "candidateId": "-P0yJTMcUpSVStamobw1",
+          "protocol": "CAND-2026-874377",
+          "reservedAt": "2026-09-08T00:01:28.648Z"
+        },
+        "14144": {
+          "candidateId": "-P1Gy2cxS8uRd7XqEjRa",
+          "protocol": "CAND-2026-351974",
+          "reservedAt": "2026-09-11T19:35:59.886Z"
+        },
+        "15000": {
+          "candidateId": "-P0y0CdfjuJgZVehgi3S",
+          "protocol": "CAND-2026-587474",
+          "reservedAt": "2026-09-07T22:37:20.982Z"
+        },
+        "15777": {
+          "candidateId": "-P12_L0PMfjlHLy1yViJ",
+          "protocol": "CAND-2026-837340",
+          "reservedAt": "2026-09-09T00:33:20.843Z"
+        },
+        "20202": {
+          "candidateId": "-P1Mxk89IplHeiofMqgt",
+          "protocol": "CAND-2026-275331",
+          "reservedAt": "2026-09-12T23:32:23.498Z"
+        },
+        "21219": {
+          "candidateId": "-P1SRJAUBUhQhl-32yMU",
+          "protocol": "CAND-2026-353030",
+          "reservedAt": "2026-09-14T01:04:02.061Z"
+        },
+        "22075": {
+          "candidateId": "-P1CU16aKsdGMFhpbdda",
+          "protocol": "CAND-2026-163835",
+          "reservedAt": "2026-09-10T22:41:56.930Z"
+        },
+        "22162": {
+          "candidateId": "-P17WbPh420uimDUnfjP",
+          "protocol": "CAND-2026-167505",
+          "reservedAt": "2026-09-09T23:35:09.252Z"
+        },
+        "40400": {
+          "candidateId": "-P1C6TRP-6m5_QL1SFpp",
+          "protocol": "CAND-2026-403064",
+          "reservedAt": "2026-09-10T20:59:02.616Z"
+        },
+        "45456": {
+          "candidateId": "-P1QgvWba857BVvYMhZP",
+          "protocol": "CAND-2026-365835",
+          "reservedAt": "2026-09-13T16:57:22.325Z"
+        },
+        "48456": {
+          "candidateId": "-P1WLaml2UrwHcAmePmd",
+          "protocol": "CAND-2026-959358",
+          "reservedAt": "2026-09-14T19:17:32.637Z"
+        },
+        "57565": {
+          "candidateId": "-P1N-QyTR3Alycdj_d7Q",
+          "protocol": "CAND-2026-145890",
+          "reservedAt": "2026-09-12T23:44:06.745Z"
+        },
+        "67426": {
+          "candidateId": "-P1NmX8ZfIIH2qcPzUhB",
+          "protocol": "CAND-2026-752595",
+          "reservedAt": "2026-09-13T03:22:59.364Z"
+        },
+        "75000": {
+          "candidateId": "-P1NEABjQqYLhR_HM8ob",
+          "protocol": "CAND-2026-997144",
+          "reservedAt": "2026-09-13T00:48:30.186Z"
+        },
+        "75055": {
+          "candidateId": "-P0yVCufn1KEtJUBo-_a",
+          "protocol": "CAND-2026-414039",
+          "reservedAt": "2026-09-08T00:52:51.872Z"
+        },
+        "75222": {
+          "candidateId": "-P1UxYPVisjITVpJ_Has",
+          "protocol": "CAND-2026-961478",
+          "reservedAt": "2026-09-14T12:48:27.446Z"
+        },
+        "75750": {
+          "candidateId": "-P1NExGZyKlRFIqY5FhM",
+          "protocol": "CAND-2026-918628",
+          "reservedAt": "2026-09-13T00:51:55.778Z"
+        },
+        "75751": {
+          "candidateId": "-P1QGx_odt8mjCt25_Yu",
+          "protocol": "CAND-2026-838488",
+          "reservedAt": "2026-09-13T14:59:31.469Z"
+        }
+      },
+      "floremix_riomarina": {
+        "35445": {
+          "candidateId": "-P1CZ8xhOnHqDM83VVOM",
+          "protocol": "CAND-2026-714377",
+          "reservedAt": "2026-09-10T23:04:21.719Z"
+        },
+        "44445": {
+          "candidateId": "-P1GXLG8VEa8ws81O4UR",
+          "protocol": "CAND-2026-529779",
+          "reservedAt": "2026-09-11T17:34:56.984Z"
+        }
+      },
+      "fortemega_fortelume": {
+        "12512": {
+          "candidateId": "-P1MgSRTLp-ESgPgckyd",
+          "protocol": "CAND-2026-908031",
+          "reservedAt": "2026-09-12T22:16:50.225Z"
+        },
+        "22345": {
+          "candidateId": "-P1C9dLwrw0fyD7IUoqV",
+          "protocol": "CAND-2026-830346",
+          "reservedAt": "2026-09-10T21:12:54.695Z"
+        }
+      },
+      "fortemega_porto_rubi": {
+        "12294": {
+          "candidateId": "-P1SIPGlaKphjeQAigbc",
+          "protocol": "CAND-2026-782681",
+          "reservedAt": "2026-09-14T00:25:07.938Z"
+        }
+      },
+      "novacore_catarinia": {
+        "14123": {
+          "candidateId": "-P1MzcOcMC8_jAbjxkvZ",
+          "protocol": "CAND-2026-901869",
+          "reservedAt": "2026-09-12T23:40:36.055Z"
+        }
+      },
+      "novacore_napolis": {
+        "22677": {
+          "candidateId": "-P1N2RRHe5nOeC7xiyVO",
+          "protocol": "CAND-2026-915700",
+          "reservedAt": "2026-09-12T23:57:15.381Z"
+        },
+        "45000": {
+          "candidateId": "-P1SlyL2BmHqvEo5zP-R",
+          "protocol": "CAND-2026-927997",
+          "reservedAt": "2026-09-14T02:38:38.795Z"
+        }
+      }
+    }
+  }
+}

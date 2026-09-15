@@ -1,52 +1,21 @@
 {
   "rules": {
-    "settings": {
-      ".read": true,
-      ".write": true
-    },
-    "elections": {
-      ".read": true,
-      ".write": true,
-      ".indexOn": ["status", "type"]
+    ".read": true,
+    ".write": true,
+    "candidates": {
+      ".indexOn": ["status", "electionId", "office", "stateId", "cityId", "partyId", "number"]
     },
     "parties": {
-      ".read": true,
-      ".write": true,
       ".indexOn": ["active", "number", "group"]
     },
-    "candidates": {
-      ".read": true,
-      ".write": true,
-      ".indexOn": ["status", "electionId", "office", "stateId", "cityId", "partyId", "number"],
-      "$candidateId": {
-        ".validate": "newData.hasChildren(['protocol', 'office', 'ballotName', 'status'])"
-      }
-    },
-    "numberRegistry": {
-      ".read": true,
-      ".write": true
+    "elections": {
+      ".indexOn": ["status", "type"]
     },
     "auditLogs": {
-      ".read": true,
-      ".write": true,
       ".indexOn": ["timestamp", "electionId", "stateId"]
     },
     "notifications": {
-      ".read": true,
-      ".write": true,
       ".indexOn": ["timestamp", "read", "target"]
-    },
-    "admins": {
-      ".read": true,
-      ".write": true
-    },
-    "states": {
-      ".read": true,
-      ".write": true
-    },
-    "cities": {
-      ".read": true,
-      ".write": true
     }
   }
 }

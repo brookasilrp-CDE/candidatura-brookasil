@@ -1210,6 +1210,9 @@
         </div>
 
         <div class="flex flex-wrap items-center gap-2 sm:gap-3 pt-2 md:pt-0 border-t border-brand-border/60 md:border-t-0">
+          <button onclick="syncAllSeedDataToFirebase(true)" class="flex-1 sm:flex-none px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 border border-blue-400/30 text-xs font-bold text-white flex items-center justify-center gap-1.5 transition min-h-[40px] shadow-sm active:scale-95" title="Gravar e Sincronizar todos os 51 Candidatos no Firebase Novo">
+            <i data-lucide="cloud-upload" class="w-4 h-4 text-amber-300"></i> <span>Salvar Tudo no Firebase</span>
+          </button>
           <button onclick="navigateTo('home')" class="flex-1 sm:flex-none px-3.5 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 border border-brand-border text-xs font-semibold text-slate-200 hover:text-white flex items-center justify-center gap-1.5 transition min-h-[40px]">
             <i data-lucide="home" class="w-4 h-4 text-brand-gold"></i> <span>Início</span>
           </button>
@@ -2452,6 +2455,8 @@
   <!-- Toast Notification Container -->
   <div id="toast-container" class="fixed bottom-20 lg:bottom-6 right-4 sm:right-6 z-[110] flex flex-col gap-2 pointer-events-none"></div>
 
+  <!-- Base de Dados Inicial e Seed Offline dos 51 Candidatos Oficiais -->
+  <script src="./seed_data.js"></script>
   <!-- Companion JavaScript Engine -->
   <script src="./app.js"></script>
 </body>

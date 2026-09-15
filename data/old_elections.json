@@ -1,0 +1,68 @@
+{
+  "federal_2026": {
+    "applicationEnd": "2026-09-27T03:00:00.000Z",
+    "applicationStart": "2026-09-06T21:00:00.000Z",
+    "electionDate": "2026-09-27T15:00:00.000Z",
+    "id": "federal_2026",
+    "name": "ELEIÇÕES GERAIS 2026",
+    "offices": {
+      "deputado_estadual": {
+        "digits": 5,
+        "level": "state",
+        "name": "Deputado Estadual",
+        "requiresProposal": false
+      },
+      "deputado_federal": {
+        "digits": 4,
+        "level": "state",
+        "name": "Deputado Federal",
+        "requiresProposal": false
+      },
+      "governador": {
+        "digits": 2,
+        "level": "state",
+        "name": "Governador",
+        "requiresProposal": true
+      },
+      "presidente": {
+        "digits": 2,
+        "level": "federal",
+        "name": "Presidente",
+        "requiresProposal": true
+      },
+      "senador": {
+        "digits": 3,
+        "level": "state",
+        "name": "Senador",
+        "requiresProposal": false
+      }
+    },
+    "status": "open",
+    "title": "Eleição Municipal 2026",
+    "type": "Municipal",
+    "updatedAt": "2026-09-13T04:03:06.141Z",
+    "vagas": {
+      "Prefeito": 10,
+      "Vereador": 20
+    }
+  },
+  "municipal_2026": {
+    "id": "municipal_2026",
+    "name": "ELEIÇÕES MUNICIPAIS 2026",
+    "offices": {
+      "prefeito": {
+        "digits": 2,
+        "level": "municipal",
+        "name": "Prefeito",
+        "requiresProposal": true
+      },
+      "vereador": {
+        "digits": 5,
+        "level": "municipal",
+        "name": "Vereador",
+        "requiresProposal": false
+      }
+    },
+    "type": "municipal"
+  }
+}

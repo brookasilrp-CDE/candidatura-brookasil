@@ -6,13 +6,13 @@
 
 // 1. CONFIGURAÇÃO OFICIAL DO FIREBASE REALTIME DATABASE
 const firebaseConfig = {
-  apiKey: "AIzaSyAwFLV5X9ICB3mvU4WU1ihxGUeG9UsrbtQ",
-  authDomain: "candidatura-cde.firebaseapp.com",
-  databaseURL: "https://candidatura-cde-default-rtdb.firebaseio.com",
-  projectId: "candidatura-cde",
-  storageBucket: "candidatura-cde.firebasestorage.app",
-  messagingSenderId: "958958180950",
-  appId: "1:958958180950:web:51427276d0a83978fdb9f7"
+  apiKey: "AIzaSyADHdUUxsh6gpKzVz2ZiP4go42BRRGQtPU",
+  authDomain: "candidatura-cde-2.firebaseapp.com",
+  databaseURL: "https://candidatura-cde-2-default-rtdb.firebaseio.com",
+  projectId: "candidatura-cde-2",
+  storageBucket: "candidatura-cde-2.firebasestorage.app",
+  messagingSenderId: "742954683539",
+  appId: "1:742954683539:web:bc0bd46357dd6c5544d166"
 };
 
 // Inicialização segura do Firebase
@@ -449,6 +449,34 @@ let selectedCandForJudgment = null;
 let uploadedPhotoBase64 = '';
 let uploadedPdfBase64 = '';
 
+// Inicialização imediata dos 51 candidatos e legendas a partir do Seed oficial
+if (typeof window !== 'undefined' && window.INITIAL_SEED_DATABASE) {
+  try {
+    if (window.INITIAL_SEED_DATABASE.candidates) {
+      candidaciesList = Object.entries(window.INITIAL_SEED_DATABASE.candidates).map(([id, val]) => ({
+        id: val.id || id,
+        ...val
+      }));
+    }
+    if (window.INITIAL_SEED_DATABASE.parties) {
+      const pData = window.INITIAL_SEED_DATABASE.parties;
+      partiesList = Array.isArray(pData) ? pData : Object.values(pData);
+    }
+    if (window.INITIAL_SEED_DATABASE.elections) {
+      const eData = window.INITIAL_SEED_DATABASE.elections;
+      const eArr = Object.entries(eData).map(([id, val]) => ({ id, ...val }));
+      currentElection = eArr.find(e => e.status === 'open') || eArr[0];
+    }
+    if (window.INITIAL_SEED_DATABASE.settings && window.INITIAL_SEED_DATABASE.settings.courtCredentials) {
+      const cCreds = window.INITIAL_SEED_DATABASE.settings.courtCredentials;
+      activeCourtCredentials = Array.isArray(cCreds) ? cCreds : Object.values(cCreds);
+    }
+    console.log(`[Seed Inicial] Carregados ${candidaciesList.length} candidatos oficiais de Brookasil.`);
+  } catch (seedErr) {
+    console.warn('[Seed Inicial] Falha ao carregar seed inicial:', seedErr);
+  }
+}
+
 // ========================================================
 // INICIALIZAÇÃO E SINCRONIZAÇÃO EM TEMPO REAL
 // ========================================================
@@ -457,6 +485,23 @@ document.addEventListener("DOMContentLoaded", () => {
   initIcons();
   checkAuthSession();
   setupNetworkListeners();
+
+  // Exibe instantaneamente os 51 candidatos na interface sem esperar rede
+  if (candidaciesList.length > 0) {
+    try {
+      updateGlobalStats();
+      renderConfirmedCandidates();
+      renderPartiesCatalog();
+      populatePartySelects();
+      if (currentElection) {
+        updateElectionUI();
+        populateFormSelects();
+      }
+    } catch (e) {
+      console.warn('[Bootstrap Inicial] Erro na pré-renderização:', e);
+    }
+  }
+
   bootstrapFirebaseData();
   initCourtCredentialsListener();
   startCountdownTimer();
@@ -492,44 +537,56 @@ function setupNetworkListeners() {
 }
 
 // Inicializa dados no Firebase se vazios
+let hasAttemptedAutoSeed = false;
+let isSyncingToFirebase = false;
+
 async function bootstrapFirebaseData() {
   if (!db) return;
 
   // Escuta Eleição Ativa
   db.ref('elections').on('value', (snap) => {
     const data = snap.val();
-    if (data) {
+    if (data && Object.keys(data).length > 0) {
       const electionsArr = Object.entries(data).map(([id, val]) => ({ id, ...val }));
       const openElection = electionsArr.find(e => e.status === 'open') || electionsArr[0];
       currentElection = openElection;
     } else {
-      // Criar Eleição Padrão Federal
-      const defaultElec = {
-        title: "Eleições Gerais de Brookasil 2026",
-        type: "Federal",
-        status: "open",
-        applicationStart: "2026-08-01T00:00:00Z",
-        applicationEnd: "2026-10-15T23:59:59Z",
-        electionDate: "2026-10-25T08:00:00Z",
-        vagas: {
-          Presidente: 8,
-          Governador: 8,
-          Senador: 16,
-          "Deputado Federal": 16,
-          "Deputado Estadual": 16
-        }
-      };
-      const newRef = db.ref('elections').push(defaultElec);
-      currentElection = { id: newRef.key, ...defaultElec };
+      // Carrega do seed oficial se disponível
+      if (typeof window !== 'undefined' && window.INITIAL_SEED_DATABASE && window.INITIAL_SEED_DATABASE.elections) {
+        const eData = window.INITIAL_SEED_DATABASE.elections;
+        const eArr = Object.entries(eData).map(([id, val]) => ({ id, ...val }));
+        currentElection = eArr.find(e => e.status === 'open') || eArr[0];
+        try {
+          db.ref('elections').set(eData);
+        } catch (e) {}
+      } else {
+        const defaultElec = {
+          title: "Eleições Gerais de Brookasil 2026",
+          type: "Federal",
+          status: "open",
+          applicationStart: "2026-08-01T00:00:00Z",
+          applicationEnd: "2026-10-15T23:59:59Z",
+          electionDate: "2026-10-25T08:00:00Z",
+          vagas: {
+            Presidente: 8,
+            Governador: 8,
+            Senador: 16,
+            "Deputado Federal": 16,
+            "Deputado Estadual": 16
+          }
+        };
+        const newRef = db.ref('elections').push(defaultElec);
+        currentElection = { id: newRef.key, ...defaultElec };
+      }
     }
     updateElectionUI();
     populateFormSelects();
   });
 
   // Escuta Candidaturas em tempo real
-  db.ref('candidates').on('value', (snap) => {
+  db.ref('candidates').on('value', async (snap) => {
     const data = snap.val();
-    if (data) {
+    if (data && Object.keys(data).length > 0) {
       if (Array.isArray(data)) {
         candidaciesList = data
           .map((val, idx) => (val && typeof val === 'object') ? ({ id: val.id !== undefined ? val.id : String(idx), ...val }) : null)
@@ -539,8 +596,20 @@ async function bootstrapFirebaseData() {
           .map(([id, val]) => (val && typeof val === 'object') ? ({ id: val.id !== undefined ? val.id : id, ...val }) : null)
           .filter(Boolean);
       }
+      console.log(`[Firebase RTDB] ${candidaciesList.length} candidaturas ativas sincronizadas em tempo real.`);
     } else {
-      candidaciesList = [];
+      // Se o Firebase novo estiver vazio, mantém os 51 candidatos na interface e grava no Firebase
+      if (typeof window !== 'undefined' && window.INITIAL_SEED_DATABASE && window.INITIAL_SEED_DATABASE.candidates) {
+        const seedCands = window.INITIAL_SEED_DATABASE.candidates;
+        candidaciesList = Object.entries(seedCands).map(([id, val]) => ({ id: val.id || id, ...val }));
+        console.log(`[Firebase RTDB] Banco vazio detectado. Mantendo ${candidaciesList.length} candidatos oficiais de Brookasil na tela.`);
+        if (!hasAttemptedAutoSeed) {
+          hasAttemptedAutoSeed = true;
+          syncAllSeedDataToFirebase(false);
+        }
+      } else {
+        candidaciesList = [];
+      }
     }
     updateGlobalStats();
     renderConfirmedCandidates();
@@ -553,7 +622,7 @@ async function bootstrapFirebaseData() {
   // Escuta Partidos
   db.ref('parties').on('value', (snap) => {
     const data = snap.val();
-    if (data) {
+    if (data && Object.keys(data).length > 0) {
       if (Array.isArray(data)) {
         partiesList = data
           .map((val, idx) => (val && typeof val === 'object') ? ({ id: val.id !== undefined ? val.id : idx, ...val }) : null)
@@ -564,11 +633,19 @@ async function bootstrapFirebaseData() {
           .filter(p => p && (p.acronym || p.name));
       }
     } else {
-      // Sincroniza os 43 partidos oficiais
-      OFFICIAL_PARTIES.forEach(p => {
-        db.ref('parties/' + p.id).set(p);
-      });
-      partiesList = [...OFFICIAL_PARTIES];
+      // Sincroniza os 44 partidos oficiais
+      if (typeof window !== 'undefined' && window.INITIAL_SEED_DATABASE && window.INITIAL_SEED_DATABASE.parties) {
+        const pData = window.INITIAL_SEED_DATABASE.parties;
+        partiesList = Array.isArray(pData) ? pData : Object.values(pData);
+        try {
+          db.ref('parties').set(pData);
+        } catch (e) {}
+      } else {
+        OFFICIAL_PARTIES.forEach(p => {
+          try { db.ref('parties/' + p.id).set(p); } catch (e) {}
+        });
+        partiesList = [...OFFICIAL_PARTIES];
+      }
     }
     renderPartiesCatalog();
     populatePartySelects();
@@ -585,6 +662,134 @@ async function bootstrapFirebaseData() {
       renderAuditLogs(logs.reverse());
     }
   });
+}
+
+// Grava e sincroniza todos os 51 candidatos, eleições, partidos e configurações no novo Firebase
+async function syncAllSeedDataToFirebase(isManual = false) {
+  if (isSyncingToFirebase) return;
+  if (!db) {
+    if (isManual) showToast('error', 'Firebase não conectado.');
+    return;
+  }
+
+  isSyncingToFirebase = true;
+  if (isManual) {
+    showToast('info', 'Gravando 51 candidatos e dados oficiais no novo Firebase...');
+  }
+
+  try {
+    let fullSeed = null;
+    try {
+      const resp = await fetch('/api/seed-database');
+      if (resp.ok) {
+        fullSeed = await resp.json();
+      }
+    } catch (e) {}
+
+    if (!fullSeed) {
+      try {
+        const resp2 = await fetch('/seed_database.json');
+        if (resp2.ok) {
+          fullSeed = await resp2.json();
+        }
+      } catch (e) {}
+    }
+
+    if (!fullSeed && typeof window !== 'undefined' && window.INITIAL_SEED_DATABASE) {
+      fullSeed = window.INITIAL_SEED_DATABASE;
+    }
+
+    if (!fullSeed || !fullSeed.candidates) {
+      console.warn('[Firebase Seed] Dados de candidatos não encontrados para gravação.');
+      isSyncingToFirebase = false;
+      return;
+    }
+
+    // 1. Grava Eleições
+    if (fullSeed.elections) {
+      try {
+        await db.ref('elections').set(fullSeed.elections);
+      } catch (e) {
+        console.warn('[Firebase Seed] Eleições:', e.message);
+      }
+    }
+
+    // 2. Grava Partidos
+    if (fullSeed.parties) {
+      try {
+        await db.ref('parties').set(fullSeed.parties);
+      } catch (e) {
+        console.warn('[Firebase Seed] Partidos:', e.message);
+      }
+    }
+
+    // 3. Grava Configurações e Credenciais de Magistrados
+    if (fullSeed.settings) {
+      try {
+        await db.ref('settings').set(fullSeed.settings);
+      } catch (e) {
+        console.warn('[Firebase Seed] Settings:', e.message);
+      }
+    }
+
+    // 4. Grava Registro de Números
+    if (fullSeed.numberRegistry) {
+      try {
+        await db.ref('numberRegistry').set(fullSeed.numberRegistry);
+      } catch (e) {
+        console.warn('[Firebase Seed] NumberRegistry:', e.message);
+      }
+    }
+
+    // 5. Grava os 51 Candidatos em lotes paralelos seguros
+    const candidatesEntries = Object.entries(fullSeed.candidates);
+    let savedCount = 0;
+    const batchSize = 5;
+
+    for (let i = 0; i < candidatesEntries.length; i += batchSize) {
+      const batch = candidatesEntries.slice(i, i + batchSize);
+      await Promise.all(batch.map(async ([candKey, candData]) => {
+        try {
+          await db.ref('candidates/' + candKey).set(candData);
+          savedCount++;
+        } catch (candErr) {
+          console.warn(`[Firebase Seed] Erro ao gravar candidato ${candData.ballotName || candKey}:`, candErr.message);
+        }
+      }));
+    }
+
+    console.log(`[Firebase Seed] Sucesso: ${savedCount}/${candidatesEntries.length} candidatos gravados no novo Firebase!`);
+    
+    if (isManual) {
+      if (savedCount > 0) {
+        showToast('success', `Tudo salvo! ${savedCount} candidatos e dados oficiais gravados no novo Firebase.`);
+      } else {
+        showToast('error', 'Permissão negada no Firebase. Por favor, atualize as Regras no Firebase Console para liberar a gravação.');
+      }
+    }
+
+    // Se houve erro de permissão, agenda tentativa automática em 15 segundos
+    if (savedCount === 0 && candidatesEntries.length > 0) {
+      setTimeout(() => {
+        if (!isSyncingToFirebase && db) {
+          syncAllSeedDataToFirebase(false);
+        }
+      }, 15000);
+    }
+  } catch (err) {
+    console.error('[Firebase Seed] Erro geral na sincronização:', err);
+    if (isManual) {
+      showToast('error', 'Erro de permissão no Firebase. Atualize as regras no console.');
+    }
+    // Re-tenta automaticamente
+    setTimeout(() => {
+      if (!isSyncingToFirebase && db) {
+        syncAllSeedDataToFirebase(false);
+      }
+    }, 15000);
+  } finally {
+    isSyncingToFirebase = false;
+  }
 }
 
 // ========================================================
@@ -2771,7 +2976,7 @@ function onCourtSelectChange(courtId) {
   }
 }
 
-const FIREBASE_RTDB_URL = 'https://candidatura-cde-default-rtdb.firebaseio.com';
+const FIREBASE_RTDB_URL = firebaseConfig.databaseURL || 'https://candidatura-cde-2-default-rtdb.firebaseio.com';
 
 function removeAccents(str) {
   return String(str || '')
@@ -5383,7 +5588,7 @@ function refreshAdminData() {
   if (db) {
     db.ref('candidates').once('value', (snap) => {
       const data = snap.val();
-      if (data) {
+      if (data && Object.keys(data).length > 0) {
         if (Array.isArray(data)) {
           candidaciesList = data
             .map((val, idx) => (val && typeof val === 'object') ? ({ id: val.id !== undefined ? val.id : String(idx), ...val }) : null)
@@ -5393,8 +5598,14 @@ function refreshAdminData() {
             .map(([id, val]) => (val && typeof val === 'object') ? ({ id: val.id !== undefined ? val.id : id, ...val }) : null)
             .filter(Boolean);
         }
+        showToast('success', `${candidaciesList.length} candidaturas sincronizadas da nuvem!`);
       } else {
-        candidaciesList = [];
+        if (typeof window !== 'undefined' && window.INITIAL_SEED_DATABASE && window.INITIAL_SEED_DATABASE.candidates) {
+          const seedCands = window.INITIAL_SEED_DATABASE.candidates;
+          candidaciesList = Object.entries(seedCands).map(([id, val]) => ({ id: val.id || id, ...val }));
+        }
+        showToast('info', `${candidaciesList.length} candidatos carregados. Gravando no novo Firebase...`);
+        syncAllSeedDataToFirebase(false);
       }
       updateGlobalStats();
       renderConfirmedCandidates();
@@ -5402,10 +5613,9 @@ function refreshAdminData() {
         renderAdminCandidacies();
         updateAdminCharts();
       }
-      showToast('success', `${candidaciesList.length} candidaturas sincronizadas em tempo real!`);
     }, (err) => {
       console.error('Erro na sincronização:', err);
-      showToast('error', 'Falha na sincronização com o banco.');
+      showToast('error', 'Falha na sincronização com o banco. Exibindo candidatos em cache.');
     });
   }
 }

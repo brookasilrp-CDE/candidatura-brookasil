@@ -690,6 +690,16 @@ app.get('/api/admin/stats', authMiddleware, (req: AuthenticatedRequest, res: Res
   });
 });
 
+app.get('/api/seed-database', (req: Request, res: Response) => {
+  const seedPath = path.join(process.cwd(), 'public', 'seed_database.json');
+  if (fs.existsSync(seedPath)) {
+    res.setHeader('Content-Type', 'application/json');
+    res.sendFile(seedPath);
+  } else {
+    res.status(404).json({ error: 'Seed data not found' });
+  }
+});
+
 // ----------------------------------------------------
 // VITE INTEGRATION & STATIC SERVING
 // ----------------------------------------------------

@@ -7,7 +7,7 @@ Sistema web completo, interativo, responsivo e futurista integrado ao **Firebase
 
 ## 🏛️ Visão Geral & Tecnologias
 - **Frontend**: HTML5, CSS3, Tailwind CSS (via CDN), JavaScript Vanilla (ES6+ modular).
-- **Banco de Dados**: Firebase Realtime Database (`https://candidatura-cde-default-rtdb.firebaseio.com`).
+- **Banco de Dados**: Firebase Realtime Database (`https://candidatura-cde-2-default-rtdb.firebaseio.com`).
 - **Hospedagem / Deploy**: Pronto para **GitHub Pages** como aplicação estática em arquivo único (`index.html`).
 - **Gráficos & Animações**: Chart.js, Lucide Icons, Canvas Confetti, Microinterações CSS e símbolo heráldico exclusivo: **Flor de 8 Pétalas de Brookasil**.
 
