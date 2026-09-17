@@ -315,117 +315,146 @@ app.get('/api/public/config', (req: Request, res: Response) => {
   });
 });
 
-// 2. Submit Candidacy (Public Form)
-app.post('/api/candidacies', (req: Request, res: Response) => {
+// Get all candidacies (Public & Admin sync)
+app.get('/api/candidacies', (req: Request, res: Response) => {
   try {
-    const {
-      full_name,
-      ballot_name,
-      photo,
-      state,
-      position,
-      party_id,
-      number,
-      biography,
-      proposals
-    } = req.body;
+    const rawData = fs.existsSync(DB_FILE) ? JSON.parse(fs.readFileSync(DB_FILE, 'utf-8')) : db;
+    res.json({
+      candidacies: rawData.candidacies || []
+    });
+  } catch (err) {
+    res.json({ candidacies: db.candidacies || [] });
+  }
+});
 
-    // Strict validation
-    if (!full_name || typeof full_name !== 'string' || full_name.trim().length < 3) {
-      res.status(400).json({ error: 'Nome completo é obrigatório (mínimo 3 caracteres).' });
-      return;
-    }
-
-    if (!ballot_name || typeof ballot_name !== 'string' || ballot_name.trim().length < 2) {
-      res.status(400).json({ error: 'Nome de urna é obrigatório (mínimo 2 caracteres).' });
-      return;
-    }
-
-    if (!state || !BROOKASIL_STATES.includes(state)) {
-      res.status(400).json({ error: `Estado inválido. Deve ser um dos seguintes: ${BROOKASIL_STATES.join(', ')}` });
-      return;
-    }
-
-    const positionCfg = POSITIONS_CONFIG.find((p) => p.name === position);
-    if (!positionCfg) {
-      res.status(400).json({ error: 'Cargo eleitoral informado é inválido.' });
-      return;
-    }
-
-    // Party validation: party must exist and be ACTIVE
-    const party = db.parties.find((p) => p.id === Number(party_id));
-    if (!party) {
-      res.status(400).json({ error: 'Partido não encontrado no registro oficial.' });
-      return;
-    }
-    if (!party.active) {
-      res.status(400).json({ error: 'O partido selecionado encontra-se inativo no Tribunal Superior Eleitoral.' });
-      return;
-    }
-
-    // Number validation: must be exact digits according to position
-    const cleanNumber = String(number || '').trim();
-    if (!/^\d+$/.test(cleanNumber)) {
-      res.status(400).json({ error: 'O número eleitoral deve conter apenas dígitos numéricos.' });
-      return;
-    }
-
-    if (cleanNumber.length !== positionCfg.digits) {
-      res.status(400).json({
-        error: `O cargo de ${positionCfg.name} exige exatamente ${positionCfg.digits} dígitos. Você informou ${cleanNumber.length} dígitos.`
-      });
-      return;
-    }
-
-    if (!biography || typeof biography !== 'string' || biography.trim().length < 10) {
-      res.status(400).json({ error: 'Biografia é obrigatória (mínimo 10 caracteres).' });
-      return;
-    }
-
-    if (!proposals || typeof proposals !== 'string' || proposals.trim().length < 15) {
-      res.status(400).json({ error: 'Propostas são obrigatórias (mínimo 15 caracteres).' });
-      return;
-    }
-
-    // Generate unique official protocol (BRK-2026-XXXXXX)
-    const randomCode = Math.floor(100000 + Math.random() * 900000);
-    const protocol = `BRK-2026-${randomCode}`;
-    const newId = `cand-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+// 2. Submit Candidacy (Public Form & Frontend Integration)
+app.post('/api/candidacies', async (req: Request, res: Response) => {
+  try {
+    const body = req.body || {};
+    
+    // Normalize fields supporting both camelCase and snake_case
+    const fullName = String(body.fullName || body.full_name || '').trim();
+    const ballotName = String(body.ballotName || body.ballot_name || '').trim();
+    const office = String(body.office || body.position || '').trim();
+    const stateId = String(body.stateId || body.state || 'brookhaven').toLowerCase().trim();
+    const cityId = String(body.cityId || body.city || 'ALL').trim();
+    const partyId = body.partyId !== undefined ? body.partyId : body.party_id;
+    const partyAcronym = String(body.partyAcronym || body.party?.acronym || '').trim();
+    const partyName = String(body.partyName || body.party?.name || '').trim();
+    const partyColor = String(body.partyColor || body.party?.color || '#1e3a8a').trim();
+    const partyNumber = Number(body.partyNumber || body.party?.number || 0);
+    const partyGroup = String(body.partyGroup || body.party?.group || 'Centro').trim();
+    const number = String(body.number || '').trim();
+    const photo = String(body.photo || '').trim();
+    const proposalPdf = body.proposalPdf || null;
+    const proposalsText = String(body.proposalsText || body.proposals || body.biography || '').trim();
+    const tiktok = String(body.tiktok || '').trim();
+    const viceName = body.viceName ? String(body.viceName).trim() : null;
+    const coalition = body.coalition ? String(body.coalition).trim() : null;
+    const birthDate = String(body.birthDate || '').trim();
+    const protocol = String(body.protocol || `CAND-2026-${Math.floor(100000 + Math.random() * 900000)}`);
+    const status = String(body.status || 'pendente').toLowerCase();
     const nowIso = new Date().toISOString();
 
-    const newCandidacy: Candidacy = {
+    if (!fullName || fullName.length < 2) {
+      res.status(400).json({ error: 'Nome completo é obrigatório.' });
+      return;
+    }
+
+    if (!ballotName || ballotName.length < 2) {
+      res.status(400).json({ error: 'Nome de urna é obrigatório.' });
+      return;
+    }
+
+    if (!office) {
+      res.status(400).json({ error: 'Cargo eleitoral é obrigatório.' });
+      return;
+    }
+
+    if (!number) {
+      res.status(400).json({ error: 'Número eleitoral de urna é obrigatório.' });
+      return;
+    }
+
+    const newId = body.id || `cand_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+
+    const candidateRecord: any = {
       id: newId,
       protocol,
-      full_name: full_name.trim(),
-      ballot_name: ballot_name.trim(),
-      photo: photo || '',
-      state,
-      position,
+      electionId: body.electionId || '-P1UxYPVisjITVpJ_Has',
+      electionTitle: body.electionTitle || 'Eleições Gerais de Brookasil 2026',
+      office,
+      position: office,
+      stateId,
+      state: stateId,
+      cityId,
+      city: cityId,
+      partyId,
+      partyName,
+      partyAcronym,
+      partyNumber,
+      partyColor,
+      partyGroup,
       party: {
-        id: party.id,
-        name: party.name,
-        acronym: party.acronym,
-        number: party.number,
-        color: party.color
+        id: partyId,
+        name: partyName,
+        acronym: partyAcronym,
+        number: partyNumber,
+        color: partyColor,
+        group: partyGroup
       },
-      number: cleanNumber,
-      biography: biography.trim(),
-      proposals: proposals.trim(),
-      status: 'PENDENTE',
-      created_at: nowIso,
-      updated_at: nowIso
+      number,
+      fullName,
+      full_name: fullName,
+      ballotName,
+      ballot_name: ballotName,
+      birthDate,
+      tiktok,
+      viceName,
+      coalition,
+      photo,
+      proposalPdf,
+      proposalsText,
+      proposals: proposalsText,
+      status,
+      createdAt: body.createdAt || nowIso,
+      updatedAt: nowIso
     };
 
-    db.candidacies.unshift(newCandidacy);
+    // Save to server local database
+    const existingIndex = db.candidacies.findIndex((c: any) => c.id === newId || c.protocol === protocol);
+    if (existingIndex >= 0) {
+      db.candidacies[existingIndex] = candidateRecord;
+    } else {
+      db.candidacies.unshift(candidateRecord);
+    }
     saveDatabase(db);
 
+    // Asynchronously forward to Firebase RTDB if not already present
+    let fbKey: string | null = null;
+    try {
+      const fbUrl = 'https://candidatura-cde-2-default-rtdb.firebaseio.com/candidates.json';
+      const fbResp = await fetch(fbUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(candidateRecord)
+      });
+      if (fbResp.ok) {
+        const fbJson = await fbResp.json();
+        fbKey = fbJson?.name || null;
+      }
+    } catch (fbErr: any) {
+      console.warn('[Server] Aviso ao sincronizar candidatura com Firebase RTDB:', fbErr?.message);
+    }
+
     res.status(201).json({
-      message: 'CADASTRO REALIZADO COM SUCESSO',
-      candidacy: newCandidacy
+      message: 'Candidatura registrada e processada com sucesso no sistema eleitoral.',
+      candidacy: candidateRecord,
+      firebaseKey: fbKey
     });
   } catch (error) {
-    console.error('Error creating candidacy:', error);
-    res.status(500).json({ error: 'Erro interno ao processar candidatura.' });
+    console.error('[Server] Erro ao registrar candidatura:', error);
+    res.status(500).json({ error: 'Erro interno ao processar candidatura no servidor.' });
   }
 });
 

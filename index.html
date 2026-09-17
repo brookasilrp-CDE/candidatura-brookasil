@@ -490,7 +490,7 @@
             <i data-lucide="flag" class="w-4 h-4"></i>
           </div>
           <div>
-            <span class="font-bold text-sm block leading-tight">Partidos Políticos (43)</span>
+            <span class="font-bold text-sm block leading-tight">Partidos Políticos (44)</span>
             <span class="text-[11px] text-slate-400">Espectros, números e estatísticas</span>
           </div>
         </button>
@@ -660,7 +660,7 @@
             <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Partidos</span>
             <i data-lucide="flag" class="w-5 h-5 text-brand-gold"></i>
           </div>
-          <p id="stat-parties" class="text-3xl font-extrabold text-brand-gold mt-2">43</p>
+          <p id="stat-parties" class="text-3xl font-extrabold text-brand-gold mt-2">44</p>
           <p class="text-xs text-slate-400 mt-1">Legendas registradas</p>
         </div>
 
@@ -697,7 +697,7 @@
             <i data-lucide="pie-chart" class="w-6 h-6"></i>
           </div>
           <h3 class="text-lg font-bold text-white group-hover:text-brand-emerald transition-colors">Panorama Partidário</h3>
-          <p class="text-sm text-slate-400 mt-2">Veja os 43 partidos divididos em Direita, Centro e Esquerda, seus números e quantos candidatos já possuem deferidos.</p>
+          <p class="text-sm text-slate-400 mt-2">Veja os 44 partidos divididos em Direita, Centro e Esquerda, seus números e quantos candidatos já possuem deferidos.</p>
         </div>
       </div>
     </section>
@@ -809,7 +809,7 @@
           </h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Partido Político (43 legendas) *</label>
+              <label class="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Partido Político (44 legendas) *</label>
               <select id="form-party-select" onchange="onPartyChange()" required class="w-full bg-brand-navy border border-brand-border rounded-xl px-4 py-3 text-white focus:border-brand-electric focus:ring-1 focus:ring-brand-electric outline-none">
                 <option value="">Selecione o Partido</option>
                 <!-- Populated dynamically -->
@@ -904,7 +904,7 @@
                   </button>
                 </div>
                 <div class="flex-1 space-y-2">
-                  <input type="file" id="form-photo-input" accept="image/*" onchange="handlePhotoUpload(event)" class="hidden" required>
+                  <input type="file" id="form-photo-input" accept="image/*" onchange="handlePhotoUpload(event)" class="hidden">
                   <div class="flex flex-wrap items-center gap-2">
                     <button type="button" onclick="document.getElementById('form-photo-input').click()" class="px-4 py-2.5 rounded-xl bg-brand-deep hover:bg-white/10 active:bg-white/15 border border-brand-border text-white text-xs font-semibold flex items-center gap-2 transition">
                       <i data-lucide="upload" class="w-4 h-4 text-brand-electric"></i> Escolher Foto
@@ -973,20 +973,20 @@
         <div class="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-2.5 sm:gap-3 flex-1">
             <select id="filter-status" onchange="renderConfirmedCandidates()" class="bg-brand-navy border border-brand-border hover:border-brand-electric/50 focus:border-brand-electric rounded-xl px-3.5 py-2.5 text-xs text-white outline-none min-h-[44px] transition">
-              <option value="deferida" selected>Apenas Homologadas (Aptas pelo TRE)</option>
+              <option value="ALL" selected>Todas as Candidaturas (Todos os Status)</option>
+              <option value="deferida">Apenas Homologadas (Aptas pelo TRE)</option>
               <option value="pendente">Em Análise (Aguardando Decisão do TRE)</option>
               <option value="indeferida">Indeferidas pelo Tribunal</option>
-              <option value="ALL">Todas as Candidaturas (Todos os Status)</option>
             </select>
             <select id="filter-cargo" onchange="renderConfirmedCandidates()" class="bg-brand-navy border border-brand-border hover:border-brand-electric/50 focus:border-brand-electric rounded-xl px-3.5 py-2.5 text-xs text-white outline-none min-h-[44px] transition">
               <option value="ALL">Todos os Cargos</option>
+              <option value="Prefeito">Prefeito</option>
+              <option value="Vereador">Vereador</option>
               <option value="Presidente">Presidente</option>
               <option value="Governador">Governador</option>
               <option value="Senador">Senador</option>
               <option value="Deputado Federal">Deputado Federal</option>
               <option value="Deputado Estadual">Deputado Estadual</option>
-              <option value="Prefeito">Prefeito</option>
-              <option value="Vereador">Vereador</option>
             </select>
             <select id="filter-estado" onchange="onPublicStateFilterChange()" class="bg-brand-navy border border-brand-border hover:border-brand-electric/50 focus:border-brand-electric rounded-xl px-3.5 py-2.5 text-xs text-white outline-none min-h-[44px] transition">
               <option value="ALL">Todos os Estados</option>
@@ -1017,25 +1017,25 @@
     </section>
 
     <!-- ============================================== -->
-    <!-- VIEW 4: PARTIDOS POLÍTICOS (43 LEGENDAS)       -->
+    <!-- VIEW 4: PARTIDOS POLÍTICOS (44 LEGENDAS)       -->
     <!-- ============================================== -->
     <section id="view-partidos" class="view-section space-y-8">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-brand-border pb-6">
         <div>
           <span class="text-xs uppercase font-bold tracking-widest text-brand-gold">Quadro Político</span>
           <h2 class="text-3xl font-cinzel font-bold text-white">Partidos Políticos de Brookasil</h2>
-          <p class="text-sm text-slate-400">43 legendas registradas no Tribunal Superior Eleitoral, divididas por espectro ideológico.</p>
+          <p class="text-sm text-slate-400">44 legendas registradas no Tribunal Superior Eleitoral, divididas por espectro ideológico.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2 text-xs">
-          <span class="px-3 py-1.5 rounded-lg bg-blue-500/20 text-blue-400 font-bold border border-blue-500/30">Direita (19)</span>
-          <span class="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30">Centro (10)</span>
+          <span class="px-3 py-1.5 rounded-lg bg-blue-500/20 text-blue-400 font-bold border border-blue-500/30">Direita (23)</span>
+          <span class="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-400 font-bold border border-amber-500/30">Centro (7)</span>
           <span class="px-3 py-1.5 rounded-lg bg-red-500/20 text-red-400 font-bold border border-red-500/30">Esquerda (14)</span>
         </div>
       </div>
 
       <!-- Group Tabs Touch-Friendly -->
       <div class="flex items-center gap-2 border-b border-brand-border/60 pb-2 overflow-x-auto no-scrollbar -mx-4 px-4 sm:mx-0 sm:px-0">
-        <button onclick="setPartyGroupFilter('ALL')" class="party-tab-btn whitespace-nowrap px-4 py-2.5 rounded-xl text-xs font-bold transition bg-brand-blue text-white min-h-[40px] shadow-sm" data-group="ALL">Todos os 43 Partidos</button>
+        <button onclick="setPartyGroupFilter('ALL')" class="party-tab-btn whitespace-nowrap px-4 py-2.5 rounded-xl text-xs font-bold transition bg-brand-blue text-white min-h-[40px] shadow-sm" data-group="ALL">Todos os 44 Partidos</button>
         <button onclick="setPartyGroupFilter('Direita')" class="party-tab-btn whitespace-nowrap px-4 py-2.5 rounded-xl text-xs font-bold transition text-slate-300 hover:bg-white/5 min-h-[40px]" data-group="Direita">Direita</button>
         <button onclick="setPartyGroupFilter('Centro')" class="party-tab-btn whitespace-nowrap px-4 py-2.5 rounded-xl text-xs font-bold transition text-slate-300 hover:bg-white/5 min-h-[40px]" data-group="Centro">Centro</button>
         <button onclick="setPartyGroupFilter('Esquerda')" class="party-tab-btn whitespace-nowrap px-4 py-2.5 rounded-xl text-xs font-bold transition text-slate-300 hover:bg-white/5 min-h-[40px]" data-group="Esquerda">Esquerda</button>
@@ -1141,7 +1141,7 @@
             <i data-lucide="file-check" class="w-5 h-5 text-brand-emerald"></i> Requisitos de Admissibilidade
           </h3>
           <ul class="text-sm text-slate-300 space-y-2">
-            <li>✅ Filiação ativa a um dos 43 partidos registrados.</li>
+            <li>✅ Filiação ativa a um dos 44 partidos registrados.</li>
             <li>✅ Foto oficial de rosto sem acessórios que dificultem a identificação.</li>
             <li>✅ Link ou arroba válido de TikTok oficial.</li>
             <li>✅ Plano de governo detalhado em PDF (obrigatório para Presidente, Governador e Prefeito).</li>
@@ -1283,6 +1283,22 @@
           </button>
         </div>
 
+        <!-- Alert Banner for Pending Candidacies -->
+        <div id="admin-pending-alert-banner" class="hidden p-4 rounded-2xl bg-amber-950/40 border border-amber-500/40 text-amber-200 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center shrink-0">
+              <i data-lucide="bell-ring" class="w-5 h-5 text-amber-400 animate-bounce"></i>
+            </div>
+            <div>
+              <span class="font-bold text-white block text-sm" id="admin-pending-alert-title">Novas Candidaturas Aguardando Julgamento!</span>
+              <span class="text-slate-300 text-xs" id="admin-pending-alert-desc">Existem candidaturas recém-registradas aguardando apreciação pelo magistrado eleitoral.</span>
+            </div>
+          </div>
+          <button type="button" onclick="setAdminPendingFilter()" class="px-4 py-2 rounded-xl bg-amber-400 text-slate-950 hover:bg-amber-300 font-black text-xs shrink-0 transition shadow-sm">
+            Ver Pendentes Agora
+          </button>
+        </div>
+
         <!-- Filter bar for Admin Judgments Responsiva -->
         <div class="glass-panel p-4 sm:p-5 rounded-3xl border border-brand-border space-y-3 shadow-xl">
           <div class="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
@@ -1294,6 +1310,10 @@
                 <option value="indeferida">Indeferidas</option>
                 <option value="excluida">Excluídas</option>
               </select>
+              <button type="button" onclick="setAdminPendingFilter()" id="admin-quick-pending-btn" class="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 transition min-h-[44px]" title="Filtrar candidaturas pendentes">
+                <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                <span id="admin-pending-badge-text">Pendentes (0)</span>
+              </button>
               <select id="admin-filter-cargo" onchange="renderAdminCandidacies()" class="bg-brand-navy border border-brand-border hover:border-brand-electric/50 focus:border-brand-electric rounded-xl px-3.5 py-2.5 text-xs text-white outline-none min-h-[44px] transition">
                 <option value="ALL">Todos os Cargos</option>
                 <option value="Presidente">Presidente</option>
@@ -1319,6 +1339,11 @@
               <select id="admin-filter-partido" onchange="renderAdminCandidacies()" class="bg-brand-navy border border-brand-border hover:border-brand-electric/50 focus:border-brand-electric rounded-xl px-3.5 py-2.5 text-xs text-white outline-none min-h-[44px] transition">
                 <option value="ALL">Todos os Partidos</option>
               </select>
+              <!-- Toggle to view all jurisdictions (Panorama Geral) -->
+              <label id="admin-toggle-all-jurisdictions-container" class="inline-flex items-center gap-2 cursor-pointer bg-brand-navy border border-brand-border hover:border-brand-electric/50 rounded-xl px-3.5 py-2 text-xs text-slate-200 select-none min-h-[44px]" title="Permite ao magistrado visualizar candidaturas de todas as circunscrições eleitorais">
+                <input type="checkbox" id="admin-toggle-all-jurisdictions" onchange="renderAdminCandidacies()" class="accent-brand-electric w-4 h-4 cursor-pointer">
+                <span class="text-xs font-semibold">Panorama Geral</span>
+              </label>
             </div>
             <div class="relative w-full lg:w-72">
               <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
@@ -1597,8 +1622,12 @@
         </svg>
         <span class="font-bold text-white font-cinzel">Justiça Eleitoral de Brookasil</span> • Eleições 2026
       </div>
-      <div class="text-slate-400 text-[11px] sm:text-xs">
-        República Democrática de Brookasil • Tribunal Superior Eleitoral • Infraestrutura Criptografada e Segura
+      <div class="flex flex-wrap items-center gap-3 text-slate-400 text-[11px] sm:text-xs">
+        <button type="button" id="btn-footer-firebase-diag" onclick="testFirebaseConnection()" class="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-medium transition flex items-center gap-1.5 active:scale-95" title="Testar conexão e verificar integridade dos dados no console">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Firebase Conectado</span>
+        </button>
+        <span>República Democrática de Brookasil • Tribunal Superior Eleitoral</span>
       </div>
     </div>
   </footer>

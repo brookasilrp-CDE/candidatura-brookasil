@@ -371,57 +371,86 @@ const BROOKASIL_GEO = {
   novacore: { name: "Novacore", cities: { napolis: "Nápolis", catarinia: "Catarinía" } }
 };
 
-// 4. PARTIDOS POLÍTICOS OFICIAIS (43 LEGENDAS)
+// 4. PARTIDOS POLÍTICOS OFICIAIS (44 LEGENDAS)
 const OFFICIAL_PARTIES = [
-  // DIREITA (19)
-  { id: 1, name: "Partido Liberal", acronym: "PL", number: 22, group: "Direita", color: "#1E3A8A" },
-  { id: 2, name: "Progressistas", acronym: "PP", number: 11, group: "Direita", color: "#0284C7" },
-  { id: 3, name: "Republicanos", acronym: "REP", number: 10, group: "Direita", color: "#0D9488" },
-  { id: 4, name: "Partido Novo", acronym: "NOVO", number: 30, group: "Direita", color: "#EA580C" },
-  { id: 5, name: "Democracia Cristã", acronym: "DC", number: 27, group: "Direita", color: "#2563EB" },
-  { id: 6, name: "Agir", acronym: "AGIR", number: 36, group: "Direita", color: "#4F46E5" },
-  { id: 7, name: "Partido da Mulher Brookasileira", acronym: "PMB", number: 35, group: "Direita", color: "#DB2777" },
-  { id: 8, name: "Patriota", acronym: "PATRIOTA", number: 51, group: "Direita", color: "#15803D" },
-  { id: 9, name: "Partido Renovador Trabalhista Brookasileiro", acronym: "PRTB", number: 28, group: "Direita", color: "#B45309" },
-  { id: 10, name: "União Democrática Brookasileira", acronym: "UDB", number: 38, group: "Direita", color: "#3B82F6" },
-  { id: 11, name: "Partido da Ordem e Liberdade", acronym: "POL", number: 81, group: "Direita", color: "#1E293B" },
-  { id: 12, name: "Aliança Cristã Nacional", acronym: "ACN", number: 84, group: "Direita", color: "#7E22CE" },
-  { id: 13, name: "Partido da Reedificação da Ordem Nacional", acronym: "PRONA", number: 57, group: "Direita", color: "#312E81" },
-  { id: 14, name: "Partido da Liberdade Nacional", acronym: "PLN", number: 17, group: "Direita", color: "#047857" },
-  { id: 15, name: "Partido da Esperança", acronym: "PESP", number: 48, group: "Direita", color: "#059669" },
-  { id: 16, name: "Partido Militar Nacionalista", acronym: "PMNL", number: 86, group: "Direita", color: "#292524" },
-  { id: 17, name: "Partido Renovador Trabalhista Nacional", acronym: "PRTN", number: 75, group: "Direita", color: "#4338CA" },
-  { id: 18, name: "Partido Revolucionário Institucional", acronym: "PRI", number: 26, group: "Direita", color: "#991B1B" },
-  { id: 19, name: "Partido da Unidade e Liberdade Nacional", acronym: "PULN", number: 24, group: "Direita", color: "#155E75" },
+  // DIREITA (23)
+  { id: "p3", name: "Rep10", acronym: "REP", number: 10, group: "Direita", color: "#0D9488" },
+  { id: "p2", name: "Partido Progressista", acronym: "PP", number: 11, group: "Direita", color: "#2563eb" },
+  { id: "1788818559498", name: "Partido Missão", acronym: "MISSÃO", number: 14, group: "Direita", color: "#ffb300" },
+  { id: "p14", name: "Partido da Liberdade Nacional", acronym: "PLN", number: 17, group: "Direita", color: "#047857" },
+  { id: "p23", name: "Podemos", acronym: "PODE", number: 20, group: "Direita", color: "#8eff80" },
+  { id: "p1", name: "Partido Liberal", acronym: "PL", number: 22, group: "Direita", color: "#2563eb" },
+  { id: "p19", name: "Partido da Unidade e Liberdade Nacional", acronym: "PULN", number: 24, group: "Direita", color: "#155E75" },
+  { id: 1789346506511, name: "Partido da Renovação Democrática", acronym: "PRD", number: 25, group: "Direita", color: "#0000ff" },
+  { id: "p18", name: "Partido Revolucionário Institucional", acronym: "PRI", number: 26, group: "Direita", color: "#991B1B" },
+  { id: "p5", name: "Democracia Cristã", acronym: "DC", number: 27, group: "Direita", color: "#2563EB" },
+  { id: "p9", name: "Partido Republicano Trabalhista Brookasileiro", acronym: "PRTB", number: 28, group: "Direita", color: "#0000ff" },
+  { id: "p4", name: "Partido Novo", acronym: "NOVO", number: 30, group: "Direita", color: "#ff9500" },
+  { id: "p7", name: "Democratas", acronym: "DEM", number: 35, group: "Direita", color: "#73ff77" },
+  { id: "p6", name: "Agir", acronym: "AGIR", number: 36, group: "Direita", color: "#4F46E5" },
+  { id: "p15", name: "Partido Esperança", acronym: "ESP", number: 48, group: "Direita", color: "#2563eb" },
+  { id: "p8", name: "Patriota", acronym: "PATRIOTA", number: 51, group: "Direita", color: "#15803D" },
+  { id: "p13", name: "PRONA", acronym: "PRONA", number: 57, group: "Direita", color: "#312E81" },
+  { id: "p28", name: "Partido Republicano Nacional Brookasileiro", acronym: "PRNB", number: 67, group: "Direita", color: "#2563eb" },
+  { id: "p10", name: "Partido Nacional Trabalhista Brookasileiro", acronym: "PNTB", number: 75, group: "Direita", color: "#ff0000" },
+  { id: "p26", name: "Solidariedade", acronym: "SD", number: 77, group: "Direita", color: "#ff9900" },
+  { id: "p11", name: "Partido da Ordem e Liberdade", acronym: "POL", number: 81, group: "Direita", color: "#9e7e00" },
+  { id: "p12", name: "Aliança Cristã Nacional", acronym: "ACN", number: 84, group: "Direita", color: "#2563eb" },
+  { id: "p16", name: "Partido Militar Nacionalista", acronym: "PMNL", number: 86, group: "Direita", color: "#008a09" },
 
-  // CENTRO (10)
-  { id: 20, name: "Movimento Democrático Brookasileiro", acronym: "MDB", number: 15, group: "Centro", color: "#059669" },
-  { id: 21, name: "União Brookasil", acronym: "UNIÃO", number: 44, group: "Centro", color: "#2563EB" },
-  { id: 22, name: "Partido Social Democrático", acronym: "PSD", number: 55, group: "Centro", color: "#D97706" },
-  { id: 23, name: "Podemos", acronym: "PODEMOS", number: 20, group: "Centro", color: "#0284C7" },
-  { id: 24, name: "Partido da Social Democracia Brookasileira", acronym: "PSDB", number: 45, group: "Centro", color: "#1D4ED8" },
-  { id: 25, name: "Cidadania", acronym: "CIDADANIA", number: 23, group: "Centro", color: "#E11D48" },
-  { id: 26, name: "Solidariedade", acronym: "SOLIDARIEDADE", number: 77, group: "Centro", color: "#EA580C" },
-  { id: 27, name: "Avante", acronym: "AVANTE", number: 70, group: "Centro", color: "#D97706" },
-  { id: 28, name: "Partido da Reconstrução Nacional Brookasileira", acronym: "PRNB", number: 76, group: "Centro", color: "#4F46E5" },
-  { id: 29, name: "Partido da Mobilização Nacional", acronym: "PMN", number: 33, group: "Centro", color: "#9333EA" },
+  // CENTRO (7)
+  { id: "p20", name: "Movimento Democrático Brookasileiro", acronym: "MDB", number: 15, group: "Centro", color: "#eeff00" },
+  { id: "p25", name: "Cidadania", acronym: "CIDADANIA", number: 23, group: "Centro", color: "#E11D48" },
+  { id: "p29", name: "Partido da Mobilização Nacional", acronym: "PMN", number: 33, group: "Centro", color: "#9333EA" },
+  { id: "p21", name: "União Brookasil", acronym: "UNIÃO", number: 44, group: "Centro", color: "#2563eb" },
+  { id: "p24", name: "Partido da Social Democracia Brookasileira", acronym: "PSDB", number: 45, group: "Centro", color: "#0000ff" },
+  { id: "p22", name: "Partido Social Democrático", acronym: "PSD", number: 55, group: "Centro", color: "#07008f" },
+  { id: "p27", name: "Avante", acronym: "AVANTE", number: 70, group: "Centro", color: "#D97706" },
 
   // ESQUERDA (14)
-  { id: 30, name: "Partido dos Trabalhadores", acronym: "PT", number: 13, group: "Esquerda", color: "#DC2626" },
-  { id: 31, name: "Partido Socialismo e Liberdade", acronym: "PSOL", number: 50, group: "Esquerda", color: "#E11D48" },
-  { id: 32, name: "Partido Comunista de Brookasil", acronym: "PCdoB", number: 65, group: "Esquerda", color: "#B91C1C" },
-  { id: 33, name: "Rede Sustentabilidade", acronym: "REDE", number: 18, group: "Esquerda", color: "#059669" },
-  { id: 34, name: "Partido Democrático Trabalhista", acronym: "PDT", number: 12, group: "Esquerda", color: "#C2410C" },
-  { id: 35, name: "Unidade Popular", acronym: "UP", number: 80, group: "Esquerda", color: "#991B1B" },
-  { id: 36, name: "Partido da Causa Operária", acronym: "PCO", number: 29, group: "Esquerda", color: "#7F1D1D" },
-  { id: 37, name: "Partido Comunista Brookasileiro", acronym: "PCB", number: 21, group: "Esquerda", color: "#991B1B" },
-  { id: 38, name: "Partido Socialista dos Trabalhadores Unificado", acronym: "PSTU", number: 16, group: "Esquerda", color: "#DC2626" },
-  { id: 39, name: "Partido Pátria Livre", acronym: "PPL", number: 54, group: "Esquerda", color: "#B45309" },
-  { id: 40, name: "Partido Socialista Brookasileiro", acronym: "PSB", number: 40, group: "Esquerda", color: "#F59E0B" },
-  { id: 41, name: "Partido da Frente Socialista", acronym: "PFS", number: 60, group: "Esquerda", color: "#EF4444" },
-  { id: 42, name: "Partido Socialista", acronym: "PS", number: 56, group: "Esquerda", color: "#E11D48" },
-  { id: 43, name: "Partido Social Trabalhista Nacional", acronym: "PSTN", number: 31, group: "Esquerda", color: "#0D9488" }
+  { id: "p34", name: "Partido Democrático Brookasileiro", acronym: "PDT", number: 12, group: "Esquerda", color: "#ff4040" },
+  { id: "p30", name: "Partido dos Trabalhadores", acronym: "PT", number: 13, group: "Esquerda", color: "#ff0000" },
+  { id: "p38", name: "Partido Socialista dos Trabalhadores Unificado", acronym: "PSTU", number: 16, group: "Esquerda", color: "#DC2626" },
+  { id: "p33", name: "Rede Sustentabilidade", acronym: "REDE", number: 18, group: "Esquerda", color: "#059669" },
+  { id: "p37", name: "Partido Comunista Brookasileiro", acronym: "PCB", number: 21, group: "Esquerda", color: "#991B1B" },
+  { id: "p36", name: "Partido da Causa Operária", acronym: "PCO", number: 29, group: "Esquerda", color: "#7F1D1D" },
+  { id: "p43", name: "Partido Social Trabalhista Nacional", acronym: "PSTN", number: 31, group: "Esquerda", color: "#0D9488" },
+  { id: "p40", name: "Partido Socialista Brookasileiro", acronym: "PSB", number: 40, group: "Esquerda", color: "#ff0000" },
+  { id: "p31", name: "Partido Socialismo e Liberdade", acronym: "PSOL", number: 50, group: "Esquerda", color: "#E11D48" },
+  { id: "p39", name: "Partido Pátria Livre", acronym: "PPL", number: 54, group: "Esquerda", color: "#B45309" },
+  { id: "p42", name: "Partido Socialista", acronym: "PS", number: 56, group: "Esquerda", color: "#E11D48" },
+  { id: "p41", name: "Partido da Frente Socialista", acronym: "PFS", number: 60, group: "Esquerda", color: "#EF4444" },
+  { id: "p32", name: "Partido Comunista de Brookasil", acronym: "PCdoB", number: 65, group: "Esquerda", color: "#B91C1C" },
+  { id: "p35", name: "Unidade Popular", acronym: "UP", number: 80, group: "Esquerda", color: "#991B1B" }
 ];
+
+function normalizePartyObject(p, idFallback) {
+  if (!p || typeof p !== 'object') return null;
+  const official = OFFICIAL_PARTIES.find(op => 
+    (p.number && String(op.number) === String(p.number)) ||
+    (p.acronym && op.acronym === p.acronym) ||
+    (p.name && (op.name === p.name || op.acronym === p.name))
+  );
+
+  const acronym = p.acronym || official?.acronym || p.name || 'LEG';
+  const name = (p.name && p.name !== acronym) ? p.name : (official?.name || p.name || acronym);
+  const number = p.number !== undefined ? Number(p.number) : (official?.number || 0);
+  const rawGroup = p.group || p.spectrum || official?.group || 'Centro';
+  const group = rawGroup.charAt(0).toUpperCase() + rawGroup.slice(1).toLowerCase();
+  const color = p.color || official?.color || '#2563eb';
+  const id = p.id !== undefined ? String(p.id) : (idFallback !== undefined ? String(idFallback) : String(official?.id || number));
+
+  return {
+    ...p,
+    id,
+    name,
+    acronym,
+    number,
+    group: group === 'Esquerda' || group === 'Direita' || group === 'Centro' ? group : 'Centro',
+    color,
+    status: p.status || 'ativo'
+  };
+}
 
 // 5. CONFIGURAÇÃO DE CARGOS E NÚMEROS
 const OFFICES_CONFIG = {
@@ -543,6 +572,29 @@ let isSyncingToFirebase = false;
 async function bootstrapFirebaseData() {
   if (!db) return;
 
+  // 1. REST fetch imediato para garantir que todos os candidatos do Firebase apareçam em < 200ms
+  try {
+    fetch('https://candidatura-cde-2-default-rtdb.firebaseio.com/candidates.json')
+      .then(res => res.json())
+      .then(data => {
+        if (data && Object.keys(data).length > 0) {
+          const list = Array.isArray(data)
+            ? data.map((val, idx) => (val && typeof val === 'object') ? ({ ...val, id: val.id || String(idx) }) : null).filter(Boolean)
+            : Object.entries(data).map(([id, val]) => (val && typeof val === 'object') ? ({ ...val, id: val.id || id }) : null).filter(Boolean);
+          if (list.length > 0) {
+            candidaciesList = list;
+            console.log(`[Firebase REST Rápido] ${candidaciesList.length} candidaturas carregadas instantaneamente.`);
+            updateGlobalStats();
+            renderConfirmedCandidates();
+            if (currentUser) {
+              renderAdminCandidacies();
+            }
+          }
+        }
+      })
+      .catch(err => console.warn('[Firebase REST] Aviso no fetch rápido:', err));
+  } catch (e) {}
+
   // Escuta Eleição Ativa
   db.ref('elections').on('value', (snap) => {
     const data = snap.val();
@@ -589,11 +641,11 @@ async function bootstrapFirebaseData() {
     if (data && Object.keys(data).length > 0) {
       if (Array.isArray(data)) {
         candidaciesList = data
-          .map((val, idx) => (val && typeof val === 'object') ? ({ id: val.id !== undefined ? val.id : String(idx), ...val }) : null)
+          .map((val, idx) => (val && typeof val === 'object') ? ({ ...val, id: val.id || String(idx) }) : null)
           .filter(Boolean);
       } else {
         candidaciesList = Object.entries(data)
-          .map(([id, val]) => (val && typeof val === 'object') ? ({ id: val.id !== undefined ? val.id : id, ...val }) : null)
+          .map(([id, val]) => (val && typeof val === 'object') ? ({ ...val, id: val.id || id }) : null)
           .filter(Boolean);
       }
       console.log(`[Firebase RTDB] ${candidaciesList.length} candidaturas ativas sincronizadas em tempo real.`);
@@ -601,7 +653,7 @@ async function bootstrapFirebaseData() {
       // Se o Firebase novo estiver vazio, mantém os 51 candidatos na interface e grava no Firebase
       if (typeof window !== 'undefined' && window.INITIAL_SEED_DATABASE && window.INITIAL_SEED_DATABASE.candidates) {
         const seedCands = window.INITIAL_SEED_DATABASE.candidates;
-        candidaciesList = Object.entries(seedCands).map(([id, val]) => ({ id: val.id || id, ...val }));
+        candidaciesList = Object.entries(seedCands).map(([id, val]) => ({ ...val, id: val.id || id }));
         console.log(`[Firebase RTDB] Banco vazio detectado. Mantendo ${candidaciesList.length} candidatos oficiais de Brookasil na tela.`);
         if (!hasAttemptedAutoSeed) {
           hasAttemptedAutoSeed = true;
@@ -625,18 +677,21 @@ async function bootstrapFirebaseData() {
     if (data && Object.keys(data).length > 0) {
       if (Array.isArray(data)) {
         partiesList = data
-          .map((val, idx) => (val && typeof val === 'object') ? ({ id: val.id !== undefined ? val.id : idx, ...val }) : null)
+          .map((val, idx) => normalizePartyObject(val, idx))
           .filter(p => p && (p.acronym || p.name));
       } else {
         partiesList = Object.entries(data)
-          .map(([id, val]) => (val && typeof val === 'object') ? ({ id: val.id !== undefined ? val.id : id, ...val }) : null)
+          .map(([id, val]) => normalizePartyObject(val, id))
           .filter(p => p && (p.acronym || p.name));
       }
     } else {
       // Sincroniza os 44 partidos oficiais
       if (typeof window !== 'undefined' && window.INITIAL_SEED_DATABASE && window.INITIAL_SEED_DATABASE.parties) {
         const pData = window.INITIAL_SEED_DATABASE.parties;
-        partiesList = Array.isArray(pData) ? pData : Object.values(pData);
+        const rawArr = Array.isArray(pData)
+          ? pData.map((val, idx) => normalizePartyObject(val, idx))
+          : Object.entries(pData).map(([id, val]) => normalizePartyObject(val, id));
+        partiesList = rawArr.filter(Boolean);
         try {
           db.ref('parties').set(pData);
         } catch (e) {}
@@ -644,9 +699,12 @@ async function bootstrapFirebaseData() {
         OFFICIAL_PARTIES.forEach(p => {
           try { db.ref('parties/' + p.id).set(p); } catch (e) {}
         });
-        partiesList = [...OFFICIAL_PARTIES];
+        partiesList = OFFICIAL_PARTIES.map(p => normalizePartyObject(p));
       }
     }
+    // Ordena pelo número oficial de urna por padrão
+    partiesList.sort((a, b) => (Number(a.number) || 999) - (Number(b.number) || 999));
+    updateGlobalStats();
     renderPartiesCatalog();
     populatePartySelects();
     if (currentUser) {
@@ -844,6 +902,15 @@ function navigateTo(viewId) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  // Garante renderização imediata dos dados ao alternar de tela
+  if (viewId === 'candidatos') {
+    renderConfirmedCandidates();
+  } else if (viewId === 'partidos') {
+    renderPartiesCatalog();
+  } else if (viewId === 'home') {
+    updateGlobalStats();
+  }
+
   // Sincroniza botões da barra superior e menu mobile para a tela atual
   updateAuthUI();
   initIcons();
@@ -1031,8 +1098,12 @@ function startCountdownTimer() {
 function updateGlobalStats() {
   const total = candidaciesList.length;
   const deferidas = candidaciesList.filter(c => c.status === 'deferida').length;
-  document.getElementById('stat-total-candidacies').textContent = total;
-  document.getElementById('stat-deferidas').textContent = deferidas;
+  const statTotal = document.getElementById('stat-total-candidacies');
+  if (statTotal) statTotal.textContent = total;
+  const statDef = document.getElementById('stat-deferidas');
+  if (statDef) statDef.textContent = deferidas;
+  const statParties = document.getElementById('stat-parties');
+  if (statParties) statParties.textContent = (partiesList && partiesList.length > 0) ? partiesList.length : 44;
 }
 
 // ========================================================
@@ -1087,10 +1158,8 @@ function onOfficeChange() {
 
   if (office.needsPdf) {
     pdfLabel.innerHTML = 'Plano de Governo em PDF * <span class="text-brand-gold font-normal">(Obrigatório para cargos Executivos)</span>';
-    pdfInput.setAttribute('required', 'true');
   } else {
     pdfLabel.innerHTML = 'Proposta em PDF (Opcional)';
-    pdfInput.removeAttribute('required');
   }
 
   updateNumberPrefixAndSuffixConfig();
@@ -1155,10 +1224,28 @@ function onCityChange() {
 
 function populatePartySelects() {
   const partySelect = document.getElementById('form-party-select');
-  if (!partySelect) return;
+  if (partySelect) {
+    partySelect.innerHTML = '<option value="">Selecione o Partido</option>' +
+      partiesList.map(p => `<option value="${p.id}" data-number="${p.number}">[${p.acronym}] ${p.name} - Número ${p.number} (${p.group})</option>`).join('');
+  }
 
-  partySelect.innerHTML = '<option value="">Selecione o Partido</option>' +
-    partiesList.map(p => `<option value="${p.id}" data-number="${p.number}">[${p.acronym}] ${p.name} - Número ${p.number} (${p.group})</option>`).join('');
+  // Popula o seletor público de filtros da tela de Candidatos Confirmados
+  const publicPartySelect = document.getElementById('filter-partido');
+  if (publicPartySelect) {
+    const currentVal = publicPartySelect.value;
+    publicPartySelect.innerHTML = '<option value="ALL">Todos os Partidos</option>' +
+      partiesList.map(p => `<option value="${p.acronym}">[${p.acronym}] ${p.name} (${p.number})</option>`).join('');
+    if (currentVal) publicPartySelect.value = currentVal;
+  }
+
+  // Popula o seletor de partidos do painel do Magistrado
+  const adminPartySelect = document.getElementById('admin-filter-partido');
+  if (adminPartySelect) {
+    const currentAdminVal = adminPartySelect.value;
+    adminPartySelect.innerHTML = '<option value="ALL">Todos os Partidos</option>' +
+      partiesList.map(p => `<option value="${p.acronym}">[${p.acronym}] ${p.name}</option>`).join('');
+    if (currentAdminVal) adminPartySelect.value = currentAdminVal;
+  }
 }
 
 function onPartyChange() {
@@ -1424,9 +1511,48 @@ function handlePhotoUpload(e) {
 
   const reader = new FileReader();
   reader.onload = function(evt) {
-    rawUploadedPhotoDataUrl = evt.target.result;
-    // Abre imediatamente o ajustador interativo para o candidato centralizar/posicionar
-    openPhotoCropperModal(rawUploadedPhotoDataUrl, 'form');
+    const originalDataUrl = evt.target.result;
+    rawUploadedPhotoDataUrl = originalDataUrl;
+
+    // Redimensiona e comprime imediatamente para garantir que a foto já esteja pronta e válida
+    const img = new Image();
+    img.onload = function() {
+      const maxW = 500;
+      const maxH = 650;
+      let targetW = img.naturalWidth || img.width;
+      let targetH = img.naturalHeight || img.height;
+
+      const scale = Math.min(maxW / targetW, maxH / targetH, 1.0);
+      targetW = Math.round(targetW * scale);
+      targetH = Math.round(targetH * scale);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = targetW;
+      canvas.height = targetH;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, targetW, targetH);
+
+      const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      uploadedPhotoBase64 = compressedDataUrl;
+
+      // Atualiza preview na tela imediatamente
+      const previewImg = document.getElementById('photo-preview-img');
+      const placeholder = document.getElementById('photo-placeholder');
+      const cropBtn = document.getElementById('form-crop-btn');
+      const overlayCropBtn = document.getElementById('photo-overlay-crop-btn');
+
+      if (previewImg) {
+        previewImg.src = compressedDataUrl;
+        previewImg.classList.remove('hidden');
+      }
+      if (placeholder) placeholder.classList.add('hidden');
+      if (cropBtn) cropBtn.classList.remove('hidden');
+      if (overlayCropBtn) overlayCropBtn.classList.remove('hidden');
+
+      // Abre a janela de ajuste de enquadramento para o candidato, se desejar ajustar zoom/posição
+      openPhotoCropperModal(compressedDataUrl, 'form');
+    };
+    img.src = originalDataUrl;
   };
   reader.readAsDataURL(file);
 }
@@ -1745,7 +1871,15 @@ async function handleCandidacySubmit(e) {
     }
 
     if (!uploadedPhotoBase64) {
-      showToast('error', 'É obrigatório anexar a foto oficial do candidato.');
+      showToast('warning', 'É obrigatório anexar a foto oficial do candidato.');
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i> Submeter Candidatura Oficial';
+      initIcons();
+      return;
+    }
+
+    if (office.needsPdf && !uploadedPdfBase64) {
+      showToast('warning', 'Para cargos do Poder Executivo (Presidente, Governador e Prefeito), é obrigatório anexar o Plano de Governo em PDF.');
       submitBtn.disabled = false;
       submitBtn.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i> Submeter Candidatura Oficial';
       initIcons();
@@ -1805,6 +1939,7 @@ async function handleCandidacySubmit(e) {
       electionId: currentElection.id,
       electionTitle: currentElection.title,
       office: officeId,
+      position: officeId,
       stateId: stateId,
       state: stateId,
       cityId: cityId,
@@ -1830,15 +1965,57 @@ async function handleCandidacySubmit(e) {
       updatedAt: new Date().toISOString()
     };
 
-    // Gravação resiliente no Realtime Database
+    // ========================================================
+    // PIPELINE DE GRAVAÇÃO RESILIENTE MULTI-CANAL
+    // ========================================================
     let candidateKey = null;
+
+    // 1. Canal Primário: Gravação REST direta no Firebase RTDB (HTTPS puro resiliente)
+    try {
+      const fbRestResp = await fetch('https://candidatura-cde-2-default-rtdb.firebaseio.com/candidates.json', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(candidateData)
+      });
+      if (fbRestResp.ok) {
+        const fbJson = await fbRestResp.json();
+        if (fbJson && fbJson.name) {
+          candidateKey = fbJson.name;
+          console.log('[Candidatura] Gravado com sucesso no Firebase RTDB via REST:', candidateKey);
+        }
+      }
+    } catch (restErr) {
+      console.warn('[Candidatura] Aviso ao salvar via REST no Firebase:', restErr);
+    }
+
+    // 2. Canal Secundário: Servidor de Aplicação (/api/candidacies)
+    try {
+      const srvResp = await fetch('/api/candidacies', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...candidateData, id: candidateKey })
+      });
+      if (srvResp.ok) {
+        const srvJson = await srvResp.json();
+        if (!candidateKey && srvJson && srvJson.candidacy) {
+          candidateKey = srvJson.candidacy.id;
+        }
+      }
+    } catch (srvErr) {
+      console.warn('[Candidatura] Aviso ao salvar no servidor Express:', srvErr);
+    }
+
+    // 3. Canal Terciário: Firebase Web SDK (se conectado)
     if (db) {
       try {
-        const newCandRef = db.ref('candidates').push();
-        candidateKey = newCandRef.key;
-        await newCandRef.set(candidateData);
-      } catch (dbErr) {
-        console.warn("Aviso ao gravar no Firebase RTDB (usando fallback local):", dbErr);
+        const sdkKey = candidateKey || db.ref('candidates').push().key;
+        candidateKey = sdkKey;
+        await Promise.race([
+          db.ref('candidates/' + sdkKey).set({ ...candidateData, id: sdkKey }),
+          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout Firebase SDK')), 4000))
+        ]);
+      } catch (sdkErr) {
+        console.warn('[Candidatura] SDK Firebase concluído/bypassado:', sdkErr.message);
       }
     }
 
@@ -1867,14 +2044,26 @@ async function handleCandidacySubmit(e) {
     }
 
     // Registro da reserva de número na circunscrição
-    if (db && candidateKey) {
-      try {
-        const jurisdictionKey = isMunicipalOffice(officeId)
-          ? `${candidateData.stateId}_${candidateData.cityId}`
-          : (isStateOffice(officeId) ? candidateData.stateId : 'NACIONAL');
+    const jurisdictionKey = isMunicipalOffice(officeId)
+      ? `${candidateData.stateId}_${candidateData.cityId}`
+      : (isStateOffice(officeId) ? candidateData.stateId : 'NACIONAL');
 
+    try {
+      fetch(`https://candidatura-cde-2-default-rtdb.firebaseio.com/numberRegistry/${currentElection.id}/${officeId}/${jurisdictionKey}/${finalNumber}.json`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          candidateId: finalKey,
+          protocol: protocol,
+          reservedAt: new Date().toISOString()
+        })
+      }).catch(() => {});
+    } catch (e) {}
+
+    if (db) {
+      try {
         await db.ref(`numberRegistry/${currentElection.id}/${officeId}/${jurisdictionKey}/${finalNumber}`).set({
-          candidateId: candidateKey,
+          candidateId: finalKey,
           protocol: protocol,
           reservedAt: new Date().toISOString()
         });
@@ -1887,17 +2076,27 @@ async function handleCandidacySubmit(e) {
       ? `em ${getCityDisplayName(stateId, cityId)}`
       : (isStateOffice(officeId) ? `em ${getStateDisplayName(stateId)}` : '');
 
-    // Tentativa segura de criar notificação administrativa (ignora se houver restrição de segurança no RTDB)
+    // Cria notificação administrativa no Firebase
+    const notifPayload = {
+      type: 'new_candidacy',
+      text: `Nova candidatura registrada: ${candidateData.ballotName} (${candidateData.partyAcronym} - ${finalNumber}) para ${officeId} ${circInfo}`,
+      timestamp: new Date().toISOString(),
+      read: false
+    };
+
+    try {
+      fetch('https://candidatura-cde-2-default-rtdb.firebaseio.com/notifications.json', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(notifPayload)
+      }).catch(() => {});
+    } catch (e) {}
+
     if (db) {
       try {
-        await db.ref('notifications').push({
-          type: 'new_candidacy',
-          text: `Nova candidatura registrada: ${candidateData.ballotName} (${candidateData.partyAcronym} - ${finalNumber}) para ${officeId} ${circInfo}`,
-          timestamp: new Date().toISOString(),
-          read: false
-        });
+        await db.ref('notifications').push(notifPayload);
       } catch (notifErr) {
-        console.warn("Notificação não gravada no Firebase (permissão restrita):", notifErr);
+        console.warn("Notificação RTDB:", notifErr);
       }
     }
 
@@ -2027,40 +2226,54 @@ function renderConfirmedCandidates() {
   const cidadeFilterEl = document.getElementById('filter-cidade');
   const cidadeFilter = (cidadeFilterEl && !cidadeFilterEl.classList.contains('hidden')) ? (cidadeFilterEl.value || 'ALL') : 'ALL';
   const partidoFilter = document.getElementById('filter-partido')?.value || 'ALL';
-  const statusFilter = document.getElementById('filter-status')?.value || 'deferida';
+  const statusFilter = document.getElementById('filter-status')?.value || 'ALL';
   const searchInput = document.getElementById('filter-search');
   const searchFilter = (searchInput && searchInput.value ? searchInput.value : '').toLowerCase().trim();
 
   const filtered = candidaciesList.filter(c => {
     if (!c) return false;
-    if (c.status === 'excluida') return false;
+    const cStatus = String(c.status || 'deferida').toLowerCase().trim();
+    if (cStatus === 'excluida') return false;
 
-    // REGRA DE HOMOLOGAÇÃO: O status DEVE ser rigorosamente respeitado!
-    // Se o filtro for 'deferida' (padrão), NUNCA exibe pendentes, mesmo se houver busca de texto!
-    if (statusFilter !== 'ALL' && c.status !== statusFilter) return false;
+    // Filtro por status (ALL exibe todas as candidaturas do Firebase)
+    if (statusFilter !== 'ALL' && cStatus !== String(statusFilter).toLowerCase().trim()) return false;
 
     if (searchFilter) {
-      const bName = String(c.ballotName || '').toLowerCase();
-      const fName = String(c.fullName || '').toLowerCase();
+      const bName = String(c.ballotName || c.ballot_name || '').toLowerCase();
+      const fName = String(c.fullName || c.full_name || '').toLowerCase();
       const num = String(c.number !== undefined && c.number !== null ? c.number : '');
-      const pAcronym = String(c.partyAcronym || '').toLowerCase();
+      const pAcronym = String(c.partyAcronym || c.party_acronym || '').toLowerCase();
       const prot = String(c.protocol || '').toLowerCase();
       const matchesSearch = bName.includes(searchFilter) || fName.includes(searchFilter) || num.includes(searchFilter) || pAcronym.includes(searchFilter) || prot.includes(searchFilter);
       if (!matchesSearch) return false;
     }
 
-    if (cargoFilter !== 'ALL' && c.office !== cargoFilter) return false;
-    if (estadoFilter !== 'ALL' && String(c.stateId || c.state || '').toLowerCase() !== estadoFilter.toLowerCase()) return false;
-    if (cidadeFilter !== 'ALL' && String(c.cityId || c.city || '').toLowerCase() !== cidadeFilter.toLowerCase()) return false;
-    if (partidoFilter !== 'ALL' && String(c.partyId) !== String(partidoFilter)) return false;
+    const candOffice = String(c.office || c.position || '').trim();
+    if (cargoFilter !== 'ALL' && candOffice !== cargoFilter) return false;
+
+    const candState = String(c.stateId || c.state || '').toLowerCase().trim();
+    if (estadoFilter !== 'ALL' && candState !== estadoFilter.toLowerCase().trim()) return false;
+
+    const candCity = String(c.cityId || c.city || '').toLowerCase().trim();
+    if (cidadeFilter !== 'ALL' && candCity !== cidadeFilter.toLowerCase().trim()) return false;
+
+    if (partidoFilter !== 'ALL') {
+      const candPartyId = String(c.partyId || c.party_id || '');
+      const candPartyAcronym = String(c.partyAcronym || c.party_acronym || '').toUpperCase();
+      const candPartyNumber = String(c.partyNumber || c.party_number || '');
+      if (candPartyId !== partidoFilter && candPartyAcronym !== partidoFilter.toUpperCase() && candPartyNumber !== partidoFilter) {
+        return false;
+      }
+    }
 
     return true;
   });
 
   const badge = document.getElementById('confirmed-count-badge');
   if (badge) {
-    const deferidasCount = candidaciesList.filter(c => c.status === 'deferida').length;
-    const pendentesCount = candidaciesList.filter(c => c.status === 'pendente').length;
+    const deferidasCount = candidaciesList.filter(c => String(c.status || '').toLowerCase() === 'deferida').length;
+    const pendentesCount = candidaciesList.filter(c => String(c.status || '').toLowerCase() === 'pendente').length;
+    const indeferidasCount = candidaciesList.filter(c => String(c.status || '').toLowerCase() === 'indeferida').length;
     if (statusFilter === 'deferida') {
       badge.textContent = `${filtered.length} Candidato${filtered.length === 1 ? '' : 's'} Homologado${filtered.length === 1 ? '' : 's'} (Deferidos)`;
     } else if (statusFilter === 'pendente') {
@@ -2068,7 +2281,7 @@ function renderConfirmedCandidates() {
     } else if (statusFilter === 'indeferida') {
       badge.textContent = `${filtered.length} Candidatura${filtered.length === 1 ? '' : 's'} Indeferida${filtered.length === 1 ? '' : 's'}`;
     } else {
-      badge.textContent = `${filtered.length} Total (${deferidasCount} Homologadas, ${pendentesCount} em Análise)`;
+      badge.textContent = `${filtered.length} Total (${deferidasCount} Homologadas, ${pendentesCount} em Análise, ${indeferidasCount} Indeferidas)`;
     }
   }
 
@@ -2078,7 +2291,7 @@ function renderConfirmedCandidates() {
       <div class="col-span-full py-16 text-center text-slate-500">
         <i data-lucide="${isPendenteFilter ? 'clock' : 'users'}" class="w-12 h-12 mx-auto text-slate-600 mb-3"></i>
         <p class="font-bold text-base text-slate-400">Nenhuma candidatura localizada com os filtros selecionados.</p>
-        <p class="text-xs text-slate-500 mt-1">${statusFilter === 'deferida' ? 'Apenas candidaturas homologadas pelo TRE são listadas nesta tela oficial. Candidaturas recém-enviadas estão em análise e podem ser consultadas no menu "Consultar".' : 'Tente alterar os termos de busca ou filtros.'}</p>
+        <p class="text-xs text-slate-500 mt-1">${statusFilter === 'deferida' ? 'Apenas candidaturas homologadas pelo TRE são listadas com este filtro. Selecione "Todas as Candidaturas" para visualizar o catálogo completo.' : 'Tente alterar os termos de busca ou filtros.'}</p>
       </div>
     `;
     initIcons();
@@ -2086,9 +2299,20 @@ function renderConfirmedCandidates() {
   }
 
   grid.innerHTML = filtered.map(c => {
-    const isPendente = c.status === 'pendente';
-    const isIndeferida = c.status === 'indeferida';
-    const isDeferida = c.status === 'deferida';
+    const cStatus = String(c.status || 'deferida').toLowerCase().trim();
+    const isPendente = cStatus === 'pendente';
+    const isIndeferida = cStatus === 'indeferida';
+    const isDeferida = !isPendente && !isIndeferida;
+
+    const photoSrc = (c.photo && typeof c.photo === 'string' && c.photo.trim() !== '') ? c.photo : 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80';
+    const candBallotName = c.ballotName || c.ballot_name || c.fullName || c.full_name || 'Candidato';
+    const candOffice = c.office || c.position || 'Cargo';
+    const candPartyAcronym = c.partyAcronym || c.party_acronym || 'PARTIDO';
+    const candPartyName = c.partyName || c.party_name || '';
+    const candNumber = c.number !== undefined && c.number !== null ? c.number : (c.partyNumber || '--');
+
+    const hasTiktok = c.tiktok && typeof c.tiktok === 'string' && c.tiktok.trim() !== '';
+    const tiktokUrl = hasTiktok ? (c.tiktok.startsWith('http') ? c.tiktok : 'https://tiktok.com/' + (c.tiktok.startsWith('@') ? c.tiktok : '@' + c.tiktok)) : null;
 
     return `
     <div class="glass-panel rounded-3xl border ${isPendente ? 'border-amber-500/60 bg-amber-950/20' : (isIndeferida ? 'border-red-500/60 bg-red-950/20' : 'border-brand-border/70 hover:border-brand-electric/50')} transition-all p-5 flex flex-col justify-between group">
@@ -2111,9 +2335,9 @@ function renderConfirmedCandidates() {
         `)}
 
         <div class="relative h-48 rounded-2xl overflow-hidden mb-4 bg-brand-deep">
-          <img src="${c.photo}" alt="${c.ballotName}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+          <img src="${photoSrc}" alt="${candBallotName}" onerror="this.src='https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80'" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
           <div class="absolute top-3 right-3 px-3 py-1 rounded-xl bg-brand-navy/90 backdrop-blur-md border border-brand-border text-brand-gold font-mono font-bold text-sm shadow-md">
-            ${c.number}
+            ${candNumber}
           </div>
           <div class="absolute bottom-3 left-3 px-2.5 py-1 rounded-lg text-[10px] font-black uppercase ${
             isDeferida ? 'bg-emerald-500 text-slate-950 shadow-md' :
@@ -2126,22 +2350,22 @@ function renderConfirmedCandidates() {
 
         <div class="space-y-1">
           <div class="flex items-center justify-between">
-            <span class="text-[11px] font-bold text-brand-electric uppercase tracking-wider">${c.office}</span>
-            <span class="text-xs font-bold text-slate-300" style="color: ${c.partyColor || '#fff'}">${c.partyAcronym}</span>
+            <span class="text-[11px] font-bold text-brand-electric uppercase tracking-wider">${candOffice}</span>
+            <span class="text-xs font-bold text-slate-300" style="color: ${c.partyColor || '#fff'}">${candPartyAcronym}</span>
           </div>
-          <h4 class="text-lg font-bold text-white tracking-wide truncate">${c.ballotName}</h4>
-          <p class="text-xs text-slate-400 truncate">${c.partyName}</p>
+          <h4 class="text-lg font-bold text-white tracking-wide truncate">${candBallotName}</h4>
+          <p class="text-xs text-slate-400 truncate">${candPartyName}</p>
         </div>
 
         <div class="mt-4 pt-3 border-t border-brand-border/40 text-xs text-slate-400 space-y-1.5">
           <div class="flex justify-between">
             <span>Circunscrição:</span>
-            <strong class="text-slate-200">${c.cityId && c.cityId !== 'ALL' ? (getCityDisplayName(c.stateId, c.cityId) + ' (' + getStateDisplayName(c.stateId) + ')') : getStateDisplayName(c.stateId)}</strong>
+            <strong class="text-slate-200">${c.cityId && c.cityId !== 'ALL' ? (getCityDisplayName(c.stateId || c.state, c.cityId || c.city) + ' (' + getStateDisplayName(c.stateId || c.state) + ')') : getStateDisplayName(c.stateId || c.state)}</strong>
           </div>
-          ${c.viceName ? `
+          ${c.viceName || c.vice_name ? `
             <div class="flex justify-between">
               <span>Vice:</span>
-              <strong class="text-slate-200 truncate max-w-[130px]">${c.viceName}</strong>
+              <strong class="text-slate-200 truncate max-w-[130px]">${c.viceName || c.vice_name}</strong>
             </div>
           ` : ''}
           <div class="flex justify-between items-center text-[10px] text-slate-500 font-mono pt-1">
@@ -2159,9 +2383,15 @@ function renderConfirmedCandidates() {
 
       <div class="mt-4 pt-3 border-t border-brand-border/60 flex flex-wrap items-center justify-between gap-2">
         <div class="flex items-center gap-1.5">
-          <a href="${c.tiktok.startsWith('http') ? c.tiktok : 'https://tiktok.com/' + c.tiktok}" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 active:bg-white/15 text-brand-electric text-xs font-semibold flex items-center gap-1.5 transition">
-            <span>🎵</span> TikTok
-          </a>
+          ${tiktokUrl ? `
+            <a href="${tiktokUrl}" target="_blank" rel="noopener noreferrer" class="px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 active:bg-white/15 text-brand-electric text-xs font-semibold flex items-center gap-1.5 transition">
+              <span>🎵</span> TikTok
+            </a>
+          ` : `
+            <span class="px-3 py-2 rounded-xl bg-white/5 text-slate-500 text-xs font-medium flex items-center gap-1.5">
+              <span>🎵</span> TikTok
+            </span>
+          `}
           <button onclick="viewCandidacyDetails('${c.id}')" class="px-3 py-2 rounded-xl bg-brand-blue/20 hover:bg-brand-blue/30 active:bg-brand-blue/40 text-brand-electric text-xs font-semibold flex items-center gap-1.5 transition">
             <i data-lucide="info" class="w-3.5 h-3.5"></i> Ficha
           </button>
@@ -2576,15 +2806,15 @@ window.viewCandidacyDetails = viewCandidacyDetails;
 window.closeCandidacyDetailsModal = closeCandidacyDetailsModal;
 
 // ========================================================
-// CATÁLOGO DE PARTIDOS POLÍTICOS (43 LEGENDAS)
+// CATÁLOGO DE PARTIDOS POLÍTICOS (44 LEGENDAS)
 // ========================================================
 function setPartyGroupFilter(group) {
   activePartyTab = group;
   document.querySelectorAll('.party-tab-btn').forEach(btn => {
     if (btn.getAttribute('data-group') === group) {
-      btn.className = "party-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition bg-brand-blue text-white";
+      btn.className = "party-tab-btn whitespace-nowrap px-4 py-2.5 rounded-xl text-xs font-bold transition bg-brand-blue text-white min-h-[40px] shadow-sm";
     } else {
-      btn.className = "party-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition text-slate-300 hover:bg-white/5";
+      btn.className = "party-tab-btn whitespace-nowrap px-4 py-2.5 rounded-xl text-xs font-bold transition text-slate-300 hover:bg-white/5 min-h-[40px]";
     }
   });
   renderPartiesCatalog();
@@ -2597,7 +2827,13 @@ function renderPartiesCatalog() {
   const filtered = partiesList.filter(p => activePartyTab === 'ALL' || p.group === activePartyTab);
 
   grid.innerHTML = filtered.map(p => {
-    const candCount = candidaciesList.filter(c => c.status === 'deferida' && String(c.partyId) === String(p.id)).length;
+    const candCount = candidaciesList.filter(c => 
+      c.status === 'deferida' && (
+        String(c.partyId) === String(p.id) || 
+        String(c.partyNumber) === String(p.number) || 
+        (c.partyAcronym && c.partyAcronym === p.acronym)
+      )
+    ).length;
     const isSuspended = p.status === 'suspenso';
     const isFormacao = p.status === 'formacao';
 
@@ -4629,6 +4865,12 @@ function setAdminStatusFilter(status) {
 function isCandidateInJurisdiction(c, user) {
   if (!user || !c) return false;
 
+  // Se a opção "Panorama Geral" estiver ativada pelo magistrado na interface, permite visualizar todas as candidaturas
+  const toggleAll = document.getElementById('admin-toggle-all-jurisdictions');
+  if (toggleAll && toggleAll.checked) {
+    return true;
+  }
+
   // 1. TSE NACIONAL: Vê rigorosamente TODOS os candidatos de todo o país
   if (user.role === 'tse' || user.state === 'ALL') {
     return true;
@@ -4695,6 +4937,19 @@ function isCandidateInJurisdiction(c, user) {
   return false;
 }
 
+function setAdminPendingFilter() {
+  const statusFilter = document.getElementById('admin-filter-status');
+  if (statusFilter) {
+    statusFilter.value = 'pendente';
+  }
+  const allJurisToggle = document.getElementById('admin-toggle-all-jurisdictions');
+  if (allJurisToggle) {
+    allJurisToggle.checked = true;
+  }
+  renderAdminCandidacies();
+  showToast('info', 'Filtro ativado: Exibindo candidaturas PENDENTES de julgamento.');
+}
+
 function renderAdminCandidacies() {
   if (!currentUser) return;
 
@@ -4712,10 +4967,30 @@ function renderAdminCandidacies() {
   const partyFilter = (partyFilterEl && partyFilterEl.style && partyFilterEl.style.display !== 'none') ? (partyFilterEl.value || 'ALL') : 'ALL';
   const searchFilter = (document.getElementById('admin-filter-search')?.value || '').toLowerCase().trim();
 
+  // Atualiza contador geral de pendentes no sistema
+  const allPendingTotal = candidaciesList.filter(c => c.status === 'pendente').length;
+  const quickPendingBtnText = document.getElementById('admin-pending-badge-text');
+  if (quickPendingBtnText) {
+    quickPendingBtnText.textContent = `Pendentes (${allPendingTotal})`;
+  }
+  const pendingBanner = document.getElementById('admin-pending-alert-banner');
+  if (pendingBanner) {
+    if (allPendingTotal > 0) {
+      pendingBanner.classList.remove('hidden');
+      const descEl = document.getElementById('admin-pending-alert-desc');
+      if (descEl) {
+        descEl.textContent = `Existem ${allPendingTotal} candidatura(s) com status PENDENTE aguardando homologação ou despacho no sistema eleitoral.`;
+      }
+    } else {
+      pendingBanner.classList.add('hidden');
+    }
+  }
+
   // JURISDIÇÃO ESTRITA:
   // TSE vê TODOS os candidatos de qualquer estado/cidade
   // TRE Estadual vê somente seu estado
   // TRE Municipal vê somente sua cidade
+  // Magistrado pode alternar para "Panorama Geral" a qualquer momento
   const jurisdictionList = candidaciesList.filter(c => isCandidateInJurisdiction(c, currentUser));
 
   // Atualiza KPIs da jurisdição
@@ -4764,6 +5039,18 @@ function renderAdminCandidacies() {
     }
 
     return true;
+  });
+
+  // ORDENAÇÃO PRIORITÁRIA:
+  // 1. Candidaturas 'pendente' aparecem SEMPRE no topo com destaque visual
+  // 2. Candidaturas mais recentes primeiro
+  filtered.sort((a, b) => {
+    if (a.status === 'pendente' && b.status !== 'pendente') return -1;
+    if (a.status !== 'pendente' && b.status === 'pendente') return 1;
+
+    const timeA = new Date(a.createdAt || a.created_at || 0).getTime();
+    const timeB = new Date(b.createdAt || b.created_at || 0).getTime();
+    return timeB - timeA;
   });
 
   const mobileListEl = document.getElementById('admin-candidacies-mobile-list');
@@ -5143,16 +5430,45 @@ async function executeJudgment(newStatus) {
       updatedAt: new Date().toISOString()
     };
 
-    // Se excluída, libera o número de urna no numberRegistry
-    if (newStatus === 'excluida') {
-      await db.ref(`numberRegistry/${c.electionId}/${c.office}/${c.number}`).remove().catch(() => {});
+    // 1. Atualização Otimista Imediata na Memória
+    const localIdx = candidaciesList.findIndex(item => item.id === c.id || item.protocol === c.protocol);
+    if (localIdx >= 0) {
+      candidaciesList[localIdx] = { ...candidaciesList[localIdx], ...updates };
     }
 
-    // Atualiza o candidato
-    await db.ref('candidates/' + c.id).update(updates);
+    // 2. Se excluída, libera o número de urna no numberRegistry
+    if (newStatus === 'excluida') {
+      try {
+        fetch(`https://candidatura-cde-2-default-rtdb.firebaseio.com/numberRegistry/${c.electionId}/${c.office}/${c.number}.json`, { method: 'DELETE' }).catch(() => {});
+      } catch(e) {}
+      if (db) {
+        db.ref(`numberRegistry/${c.electionId}/${c.office}/${c.number}`).remove().catch(() => {});
+      }
+    }
 
-    // Registra Log Imutável de Auditoria
-    await db.ref('auditLogs').push({
+    // 3. Atualização REST Direta no Firebase RTDB (Super Resiliente)
+    try {
+      fetch(`https://candidatura-cde-2-default-rtdb.firebaseio.com/candidates/${c.id}.json`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      }).catch(() => {});
+    } catch (e) {}
+
+    // 4. Atualização via Firebase SDK
+    if (db) {
+      try {
+        await Promise.race([
+          db.ref('candidates/' + c.id).update(updates),
+          new Promise(res => setTimeout(res, 2500))
+        ]);
+      } catch (e) {
+        console.warn('Aviso ao atualizar via SDK:', e.message);
+      }
+    }
+
+    // 5. Registra Log Imutável de Auditoria
+    const auditEntry = {
       candidateId: c.id || '',
       candidateProtocol: c.protocol || '',
       ballotName: c.ballotName || '',
@@ -5167,7 +5483,27 @@ async function executeJudgment(newStatus) {
       competentCourt: actingCourt,
       originatingCourt: compInfo.courtName,
       timestamp: new Date().toISOString()
-    });
+    };
+
+    try {
+      fetch('https://candidatura-cde-2-default-rtdb.firebaseio.com/auditLogs.json', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(auditEntry)
+      }).catch(() => {});
+    } catch(e) {}
+
+    if (db) {
+      try {
+        await db.ref('auditLogs').push(auditEntry);
+      } catch (e) {}
+    }
+
+    // Atualização imediata de todas as telas
+    updateGlobalStats();
+    renderConfirmedCandidates();
+    renderAdminCandidacies();
+    updateAdminCharts();
 
     showToast('success', `Julgamento registrado com sucesso: ${newStatus.toUpperCase()} por ${currentUser.name}`);
     closeJudgmentModal();
@@ -5583,42 +5919,78 @@ function updateAdminCharts() {
   });
 }
 
-function refreshAdminData() {
-  showToast('info', 'Sincronizando com o Firebase...');
-  if (db) {
-    db.ref('candidates').once('value', (snap) => {
-      const data = snap.val();
-      if (data && Object.keys(data).length > 0) {
-        if (Array.isArray(data)) {
-          candidaciesList = data
-            .map((val, idx) => (val && typeof val === 'object') ? ({ id: val.id !== undefined ? val.id : String(idx), ...val }) : null)
-            .filter(Boolean);
-        } else {
-          candidaciesList = Object.entries(data)
-            .map(([id, val]) => (val && typeof val === 'object') ? ({ id: val.id !== undefined ? val.id : id, ...val }) : null)
-            .filter(Boolean);
-        }
-        showToast('success', `${candidaciesList.length} candidaturas sincronizadas da nuvem!`);
-      } else {
-        if (typeof window !== 'undefined' && window.INITIAL_SEED_DATABASE && window.INITIAL_SEED_DATABASE.candidates) {
-          const seedCands = window.INITIAL_SEED_DATABASE.candidates;
-          candidaciesList = Object.entries(seedCands).map(([id, val]) => ({ id: val.id || id, ...val }));
-        }
-        showToast('info', `${candidaciesList.length} candidatos carregados. Gravando no novo Firebase...`);
-        syncAllSeedDataToFirebase(false);
+async function refreshAdminData(silent = false) {
+  if (!silent) showToast('info', 'Sincronizando candidaturas com o Firebase...');
+
+  let cloudCandidates = null;
+
+  // 1. Consulta REST Direta ao Firebase RTDB
+  try {
+    const res = await fetch('https://candidatura-cde-2-default-rtdb.firebaseio.com/candidates.json');
+    if (res.ok) {
+      const data = await res.json();
+      if (data && typeof data === 'object' && Object.keys(data).length > 0) {
+        cloudCandidates = Object.entries(data)
+          .map(([id, val]) => (val && typeof val === 'object') ? ({ id: val.id || id, ...val, fbKey: id }) : null)
+          .filter(Boolean);
       }
-      updateGlobalStats();
-      renderConfirmedCandidates();
-      if (currentUser) {
-        renderAdminCandidacies();
-        updateAdminCharts();
+    }
+  } catch (e) {
+    console.warn('[Sync] Falha na consulta REST do Firebase:', e);
+  }
+
+  // 2. Se REST falhar, consulta o backend Express
+  if (!cloudCandidates || cloudCandidates.length === 0) {
+    try {
+      const srvRes = await fetch('/api/candidacies');
+      if (srvRes.ok) {
+        const srvData = await srvRes.json();
+        if (Array.isArray(srvData) && srvData.length > 0) {
+          cloudCandidates = srvData;
+        }
       }
-    }, (err) => {
-      console.error('Erro na sincronização:', err);
-      showToast('error', 'Falha na sincronização com o banco. Exibindo candidatos em cache.');
+    } catch (e) {}
+  }
+
+  if (cloudCandidates && cloudCandidates.length > 0) {
+    const prevPendingCount = candidaciesList.filter(c => c.status === 'pendente').length;
+    
+    // Mescla preservando eventuais candidaturas locais recentes
+    const map = new Map();
+    cloudCandidates.forEach(c => map.set(c.id || c.protocol, c));
+    candidaciesList.forEach(c => {
+      const key = c.id || c.protocol;
+      if (!map.has(key)) {
+        map.set(key, c);
+      }
     });
+
+    candidaciesList = Array.from(map.values());
+    const newPendingCount = candidaciesList.filter(c => c.status === 'pendente').length;
+
+    if (!silent) {
+      showToast('success', `${candidaciesList.length} candidaturas sincronizadas da nuvem!`);
+    } else if (newPendingCount > prevPendingCount && currentUser) {
+      showToast('info', `⚖️ Nova candidatura recebida! ${newPendingCount} pendente(s) aguardando análise.`);
+    }
+
+    updateGlobalStats();
+    renderConfirmedCandidates();
+    if (currentUser) {
+      renderAdminCandidacies();
+      updateAdminCharts();
+    }
+  } else if (!silent) {
+    showToast('info', 'Nenhuma nova candidatura no banco de dados.');
   }
 }
+
+// Sincronizador periódico em segundo plano para o painel administrativo (a cada 7 segundos)
+setInterval(() => {
+  if (currentUser) {
+    refreshAdminData(true);
+  }
+}, 7000);
 
 // ========================================================
 // SISTEMA DE TOASTS
@@ -5631,11 +6003,12 @@ function showToast(type, message) {
   toast.className = `p-4 rounded-2xl border text-xs font-bold shadow-2xl flex items-center gap-3 pointer-events-auto transform translate-y-4 transition-all duration-300 ${
     type === 'success' ? 'bg-emerald-950/95 border-emerald-500 text-emerald-200' :
     type === 'error' ? 'bg-red-950/95 border-red-500 text-red-200' :
+    type === 'warning' ? 'bg-amber-950/95 border-amber-500 text-amber-200' :
     'bg-blue-950/95 border-brand-electric text-blue-200'
   }`;
 
   toast.innerHTML = `
-    <span>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span>
+    <span>${type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️'}</span>
     <span>${message}</span>
   `;
 
@@ -5664,4 +6037,90 @@ window.handleTseEditPhotoFile = handleTseEditPhotoFile;
 window.openPhotoCropperForTseEdit = openPhotoCropperForTseEdit;
 window.handleTseEditCandidateSubmit = handleTseEditCandidateSubmit;
 window.openTseEditFromJudgment = openTseEditFromJudgment;
+window.setAdminPendingFilter = setAdminPendingFilter;
+window.refreshAdminData = refreshAdminData;
+window.renderAdminCandidacies = renderAdminCandidacies;
+window.executeJudgment = executeJudgment;
+
+// ========================================================
+// DIAGNÓSTICO DO FIREBASE (CONSOLE BROWSER & INTEGRAÇÃO)
+// ========================================================
+window.testFirebaseConnection = window.diagnosticoFirebase = async function() {
+  const styles = {
+    title: "background: #1e3a8a; color: #ffffff; font-weight: bold; padding: 4px 10px; border-radius: 4px; font-size: 13px;",
+    success: "color: #10b981; font-weight: bold; font-size: 12px;",
+    warn: "color: #f59e0b; font-weight: bold; font-size: 12px;",
+    error: "color: #ef4444; font-weight: bold; font-size: 12px;",
+    info: "color: #38bdf8; font-weight: normal; font-size: 11px;"
+  };
+
+  console.log("%c🇬🇦 TSE BROOKASIL | DIAGNÓSTICO DE CONEXÃO FIREBASE", styles.title);
+  console.log("%cIniciando testes de conectividade e leitura de nó de teste...", styles.info);
+
+  if (!db) {
+    console.error("%c[FALHA] Objeto do banco de dados (db) não foi inicializado!", styles.error);
+    return { success: false, error: "Firebase DB não inicializado" };
+  }
+
+  try {
+    // 1. Grava e lê nó de teste
+    const testRef = db.ref('_connection_test');
+    const testData = {
+      clientPingAt: new Date().toISOString(),
+      status: "online",
+      agent: navigator.userAgent
+    };
+
+    await testRef.set(testData);
+    const testSnap = await testRef.once('value');
+    const readVal = testSnap.val();
+
+    if (readVal && readVal.status === "online") {
+      console.log("%c[OK] Conexão com o Firebase bem sucedida! Nó de teste '/_connection_test' lido com sucesso.", styles.success);
+    } else {
+      console.warn("%c[ATENÇÃO] Nó de teste gravado, mas retorno foi inesperado.", styles.warn);
+    }
+
+    // 2. Leitura e verificação de candidatos
+    const candsSnap = await db.ref('candidates').once('value');
+    const candsData = candsSnap.val() || {};
+    const candsList = Object.entries(candsData).map(([id, val]) => ({ id, ...val }));
+    const totalCands = candsList.length;
+
+    const deferidas = candsList.filter(c => c.status === 'deferida').length;
+    const pendentes = candsList.filter(c => c.status === 'pendente').length;
+    const indeferidas = candsList.filter(c => c.status === 'indeferida').length;
+
+    console.log(`%c[OK] Candidatos verificados no Firebase: ${totalCands} registros encontrados.`, styles.success);
+    console.log(`%c↳ Deferidas: ${deferidas} | Pendentes: ${pendentes} | Indeferidas: ${indeferidas}`, styles.info);
+
+    // 3. Leitura e verificação de partidos
+    const partiesSnap = await db.ref('parties').once('value');
+    const partiesData = partiesSnap.val() || {};
+    const partiesCount = Array.isArray(partiesData) 
+      ? partiesData.filter(Boolean).length 
+      : Object.keys(partiesData).length;
+
+    console.log(`%c[OK] Partidos verificados no Firebase: ${partiesCount} legendas registradas (Esperado: 44).`, styles.success);
+
+    console.log("%c✅ Todos os serviços do Firebase estão 100% operacionais e sincronizados!", styles.success);
+    if (typeof showToast === 'function') {
+      showToast('success', `Conexão Firebase OK! ${totalCands} candidatos e ${partiesCount} partidos operacionais.`);
+    }
+    return {
+      success: true,
+      databaseURL: firebaseConfig.databaseURL,
+      candidatesCount: totalCands,
+      partiesCount: partiesCount,
+      statusBreakdown: { deferidas, pendentes, indeferidas }
+    };
+  } catch (err) {
+    console.error("%c[ERRO] Falha durante o teste de conexão com o Firebase:", styles.error, err);
+    if (typeof showToast === 'function') {
+      showToast('error', `Falha de conexão com Firebase: ${err.message || err}`);
+    }
+    return { success: false, error: err.message || err };
+  }
+};
+
 
