@@ -18,10 +18,70 @@ app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 // ----------------------------------------------------
 const DATA_DIR = path.join(process.cwd(), 'data');
 const DB_FILE = path.join(DATA_DIR, 'database.json');
+const ELECTION_FILE = path.join(DATA_DIR, 'election.json');
 
 interface DatabaseSchema {
   parties: Party[];
   candidacies: Candidacy[];
+}
+
+export interface ElectionData {
+  id: string;
+  title: string;
+  type: string;
+  status: string;
+  applicationStart: string;
+  applicationEnd: string;
+  electionDate: string;
+  vagas: Record<string, number>;
+  updatedAt?: string;
+}
+
+function loadElectionData(): ElectionData {
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    if (fs.existsSync(ELECTION_FILE)) {
+      const raw = fs.readFileSync(ELECTION_FILE, 'utf-8');
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.electionDate) {
+        return parsed;
+      }
+    }
+  } catch (err) {
+    console.error('Error loading election file:', err);
+  }
+
+  const defaultElection: ElectionData = {
+    id: "elec_2026",
+    title: "Eleições Gerais de Brookasil 2026",
+    type: "Federal",
+    status: "open",
+    applicationStart: "2026-08-01T00:00:00.000Z",
+    applicationEnd: "2026-10-15T23:59:59.000Z",
+    electionDate: "2026-10-25T08:00:00.000Z",
+    vagas: {
+      Presidente: 8,
+      Governador: 8,
+      Senador: 16,
+      "Deputado Federal": 16,
+      "Deputado Estadual": 16
+    }
+  };
+  saveElectionData(defaultElection);
+  return defaultElection;
+}
+
+function saveElectionData(data: ElectionData): void {
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    fs.writeFileSync(ELECTION_FILE, JSON.stringify(data, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('Error saving election file:', err);
+  }
 }
 
 // Fixed Pre-configured Administrative Accounts
@@ -315,6 +375,36 @@ app.get('/api/public/config', (req: Request, res: Response) => {
   });
 });
 
+// 1.1 Get & Update Current Election
+app.get('/api/election', (req: Request, res: Response) => {
+  const current = loadElectionData();
+  res.json({ election: current });
+});
+
+app.post('/api/election', (req: Request, res: Response) => {
+  try {
+    const body = req.body || {};
+    const existing = loadElectionData();
+    const updated: ElectionData = {
+      ...existing,
+      ...body,
+      id: body.id || existing.id || 'elec_2026',
+      title: body.title || existing.title,
+      type: body.type || existing.type,
+      status: body.status || existing.status,
+      applicationStart: body.applicationStart || existing.applicationStart,
+      applicationEnd: body.applicationEnd || existing.applicationEnd,
+      electionDate: body.electionDate || existing.electionDate,
+      vagas: body.vagas || existing.vagas,
+      updatedAt: new Date().toISOString()
+    };
+    saveElectionData(updated);
+    res.json({ success: true, election: updated });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Erro ao salvar eleição' });
+  }
+});
+
 // Get all candidacies (Public & Admin sync)
 app.get('/api/candidacies', (req: Request, res: Response) => {
   try {
@@ -430,27 +520,45 @@ app.post('/api/candidacies', async (req: Request, res: Response) => {
     }
     saveDatabase(db);
 
-    // Asynchronously forward to Firebase RTDB if not already present
-    let fbKey: string | null = null;
+    // Sincronização com o Supabase (PostgreSQL)
     try {
-      const fbUrl = 'https://candidatura-cde-2-default-rtdb.firebaseio.com/candidates.json';
-      const fbResp = await fetch(fbUrl, {
+      const SUPABASE_URL = 'https://jghdyksktkcuupazbhao.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpnaGR5a3NrdGtjdXVwYXpiaGFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4NDk5ODIsImV4cCI6MjEwNTQyNTk4Mn0.gCyTUeKnKCBaxngF7xmML5cjKLzEZvW_dFANVclqb8Q';
+      await fetch(`${SUPABASE_URL}/rest/v1/candidates`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(candidateRecord)
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates'
+        },
+        body: JSON.stringify({
+          id: String(candidateRecord.id),
+          protocol: candidateRecord.protocol,
+          fullname: candidateRecord.fullName,
+          ballotname: candidateRecord.ballotName,
+          number: String(candidateRecord.number),
+          office: candidateRecord.office,
+          partyid: candidateRecord.partyId,
+          partyacronym: candidateRecord.partyAcronym,
+          partyname: candidateRecord.partyName,
+          partynumber: Number(candidateRecord.partyNumber || 0),
+          state: candidateRecord.state || 'Brookhaven',
+          city: candidateRecord.city || 'Cidade Eleitoral',
+          status: candidateRecord.status || 'deferida',
+          photo: candidateRecord.photo || '',
+          proposalpdf: candidateRecord.proposalPdf || '',
+          tiktok: candidateRecord.tiktok || '',
+          vicename: candidateRecord.viceName || ''
+        })
       });
-      if (fbResp.ok) {
-        const fbJson = await fbResp.json();
-        fbKey = fbJson?.name || null;
-      }
-    } catch (fbErr: any) {
-      console.warn('[Server] Aviso ao sincronizar candidatura com Firebase RTDB:', fbErr?.message);
+    } catch (sbErr: any) {
+      console.warn('[Server] Aviso ao sincronizar candidatura com Supabase:', sbErr?.message);
     }
 
     res.status(201).json({
       message: 'Candidatura registrada e processada com sucesso no sistema eleitoral.',
-      candidacy: candidateRecord,
-      firebaseKey: fbKey
+      candidacy: candidateRecord
     });
   } catch (error) {
     console.error('[Server] Erro ao registrar candidatura:', error);

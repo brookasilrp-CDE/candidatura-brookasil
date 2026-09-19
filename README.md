@@ -1,14 +1,14 @@
 # 🗳️ CANDIDATURAS | BROOKASIL RP 🇬🇦
 ### Sistema Oficial de Registro e Consulta de Candidaturas da Justiça Eleitoral de Brookasil
 
-Sistema web completo, interativo, responsivo e futurista integrado ao **Firebase Realtime Database** para gerenciamento de eleições, registro de candidaturas, julgamento de processos eleitorais (TSE e TREs) e consulta pública de candidatos confirmados.
+Sistema web completo, interativo, responsivo e moderno integrado ao **Supabase (PostgreSQL)** para gerenciamento de eleições, registro de candidaturas, julgamento de processos eleitorais (TSE e TREs) e consulta pública de candidatos confirmados.
 
 ---
 
 ## 🏛️ Visão Geral & Tecnologias
-- **Frontend**: HTML5, CSS3, Tailwind CSS (via CDN), JavaScript Vanilla (ES6+ modular).
-- **Banco de Dados**: Firebase Realtime Database (`https://candidatura-cde-2-default-rtdb.firebaseio.com`).
-- **Hospedagem / Deploy**: Pronto para **GitHub Pages** como aplicação estática em arquivo único (`index.html`).
+- **Frontend**: HTML5, CSS3, Tailwind CSS, JavaScript Vanilla (ES6+ modular).
+- **Banco de Dados**: Supabase (PostgreSQL via REST API).
+- **Servidor / Backend**: Express & Vite (Node.js).
 - **Gráficos & Animações**: Chart.js, Lucide Icons, Canvas Confetti, Microinterações CSS e símbolo heráldico exclusivo: **Flor de 8 Pétalas de Brookasil**.
 
 ---
@@ -23,19 +23,26 @@ Sistema web completo, interativo, responsivo e futurista integrado ao **Firebase
 
 ---
 
-## 🗄️ Estrutura do Firebase Realtime Database
+## 🗄️ Estrutura da Tabela no Supabase (`candidates`)
 ```text
-settings/               -> Parâmetros gerais da plataforma e bandeira do RP
-elections/{electionId}  -> Eleições cadastradas (Federal ou Municipal)
-parties/{partyId}       -> Partidos políticos (43 agremiações oficiais)
-candidates/{candId}     -> Processos de candidatura completos
-numberRegistry/         -> Reserva atômica de números de urna para evitar duplicidade
-tre/                    -> Registro dos tribunais (TSE, 4 Estaduais e 8 Municipais)
-admins/                 -> Registro de operadores do sistema (sem senhas)
-notifications/          -> Notificações em tempo real para os magistrados
-auditLogs/              -> Logs imutáveis de julgamento e exclusão
-states/                 -> 4 Estados: Brookhaven, Florêmix, Fortemega, Novacore
-cities/                 -> 8 Cidades vinculadas aos seus respectivos estados
+id            (text, primary key)
+protocol      (text, unique)
+fullname      (text)
+ballotname    (text)
+number        (text)
+office        (text)
+partyid       (text)
+partyacronym  (text)
+partyname     (text)
+partynumber   (int4)
+state         (text)
+city          (text)
+status        (text: 'deferida', 'pendente', 'indeferida', etc.)
+photo         (text)
+proposalpdf   (text)
+tiktok        (text)
+vicename      (text)
+created_at    (timestamptz)
 ```
 
 ---
@@ -71,7 +78,7 @@ cities/                 -> 8 Cidades vinculadas aos seus respectivos estados
    - **Deputado Estadual / Vereador**: 5 dígitos (2 do partido + 3 do candidato).
    - O prefixo partidário é travado e não pode ser apagado.
 3. **Mídia e Propostas**:
-   - Foto obrigatória com compressão e conversão local no navegador em Base64 (sem necessidade de Firebase Storage).
+   - Foto obrigatória com compressão e conversão local no navegador em Base64 (otimizada diretamente no banco).
    - Perfil TikTok obrigatório (@usuario ou link direto).
    - Plano de governo em PDF obrigatório para Presidente, Governador e Prefeito.
 4. **Julgamento Jurisdicional**:

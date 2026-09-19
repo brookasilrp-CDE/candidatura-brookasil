@@ -1,0 +1,17 @@
+{
+  "id": "elec_2026",
+  "title": "Eleições Gerais de Brookasil 2026",
+  "type": "Federal",
+  "status": "open",
+  "applicationStart": "2026-08-01T00:00:00.000Z",
+  "applicationEnd": "2026-10-15T23:59:59.000Z",
+  "electionDate": "2026-11-15T08:00:00.000Z",
+  "vagas": {
+    "Presidente": 8,
+    "Governador": 8,
+    "Senador": 16,
+    "Deputado Federal": 16,
+    "Deputado Estadual": 16
+  },
+  "updatedAt": "2026-09-19T23:14:00.520Z"
+}

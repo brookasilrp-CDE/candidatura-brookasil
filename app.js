@@ -4,31 +4,13 @@
  * Tribunal Superior Eleitoral & Tribunais Regionais
  */
 
-// 1. CONFIGURAÇÃO OFICIAL DO FIREBASE REALTIME DATABASE
-const firebaseConfig = {
-  apiKey: "AIzaSyADHdUUxsh6gpKzVz2ZiP4go42BRRGQtPU",
-  authDomain: "candidatura-cde-2.firebaseapp.com",
-  databaseURL: "https://candidatura-cde-2-default-rtdb.firebaseio.com",
-  projectId: "candidatura-cde-2",
-  storageBucket: "candidatura-cde-2.firebasestorage.app",
-  messagingSenderId: "742954683539",
-  appId: "1:742954683539:web:bc0bd46357dd6c5544d166"
+// ========================================================
+// 1. CONFIGURAÇÃO DO BANCO SUPABASE (POSTGRESQL ELEITORAL)
+// ========================================================
+const SUPABASE_CONFIG = {
+  url: "https://jghdyksktkcuupazbhao.supabase.co",
+  anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpnaGR5a3NrdGtjdXVwYXpiaGFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4NDk5ODIsImV4cCI6MjEwNTQyNTk4Mn0.gCyTUeKnKCBaxngF7xmML5cjKLzEZvW_dFANVclqb8Q"
 };
-
-// Inicialização segura do Firebase
-let app, db;
-try {
-  if (typeof firebase !== "undefined") {
-    if (!firebase.apps.length) {
-      app = firebase.initializeApp(firebaseConfig);
-    } else {
-      app = firebase.app();
-    }
-    db = firebase.database();
-  }
-} catch (e) {
-  console.error("Falha na inicialização segura dos serviços eleitorais:", e.message || e);
-}
 
 // ========================================================
 // SISTEMA CRIPTOGRÁFICO DE CREDENCIAIS ELEITORAIS (TSE & TREs)
@@ -359,7 +341,7 @@ const DEFAULT_COURT_CREDENTIALS = [
   }
 ];
 
-// Estado dinâmico de credenciais sincronizado em tempo real com Firebase
+// Estado dinâmico de credenciais institucionais
 let activeCourtCredentials = DEFAULT_COURT_CREDENTIALS.map(c => ({ ...c }));
 const ADMIN_CREDENTIALS = activeCourtCredentials;
 
@@ -531,7 +513,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  bootstrapFirebaseData();
+  bootstrapApplicationData();
   initCourtCredentialsListener();
   startCountdownTimer();
 });
@@ -545,74 +527,138 @@ function initIcons() {
 // Detecção de Conexão
 function setupNetworkListeners() {
   window.addEventListener('online', () => {
-    document.getElementById('offline-banner').classList.add('hidden');
+    document.getElementById('offline-banner')?.classList.add('hidden');
     showToast('success', 'Conexão restabelecida com sucesso!');
   });
   window.addEventListener('offline', () => {
-    document.getElementById('offline-banner').classList.remove('hidden');
+    document.getElementById('offline-banner')?.classList.remove('hidden');
     showToast('error', 'Sem conexão com a internet.');
   });
-
-  if (db) {
-    const connectedRef = db.ref(".info/connected");
-    connectedRef.on("value", (snap) => {
-      if (snap.val() === false) {
-        document.getElementById('offline-banner').classList.remove('hidden');
-      } else {
-        document.getElementById('offline-banner').classList.add('hidden');
-      }
-    });
-  }
 }
 
-// Inicializa dados no Firebase se vazios
-let hasAttemptedAutoSeed = false;
-let isSyncingToFirebase = false;
-
-async function bootstrapFirebaseData() {
-  if (!db) return;
-
-  // 1. REST fetch imediato para garantir que todos os candidatos do Firebase apareçam em < 200ms
+// Sistema Central de Logs de Auditoria (Memória + LocalStorage)
+let inMemoryAuditLogs = [];
+function getStoredAuditLogs() {
   try {
-    fetch('https://candidatura-cde-2-default-rtdb.firebaseio.com/candidates.json')
-      .then(res => res.json())
-      .then(data => {
-        if (data && Object.keys(data).length > 0) {
-          const list = Array.isArray(data)
-            ? data.map((val, idx) => (val && typeof val === 'object') ? ({ ...val, id: val.id || String(idx) }) : null).filter(Boolean)
-            : Object.entries(data).map(([id, val]) => (val && typeof val === 'object') ? ({ ...val, id: val.id || id }) : null).filter(Boolean);
-          if (list.length > 0) {
-            candidaciesList = list;
-            console.log(`[Firebase REST Rápido] ${candidaciesList.length} candidaturas carregadas instantaneamente.`);
-            updateGlobalStats();
-            renderConfirmedCandidates();
-            if (currentUser) {
-              renderAdminCandidacies();
-            }
-          }
+    const raw = localStorage.getItem('brookasil_audit_logs');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {}
+  return inMemoryAuditLogs;
+}
+
+function saveAuditLog(entry) {
+  const fullEntry = {
+    id: 'log_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7),
+    timestamp: new Date().toISOString(),
+    ...entry
+  };
+  const currentLogs = getStoredAuditLogs();
+  currentLogs.unshift(fullEntry);
+  if (currentLogs.length > 200) currentLogs.length = 200;
+  inMemoryAuditLogs = currentLogs;
+  try {
+    localStorage.setItem('brookasil_audit_logs', JSON.stringify(currentLogs));
+  } catch (e) {}
+  renderAuditLogs(currentLogs);
+  return fullEntry;
+}
+
+// Inicializa dados da aplicação via Supabase
+let isSyncingToSupabase = false;
+
+async function bootstrapApplicationData() {
+  // 1. Carrega os candidatos do Supabase de forma leve (sem os PDFs em base64 na inicialização)
+  try {
+    const [candsRes, pdfIdsRes] = await Promise.all([
+      fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates?select=id,protocol,fullname,ballotname,number,office,partyid,partyacronym,partyname,partynumber,state,city,status,photo,tiktok,vicename`, {
+        headers: {
+          'apikey': SUPABASE_CONFIG.anonKey,
+          'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+        }
+      }),
+      fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates?select=id&proposalpdf=not.is.null&proposalpdf=neq.`, {
+        headers: {
+          'apikey': SUPABASE_CONFIG.anonKey,
+          'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
         }
       })
-      .catch(err => console.warn('[Firebase REST] Aviso no fetch rápido:', err));
-  } catch (e) {}
+    ]);
 
-  // Escuta Eleição Ativa
-  db.ref('elections').on('value', (snap) => {
-    const data = snap.val();
-    if (data && Object.keys(data).length > 0) {
-      const electionsArr = Object.entries(data).map(([id, val]) => ({ id, ...val }));
-      const openElection = electionsArr.find(e => e.status === 'open') || electionsArr[0];
-      currentElection = openElection;
-    } else {
-      // Carrega do seed oficial se disponível
-      if (typeof window !== 'undefined' && window.INITIAL_SEED_DATABASE && window.INITIAL_SEED_DATABASE.elections) {
-        const eData = window.INITIAL_SEED_DATABASE.elections;
-        const eArr = Object.entries(eData).map(([id, val]) => ({ id, ...val }));
-        currentElection = eArr.find(e => e.status === 'open') || eArr[0];
+    if (candsRes.ok) {
+      const data = await candsRes.json();
+      let pdfIds = new Set();
+      if (pdfIdsRes.ok) {
         try {
-          db.ref('elections').set(eData);
-        } catch (e) {}
+          const pdfData = await pdfIdsRes.json();
+          pdfData.forEach(p => pdfIds.add(String(p.id)));
+        } catch (pe) {}
+      }
+
+      if (Array.isArray(data) && data.length > 0) {
+        candidaciesList = data.map(c => ({
+          ...c,
+          id: String(c.id),
+          protocol: c.protocol,
+          fullName: c.fullname || c.fullName,
+          ballotName: c.ballotname || c.ballotName,
+          number: c.number,
+          office: c.office,
+          partyId: c.partyid || c.partyId,
+          partyAcronym: c.partyacronym || c.partyAcronym,
+          partyName: c.partyname || c.partyName,
+          partyNumber: c.partynumber || c.partyNumber,
+          state: c.state,
+          stateId: c.state,
+          city: c.city,
+          cityId: c.city,
+          status: c.status,
+          photo: c.photo,
+          hasProposalPdf: pdfIds.has(String(c.id)),
+          proposalPdf: c.proposalpdf || c.proposalPdf || null,
+          tiktok: c.tiktok,
+          viceName: c.vicename || c.viceName
+        }));
+        console.log(`[Supabase] ${candidaciesList.length} candidaturas carregadas com alta performance!`);
+        updateGlobalStats();
+        renderConfirmedCandidates();
+        if (currentUser) {
+          renderAdminCandidacies();
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('[Supabase] Fetch inicial de candidaturas:', e);
+  }
+
+  // 2. Inicializa Eleição Ativa (Sincronizada com o Servidor e Armazenamento Local)
+  try {
+    let electionLoaded = false;
+    try {
+      const resp = await fetch('/api/election');
+      if (resp.ok) {
+        const json = await resp.json();
+        if (json && json.election && json.election.electionDate) {
+          currentElection = json.election;
+          try {
+            localStorage.setItem('brookasil_election', JSON.stringify(currentElection));
+          } catch (e) {}
+          electionLoaded = true;
+        }
+      }
+    } catch (apiErr) {
+      console.warn('[Eleição] Servidor offline ou inacessível no momento, utilizando cache:', apiErr);
+    }
+
+    if (!electionLoaded) {
+      const savedElection = localStorage.getItem('brookasil_election');
+      if (savedElection) {
+        currentElection = JSON.parse(savedElection);
       } else {
-        const defaultElec = {
+        currentElection = {
+          id: "elec_2026",
           title: "Eleições Gerais de Brookasil 2026",
           type: "Federal",
           status: "open",
@@ -627,228 +673,144 @@ async function bootstrapFirebaseData() {
             "Deputado Estadual": 16
           }
         };
-        const newRef = db.ref('elections').push(defaultElec);
-        currentElection = { id: newRef.key, ...defaultElec };
-      }
-    }
-    updateElectionUI();
-    populateFormSelects();
-  });
-
-  // Escuta Candidaturas em tempo real
-  db.ref('candidates').on('value', async (snap) => {
-    const data = snap.val();
-    if (data && Object.keys(data).length > 0) {
-      if (Array.isArray(data)) {
-        candidaciesList = data
-          .map((val, idx) => (val && typeof val === 'object') ? ({ ...val, id: val.id || String(idx) }) : null)
-          .filter(Boolean);
-      } else {
-        candidaciesList = Object.entries(data)
-          .map(([id, val]) => (val && typeof val === 'object') ? ({ ...val, id: val.id || id }) : null)
-          .filter(Boolean);
-      }
-      console.log(`[Firebase RTDB] ${candidaciesList.length} candidaturas ativas sincronizadas em tempo real.`);
-    } else {
-      // Se o Firebase novo estiver vazio, mantém os 51 candidatos na interface e grava no Firebase
-      if (typeof window !== 'undefined' && window.INITIAL_SEED_DATABASE && window.INITIAL_SEED_DATABASE.candidates) {
-        const seedCands = window.INITIAL_SEED_DATABASE.candidates;
-        candidaciesList = Object.entries(seedCands).map(([id, val]) => ({ ...val, id: val.id || id }));
-        console.log(`[Firebase RTDB] Banco vazio detectado. Mantendo ${candidaciesList.length} candidatos oficiais de Brookasil na tela.`);
-        if (!hasAttemptedAutoSeed) {
-          hasAttemptedAutoSeed = true;
-          syncAllSeedDataToFirebase(false);
-        }
-      } else {
-        candidaciesList = [];
-      }
-    }
-    updateGlobalStats();
-    renderConfirmedCandidates();
-    if (currentUser) {
-      renderAdminCandidacies();
-      updateAdminCharts();
-    }
-  });
-
-  // Escuta Partidos
-  db.ref('parties').on('value', (snap) => {
-    const data = snap.val();
-    if (data && Object.keys(data).length > 0) {
-      if (Array.isArray(data)) {
-        partiesList = data
-          .map((val, idx) => normalizePartyObject(val, idx))
-          .filter(p => p && (p.acronym || p.name));
-      } else {
-        partiesList = Object.entries(data)
-          .map(([id, val]) => normalizePartyObject(val, id))
-          .filter(p => p && (p.acronym || p.name));
-      }
-    } else {
-      // Sincroniza os 44 partidos oficiais
-      if (typeof window !== 'undefined' && window.INITIAL_SEED_DATABASE && window.INITIAL_SEED_DATABASE.parties) {
-        const pData = window.INITIAL_SEED_DATABASE.parties;
-        const rawArr = Array.isArray(pData)
-          ? pData.map((val, idx) => normalizePartyObject(val, idx))
-          : Object.entries(pData).map(([id, val]) => normalizePartyObject(val, id));
-        partiesList = rawArr.filter(Boolean);
         try {
-          db.ref('parties').set(pData);
+          localStorage.setItem('brookasil_election', JSON.stringify(currentElection));
         } catch (e) {}
-      } else {
-        OFFICIAL_PARTIES.forEach(p => {
-          try { db.ref('parties/' + p.id).set(p); } catch (e) {}
-        });
-        partiesList = OFFICIAL_PARTIES.map(p => normalizePartyObject(p));
       }
     }
-    // Ordena pelo número oficial de urna por padrão
-    partiesList.sort((a, b) => (Number(a.number) || 999) - (Number(b.number) || 999));
-    updateGlobalStats();
-    renderPartiesCatalog();
-    populatePartySelects();
-    if (currentUser) {
-      renderAdminParties();
-    }
-  });
+  } catch (e) {
+    console.warn('[Eleição] Inicialização:', e);
+  }
+  updateElectionUI();
+  populateFormSelects();
 
-  // Escuta Logs de Auditoria
-  db.ref('auditLogs').limitToLast(50).on('value', (snap) => {
-    const data = snap.val();
-    if (data && currentUser) {
-      const logs = Object.entries(data).map(([key, val]) => ({ id: key, ...val }));
-      renderAuditLogs(logs.reverse());
+  // 3. Inicializa Partidos Oficiais
+  try {
+    const savedParties = localStorage.getItem('brookasil_parties');
+    if (savedParties) {
+      const parsed = JSON.parse(savedParties);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        partiesList = parsed.map((p, idx) => normalizePartyObject(p, idx));
+      }
     }
-  });
-}
-
-// Grava e sincroniza todos os 51 candidatos, eleições, partidos e configurações no novo Firebase
-async function syncAllSeedDataToFirebase(isManual = false) {
-  if (isSyncingToFirebase) return;
-  if (!db) {
-    if (isManual) showToast('error', 'Firebase não conectado.');
-    return;
+    if (!partiesList || partiesList.length === 0) {
+      partiesList = OFFICIAL_PARTIES.map(p => normalizePartyObject(p));
+      localStorage.setItem('brookasil_parties', JSON.stringify(partiesList));
+    }
+  } catch (e) {
+    partiesList = OFFICIAL_PARTIES.map(p => normalizePartyObject(p));
+  }
+  partiesList.sort((a, b) => (Number(a.number) || 999) - (Number(b.number) || 999));
+  updateGlobalStats();
+  renderPartiesCatalog();
+  populatePartySelects();
+  if (currentUser) {
+    renderAdminParties();
   }
 
-  isSyncingToFirebase = true;
+  // 4. Inicializa Registros de Auditoria
+  const logs = getStoredAuditLogs();
+  if (currentUser && logs.length > 0) {
+    renderAuditLogs(logs);
+  }
+}
+
+// Compatibilidade
+const bootstrapFirebaseData = bootstrapApplicationData;
+
+// Grava e sincroniza candidatos no Supabase
+async function syncCandidatesToSupabase(isManual = false) {
+  if (isSyncingToSupabase) return;
+  isSyncingToSupabase = true;
+
   if (isManual) {
-    showToast('info', 'Gravando 51 candidatos e dados oficiais no novo Firebase...');
+    showToast('info', 'Verificando integridade das 51 candidaturas no Supabase...');
   }
 
   try {
-    let fullSeed = null;
-    try {
-      const resp = await fetch('/api/seed-database');
-      if (resp.ok) {
-        fullSeed = await resp.json();
+    const resp = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates?select=id`, {
+      headers: {
+        'apikey': SUPABASE_CONFIG.anonKey,
+        'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
       }
-    } catch (e) {}
+    });
 
-    if (!fullSeed) {
-      try {
-        const resp2 = await fetch('/seed_database.json');
-        if (resp2.ok) {
-          fullSeed = await resp2.json();
+    if (resp.ok) {
+      const existing = await resp.json();
+      const existingIds = new Set(existing.map(c => String(c.id)));
+
+      if (existing.length >= 50) {
+        if (isManual) {
+          showToast('success', `Banco de dados 100% sincronizado! ${existing.length} candidaturas operacionais no Supabase.`);
         }
+        await refreshAdminData(true);
+        isSyncingToSupabase = false;
+        return;
+      }
+
+      let fullSeed = null;
+      try {
+        const sRes = await fetch('/data/old_candidates.json');
+        if (sRes.ok) fullSeed = await sRes.json();
       } catch (e) {}
-    }
 
-    if (!fullSeed && typeof window !== 'undefined' && window.INITIAL_SEED_DATABASE) {
-      fullSeed = window.INITIAL_SEED_DATABASE;
-    }
-
-    if (!fullSeed || !fullSeed.candidates) {
-      console.warn('[Firebase Seed] Dados de candidatos não encontrados para gravação.');
-      isSyncingToFirebase = false;
-      return;
-    }
-
-    // 1. Grava Eleições
-    if (fullSeed.elections) {
-      try {
-        await db.ref('elections').set(fullSeed.elections);
-      } catch (e) {
-        console.warn('[Firebase Seed] Eleições:', e.message);
-      }
-    }
-
-    // 2. Grava Partidos
-    if (fullSeed.parties) {
-      try {
-        await db.ref('parties').set(fullSeed.parties);
-      } catch (e) {
-        console.warn('[Firebase Seed] Partidos:', e.message);
-      }
-    }
-
-    // 3. Grava Configurações e Credenciais de Magistrados
-    if (fullSeed.settings) {
-      try {
-        await db.ref('settings').set(fullSeed.settings);
-      } catch (e) {
-        console.warn('[Firebase Seed] Settings:', e.message);
-      }
-    }
-
-    // 4. Grava Registro de Números
-    if (fullSeed.numberRegistry) {
-      try {
-        await db.ref('numberRegistry').set(fullSeed.numberRegistry);
-      } catch (e) {
-        console.warn('[Firebase Seed] NumberRegistry:', e.message);
-      }
-    }
-
-    // 5. Grava os 51 Candidatos em lotes paralelos seguros
-    const candidatesEntries = Object.entries(fullSeed.candidates);
-    let savedCount = 0;
-    const batchSize = 5;
-
-    for (let i = 0; i < candidatesEntries.length; i += batchSize) {
-      const batch = candidatesEntries.slice(i, i + batchSize);
-      await Promise.all(batch.map(async ([candKey, candData]) => {
-        try {
-          await db.ref('candidates/' + candKey).set(candData);
-          savedCount++;
-        } catch (candErr) {
-          console.warn(`[Firebase Seed] Erro ao gravar candidato ${candData.ballotName || candKey}:`, candErr.message);
+      if (fullSeed) {
+        const missing = Object.entries(fullSeed).filter(([id]) => !existingIds.has(String(id)));
+        let upserted = 0;
+        for (const [cid, cdata] of missing) {
+          try {
+            await fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates`, {
+              method: 'POST',
+              headers: {
+                'apikey': SUPABASE_CONFIG.anonKey,
+                'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+                'Content-Type': 'application/json',
+                'Prefer': 'resolution=merge-duplicates'
+              },
+              body: JSON.stringify({
+                id: String(cid),
+                protocol: cdata.protocol || ('BRK-2026-' + Math.floor(100000 + Math.random() * 900000)),
+                fullname: cdata.fullName || cdata.fullname || '',
+                ballotname: cdata.ballotName || cdata.ballotname || '',
+                number: String(cdata.number || ''),
+                office: cdata.office || '',
+                partyid: cdata.partyId || '',
+                partyacronym: cdata.partyAcronym || '',
+                partyname: cdata.partyName || '',
+                partynumber: Number(cdata.partyNumber || 0),
+                state: cdata.state || 'Brookhaven',
+                city: cdata.city || 'Cidade Eleitoral',
+                status: cdata.status || 'deferida',
+                photo: cdata.photo || '',
+                proposalpdf: cdata.proposalPdf || '',
+                tiktok: cdata.tiktok || '',
+                vicename: cdata.viceName || ''
+              })
+            });
+            upserted++;
+          } catch (ue) {}
         }
-      }));
-    }
-
-    console.log(`[Firebase Seed] Sucesso: ${savedCount}/${candidatesEntries.length} candidatos gravados no novo Firebase!`);
-    
-    if (isManual) {
-      if (savedCount > 0) {
-        showToast('success', `Tudo salvo! ${savedCount} candidatos e dados oficiais gravados no novo Firebase.`);
-      } else {
-        showToast('error', 'Permissão negada no Firebase. Por favor, atualize as Regras no Firebase Console para liberar a gravação.');
-      }
-    }
-
-    // Se houve erro de permissão, agenda tentativa automática em 15 segundos
-    if (savedCount === 0 && candidatesEntries.length > 0) {
-      setTimeout(() => {
-        if (!isSyncingToFirebase && db) {
-          syncAllSeedDataToFirebase(false);
+        if (isManual) {
+          showToast('success', `Sincronização concluída! ${upserted} candidaturas atualizadas no Supabase.`);
         }
-      }, 15000);
+      }
+    } else {
+      if (isManual) {
+        showToast('error', 'Falha ao conectar com o Supabase. Verifique suas credenciais.');
+      }
     }
   } catch (err) {
-    console.error('[Firebase Seed] Erro geral na sincronização:', err);
+    console.error('[Supabase Sync] Erro:', err);
     if (isManual) {
-      showToast('error', 'Erro de permissão no Firebase. Atualize as regras no console.');
+      showToast('error', 'Erro ao sincronizar com Supabase: ' + (err.message || err));
     }
-    // Re-tenta automaticamente
-    setTimeout(() => {
-      if (!isSyncingToFirebase && db) {
-        syncAllSeedDataToFirebase(false);
-      }
-    }, 15000);
   } finally {
-    isSyncingToFirebase = false;
+    isSyncingToSupabase = false;
   }
 }
+
+// Alias legado
+const syncAllSeedDataToFirebase = syncCandidatesToSupabase;
 
 // ========================================================
 // ROTEAMENTO DE VISUALIZAÇÕES (SPA SEM REFRESH)
@@ -1003,12 +965,28 @@ function updateThemeIcon() {
 // ========================================================
 // ATUALIZAÇÃO DE CONTEÚDOS ELEITORAIS & CRONÔMETRO
 // ========================================================
+function formatElectionDateDisplay(dateStr) {
+  if (!dateStr) return '--/--/----';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return String(dateStr);
+  return d.toLocaleDateString('pt-BR');
+}
+
 function updateElectionUI() {
   if (!currentElection) return;
 
+  const startFormatted = formatElectionDateDisplay(currentElection.applicationStart);
+  const endFormatted = formatElectionDateDisplay(currentElection.applicationEnd);
+  const electionDateFormatted = formatElectionDateDisplay(currentElection.electionDate);
+
   // Home Banner
-  document.getElementById('home-election-title').textContent = currentElection.title;
-  document.getElementById('home-election-dates').textContent = `Inscrições até: ${new Date(currentElection.applicationEnd).toLocaleDateString('pt-BR')} • Votação: ${new Date(currentElection.electionDate).toLocaleDateString('pt-BR')}`;
+  const titleEl = document.getElementById('home-election-title');
+  if (titleEl) titleEl.textContent = currentElection.title || 'Eleições Gerais de Brookasil';
+
+  const datesEl = document.getElementById('home-election-dates');
+  if (datesEl) {
+    datesEl.textContent = `Inscrições até: ${endFormatted} • Votação: ${electionDateFormatted}`;
+  }
 
   // Eleições View
   const elecCard = document.getElementById('election-detail-card');
@@ -1021,6 +999,14 @@ function updateElectionUI() {
           </span>
           <h3 class="text-2xl sm:text-3xl font-cinzel font-bold text-white mt-2">${currentElection.title}</h3>
           <p class="text-sm text-slate-300 mt-1">Modalidade: <strong>${currentElection.type}</strong> • 4 Estados Representados</p>
+          <div class="flex flex-wrap items-center gap-3 mt-3 text-xs">
+            <span class="text-slate-300 bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg">
+              <strong class="text-brand-electric">Inscrições:</strong> ${startFormatted} até ${endFormatted}
+            </span>
+            <span class="text-brand-gold bg-brand-gold/10 border border-brand-gold/30 px-3 py-1.5 rounded-lg font-bold">
+              <strong class="text-white">Data da Votação:</strong> ${electionDateFormatted}
+            </span>
+          </div>
         </div>
         <button onclick="navigateTo('candidaturas')" class="px-6 py-3 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-brand-gold to-yellow-500 hover:to-brand-gold transition shadow-glow-gold text-sm whitespace-nowrap">
           Participar da Disputa
@@ -1060,39 +1046,55 @@ function updateElectionUI() {
   const badge = document.getElementById('candidacy-period-badge');
 
   if (!isOpen) {
-    closedAlert.classList.remove('hidden');
-    form.classList.add('opacity-50', 'pointer-events-none');
-    badge.className = "px-4 py-2 rounded-xl bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-bold flex items-center gap-2";
-    badge.innerHTML = "Período Encerrado";
+    if (closedAlert) closedAlert.classList.remove('hidden');
+    if (form) form.classList.add('opacity-50', 'pointer-events-none');
+    if (badge) {
+      badge.className = "px-4 py-2 rounded-xl bg-red-500/20 text-red-400 border border-red-500/30 text-xs font-bold flex items-center gap-2";
+      badge.innerHTML = "Período Encerrado";
+    }
   } else {
-    closedAlert.classList.add('hidden');
-    form.classList.remove('opacity-50', 'pointer-events-none');
-    badge.className = "px-4 py-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold flex items-center gap-2";
-    badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> Inscrições Abertas';
+    if (closedAlert) closedAlert.classList.add('hidden');
+    if (form) form.classList.remove('opacity-50', 'pointer-events-none');
+    if (badge) {
+      badge.className = "px-4 py-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold flex items-center gap-2";
+      badge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> Inscrições Abertas';
+    }
   }
 }
 
-function startCountdownTimer() {
-  setInterval(() => {
-    if (!currentElection || !currentElection.electionDate) return;
-    const diff = new Date(currentElection.electionDate) - new Date();
-    if (diff <= 0) {
-      document.getElementById('timer-days').textContent = "00";
-      document.getElementById('timer-hours').textContent = "00";
-      document.getElementById('timer-minutes').textContent = "00";
-      document.getElementById('timer-seconds').textContent = "00";
-      return;
-    }
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+function updateCountdownTimerValues() {
+  if (!currentElection || !currentElection.electionDate) return;
+  const targetTime = new Date(currentElection.electionDate).getTime();
+  const diff = targetTime - Date.now();
 
-    document.getElementById('timer-days').textContent = String(days).padStart(2, '0');
-    document.getElementById('timer-hours').textContent = String(hours).padStart(2, '0');
-    document.getElementById('timer-minutes').textContent = String(minutes).padStart(2, '0');
-    document.getElementById('timer-seconds').textContent = String(seconds).padStart(2, '0');
-  }, 1000);
+  const daysEl = document.getElementById('timer-days');
+  const hoursEl = document.getElementById('timer-hours');
+  const minsEl = document.getElementById('timer-minutes');
+  const secsEl = document.getElementById('timer-seconds');
+
+  if (!daysEl || !hoursEl || !minsEl || !secsEl) return;
+
+  if (diff <= 0 || isNaN(diff)) {
+    daysEl.textContent = "00";
+    hoursEl.textContent = "00";
+    minsEl.textContent = "00";
+    secsEl.textContent = "00";
+    return;
+  }
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+  daysEl.textContent = String(days).padStart(2, '0');
+  hoursEl.textContent = String(hours).padStart(2, '0');
+  minsEl.textContent = String(minutes).padStart(2, '0');
+  secsEl.textContent = String(seconds).padStart(2, '0');
+}
+
+function startCountdownTimer() {
+  updateCountdownTimerValues();
+  setInterval(updateCountdownTimerValues, 1000);
 }
 
 function updateGlobalStats() {
@@ -1829,7 +1831,7 @@ function handlePdfUpload(e) {
 }
 
 // ========================================================
-// ENVIO DA CANDIDATURA PARA O FIREBASE
+// ENVIO DA CANDIDATURA PARA O SUPABASE
 // ========================================================
 async function handleCandidacySubmit(e) {
   e.preventDefault();
@@ -1966,61 +1968,57 @@ async function handleCandidacySubmit(e) {
     };
 
     // ========================================================
-    // PIPELINE DE GRAVAÇÃO RESILIENTE MULTI-CANAL
     // ========================================================
-    let candidateKey = null;
+    // PIPELINE DE GRAVAÇÃO NO BANCO SUPABASE & SERVIDOR
+    // ========================================================
+    const finalKey = 'cand_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
+    const savedCand = { id: finalKey, ...candidateData };
 
-    // 1. Canal Primário: Gravação REST direta no Firebase RTDB (HTTPS puro resiliente)
+    // 1. Canal Primário: Supabase (PostgreSQL)
     try {
-      const fbRestResp = await fetch('https://candidatura-cde-2-default-rtdb.firebaseio.com/candidates.json', {
+      await fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(candidateData)
+        headers: {
+          'apikey': SUPABASE_CONFIG.anonKey,
+          'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates'
+        },
+        body: JSON.stringify({
+          id: String(finalKey),
+          protocol: protocol,
+          fullname: savedCand.fullName,
+          ballotname: savedCand.ballotName,
+          number: String(savedCand.number),
+          office: savedCand.office,
+          partyid: savedCand.partyId,
+          partyacronym: savedCand.partyAcronym,
+          partyname: savedCand.partyName,
+          partynumber: Number(savedCand.partyNumber || 0),
+          state: savedCand.state,
+          city: savedCand.city,
+          status: savedCand.status || 'deferida',
+          photo: savedCand.photo || '',
+          proposalpdf: savedCand.proposalPdf || '',
+          tiktok: savedCand.tiktok || '',
+          vicename: savedCand.viceName || ''
+        })
       });
-      if (fbRestResp.ok) {
-        const fbJson = await fbRestResp.json();
-        if (fbJson && fbJson.name) {
-          candidateKey = fbJson.name;
-          console.log('[Candidatura] Gravado com sucesso no Firebase RTDB via REST:', candidateKey);
-        }
-      }
-    } catch (restErr) {
-      console.warn('[Candidatura] Aviso ao salvar via REST no Firebase:', restErr);
+      console.log('[Candidatura] Gravado com sucesso no Supabase:', finalKey);
+    } catch (sbErr) {
+      console.warn('[Candidatura] Aviso ao salvar no Supabase:', sbErr);
     }
 
     // 2. Canal Secundário: Servidor de Aplicação (/api/candidacies)
     try {
-      const srvResp = await fetch('/api/candidacies', {
+      await fetch('/api/candidacies', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...candidateData, id: candidateKey })
+        body: JSON.stringify(savedCand)
       });
-      if (srvResp.ok) {
-        const srvJson = await srvResp.json();
-        if (!candidateKey && srvJson && srvJson.candidacy) {
-          candidateKey = srvJson.candidacy.id;
-        }
-      }
     } catch (srvErr) {
       console.warn('[Candidatura] Aviso ao salvar no servidor Express:', srvErr);
     }
-
-    // 3. Canal Terciário: Firebase Web SDK (se conectado)
-    if (db) {
-      try {
-        const sdkKey = candidateKey || db.ref('candidates').push().key;
-        candidateKey = sdkKey;
-        await Promise.race([
-          db.ref('candidates/' + sdkKey).set({ ...candidateData, id: sdkKey }),
-          new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout Firebase SDK')), 4000))
-        ]);
-      } catch (sdkErr) {
-        console.warn('[Candidatura] SDK Firebase concluído/bypassado:', sdkErr.message);
-      }
-    }
-
-    const finalKey = candidateKey || (`cand_loc_${Date.now()}`);
-    const savedCand = { id: finalKey, ...candidateData };
 
     // Atualização otimista imediata da lista local
     const existingIdx = candidaciesList.findIndex(c => c.id === finalKey || c.protocol === protocol);
@@ -2049,56 +2047,27 @@ async function handleCandidacySubmit(e) {
       : (isStateOffice(officeId) ? candidateData.stateId : 'NACIONAL');
 
     try {
-      fetch(`https://candidatura-cde-2-default-rtdb.firebaseio.com/numberRegistry/${currentElection.id}/${officeId}/${jurisdictionKey}/${finalNumber}.json`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          candidateId: finalKey,
-          protocol: protocol,
-          reservedAt: new Date().toISOString()
-        })
-      }).catch(() => {});
+      const numRegKey = `brookasil_numreg_${currentElection.id}_${officeId}_${jurisdictionKey}`;
+      const existingReg = JSON.parse(localStorage.getItem(numRegKey) || '{}');
+      existingReg[finalNumber] = {
+        candidateId: finalKey,
+        protocol: protocol,
+        reservedAt: new Date().toISOString()
+      };
+      localStorage.setItem(numRegKey, JSON.stringify(existingReg));
     } catch (e) {}
-
-    if (db) {
-      try {
-        await db.ref(`numberRegistry/${currentElection.id}/${officeId}/${jurisdictionKey}/${finalNumber}`).set({
-          candidateId: finalKey,
-          protocol: protocol,
-          reservedAt: new Date().toISOString()
-        });
-      } catch (numErr) {
-        console.warn("Aviso ao registrar número no RTDB:", numErr);
-      }
-    }
 
     const circInfo = isMunicipalOffice(officeId)
       ? `em ${getCityDisplayName(stateId, cityId)}`
       : (isStateOffice(officeId) ? `em ${getStateDisplayName(stateId)}` : '');
 
-    // Cria notificação administrativa no Firebase
-    const notifPayload = {
-      type: 'new_candidacy',
-      text: `Nova candidatura registrada: ${candidateData.ballotName} (${candidateData.partyAcronym} - ${finalNumber}) para ${officeId} ${circInfo}`,
-      timestamp: new Date().toISOString(),
-      read: false
-    };
-
-    try {
-      fetch('https://candidatura-cde-2-default-rtdb.firebaseio.com/notifications.json', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(notifPayload)
-      }).catch(() => {});
-    } catch (e) {}
-
-    if (db) {
-      try {
-        await db.ref('notifications').push(notifPayload);
-      } catch (notifErr) {
-        console.warn("Notificação RTDB:", notifErr);
-      }
-    }
+    // Registro no log de auditoria
+    saveAuditLog({
+      action: 'NOVA_CANDIDATURA',
+      details: `Candidatura ${candidateData.ballotName} (${candidateData.partyAcronym} - ${finalNumber}) para ${officeId} ${circInfo}`,
+      operator: 'Cidadão / Partido',
+      protocol: protocol
+    });
 
     // ========================================================
     // EXIBIÇÃO DA MENSAGEM DE SUCESSO DE SUBMISSÃO
@@ -2235,7 +2204,7 @@ function renderConfirmedCandidates() {
     const cStatus = String(c.status || 'deferida').toLowerCase().trim();
     if (cStatus === 'excluida') return false;
 
-    // Filtro por status (ALL exibe todas as candidaturas do Firebase)
+    // Filtro por status (ALL exibe todas as candidaturas)
     if (statusFilter !== 'ALL' && cStatus !== String(statusFilter).toLowerCase().trim()) return false;
 
     if (searchFilter) {
@@ -2396,7 +2365,7 @@ function renderConfirmedCandidates() {
             <i data-lucide="info" class="w-3.5 h-3.5"></i> Ficha
           </button>
         </div>
-        ${c.proposalPdf ? `
+        ${(c.proposalPdf || c.hasProposalPdf) ? `
           <button onclick="downloadOrViewPdf('${c.id}')" class="px-3 py-2 rounded-xl bg-brand-gold/15 hover:bg-brand-gold/25 active:bg-brand-gold/30 text-brand-gold text-xs font-semibold flex items-center gap-1.5 transition">
             <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Proposta
           </button>
@@ -2408,9 +2377,35 @@ function renderConfirmedCandidates() {
   initIcons();
 }
 
-function downloadOrViewPdf(candId) {
-  const cand = candidaciesList.find(c => c.id === candId);
-  if (!cand || !cand.proposalPdf) {
+async function downloadOrViewPdf(candId) {
+  const cand = candidaciesList.find(c => String(c.id) === String(candId));
+  if (!cand) {
+    showToast('error', 'Candidatura não encontrada.');
+    return;
+  }
+
+  // Se o PDF ainda não foi carregado na memória, busca sob demanda no Supabase (economiza dezenas de MBs)
+  if (!cand.proposalPdf) {
+    showToast('info', 'Carregando proposta da nuvem...');
+    try {
+      const res = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates?id=eq.${candId}&select=proposalpdf`, {
+        headers: {
+          'apikey': SUPABASE_CONFIG.anonKey,
+          'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+        }
+      });
+      if (res.ok) {
+        const d = await res.json();
+        if (Array.isArray(d) && d[0] && d[0].proposalpdf) {
+          cand.proposalPdf = d[0].proposalpdf;
+        }
+      }
+    } catch (e) {
+      console.warn('[PDF Fetch Error]:', e);
+    }
+  }
+
+  if (!cand.proposalPdf) {
     showToast('info', 'Esta candidatura não possui documento PDF anexado.');
     return;
   }
@@ -3212,8 +3207,6 @@ function onCourtSelectChange(courtId) {
   }
 }
 
-const FIREBASE_RTDB_URL = firebaseConfig.databaseURL || 'https://candidatura-cde-2-default-rtdb.firebaseio.com';
-
 function removeAccents(str) {
   return String(str || '')
     .normalize('NFD')
@@ -3236,50 +3229,19 @@ function normalizeCredString(str) {
     .toLowerCase();
 }
 
-// Sincronização direta e infalível de credenciais (REST rápido + SDK com timeout)
+// Sincronização direta de credenciais
 async function fetchCloudCourtCredentials() {
   try {
-    let cloudList = null;
-
-    // 1. Tenta REST primeiro com timeout de 1800ms (instantâneo, sem risco de congelar websocket)
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 1800);
-      const resp = await fetch(`${FIREBASE_RTDB_URL}/settings/courtCredentials.json`, { signal: controller.signal });
-      clearTimeout(timeoutId);
-      if (resp.ok) {
-        const data = await resp.json();
-        if (data) {
-          cloudList = Array.isArray(data) ? data.filter(Boolean) : Object.values(data);
-        }
-      }
-    } catch (restErr) {}
-
-    // 2. Se REST não trouxe dados, tenta SDK do Firebase com timeout rígido
-    if ((!cloudList || cloudList.length === 0) && db) {
-      try {
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 1500));
-        const snapPromise = db.ref('settings/courtCredentials').once('value');
-        const snap = await Promise.race([snapPromise, timeoutPromise]);
-        const val = snap.val();
-        if (val) {
-          cloudList = Array.isArray(val) ? val.filter(Boolean) : Object.values(val);
-        }
-      } catch (sdkErr) {}
-    }
-
-    if (cloudList && cloudList.length > 0) {
-      const valid = cloudList.filter(item => item && typeof item === 'object' && item.id);
-      if (valid.length > 0) {
-        mergeActiveCourtCredentials(valid);
-        try {
-          localStorage.setItem('brookasil_court_credentials', JSON.stringify(activeCourtCredentials));
-        } catch (e) {}
+    const cached = localStorage.getItem('brookasil_court_credentials');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        mergeActiveCourtCredentials(parsed);
         return true;
       }
     }
   } catch (err) {
-    console.warn('Erro ao carregar credenciais da nuvem:', err);
+    console.warn('Erro ao carregar credenciais locais:', err);
   }
   return false;
 }
@@ -3320,7 +3282,7 @@ function isMasterCred(str) {
   return false;
 }
 
-// Sincronização de credenciais de tribunais com o Firebase Realtime Database
+// Sincronização de credenciais de tribunais
 function initCourtCredentialsListener() {
   // 1. Carrega do cache local criptografado
   try {
@@ -3333,33 +3295,8 @@ function initCourtCredentialsListener() {
     }
   } catch (e) {}
 
-  // 2. Busca ativa instantânea via nuvem
+  // 2. Sincroniza estado
   fetchCloudCourtCredentials();
-
-  // 3. Ouve em tempo real as configurações salvas pelo TSE no nó settings/courtCredentials
-  if (db) {
-    db.ref('settings/courtCredentials').on('value', (snap) => {
-      const data = snap.val();
-      if (data) {
-        let list = [];
-        if (Array.isArray(data)) {
-          list = data.filter(Boolean);
-        } else if (typeof data === 'object') {
-          list = Object.values(data);
-        }
-        list = list.filter(item => item && typeof item === 'object' && item.id);
-        if (list.length > 0) {
-          mergeActiveCourtCredentials(list);
-          try {
-            localStorage.setItem('brookasil_court_credentials', JSON.stringify(activeCourtCredentials));
-          } catch (e) {}
-          if (isVaultUnlocked) {
-            renderAdminSecurityView();
-          }
-        }
-      }
-    });
-  }
 }
 
 function mergeActiveCourtCredentials(incomingList) {
@@ -3974,47 +3911,32 @@ function renderSecurityAuditLogs() {
   const container = document.getElementById('admin-security-audit-logs');
   if (!container) return;
 
-  if (!db) {
-    container.innerHTML = `<p class="text-xs text-slate-500">Conexão com registros de auditoria indisponível.</p>`;
+  const logs = getStoredAuditLogs()
+    .filter(l => l.action === 'CREDENTIAL_UPDATE');
+
+  if (logs.length === 0) {
+    container.innerHTML = `<p class="text-xs text-slate-500">Nenhuma alteração de credenciais registrada.</p>`;
     return;
   }
 
-  db.ref('auditLogs').limitToLast(25).once('value', (snap) => {
-    const data = snap.val();
-    if (!data) {
-      container.innerHTML = `<p class="text-xs text-slate-500">Nenhuma modificação de credencial registrada até o momento.</p>`;
-      return;
-    }
-
-    const logs = Object.entries(data)
-      .map(([id, val]) => ({ id, ...val }))
-      .filter(l => l.action === 'CREDENTIAL_UPDATE')
-      .reverse();
-
-    if (logs.length === 0) {
-      container.innerHTML = `<p class="text-xs text-slate-500">Nenhuma alteração de credenciais registrada.</p>`;
-      return;
-    }
-
-    container.innerHTML = logs.map(l => {
-      const timeStr = l.timestamp 
-        ? `${new Date(l.timestamp).toLocaleDateString('pt-BR')} às ${new Date(l.timestamp).toLocaleTimeString('pt-BR')}`
-        : 'Data não informada';
-      return `
-        <div class="p-3 rounded-xl bg-brand-navy/60 border border-brand-border flex items-center justify-between text-xs">
-          <div class="space-y-0.5">
-            <p class="font-bold text-white flex items-center gap-1.5">
-              <i data-lucide="key-round" class="w-3.5 h-3.5 text-brand-gold"></i>
-              ${l.courtName || l.courtId} — Login: <span class="font-mono text-brand-gold">${l.newLogin || 'Atualizado'}</span>
-            </p>
-            <p class="text-[11px] text-slate-400">Efetuado por: ${l.adminName || l.adminUser} (${l.reason || 'Alteração autorizada pelo TSE'})</p>
-          </div>
-          <span class="text-[10px] text-slate-500 font-mono">${timeStr}</span>
+  container.innerHTML = logs.map(l => {
+    const timeStr = l.timestamp 
+      ? `${new Date(l.timestamp).toLocaleDateString('pt-BR')} às ${new Date(l.timestamp).toLocaleTimeString('pt-BR')}`
+      : 'Data não informada';
+    return `
+      <div class="p-3 rounded-xl bg-brand-navy/60 border border-brand-border flex items-center justify-between text-xs">
+        <div class="space-y-0.5">
+          <p class="font-bold text-white flex items-center gap-1.5">
+            <i data-lucide="key-round" class="w-3.5 h-3.5 text-brand-gold"></i>
+            ${l.courtName || l.courtId} — Login: <span class="font-mono text-brand-gold">${l.newLogin || 'Atualizado'}</span>
+          </p>
+          <p class="text-[11px] text-slate-400">Efetuado por: ${l.adminName || l.adminUser} (${l.reason || 'Alteração autorizada pelo TSE'})</p>
         </div>
-      `;
-    }).join('');
-    initIcons();
-  });
+        <span class="text-[10px] text-slate-500 font-mono">${timeStr}</span>
+      </div>
+    `;
+  }).join('');
+  initIcons();
 }
 
 async function saveCourtCredential(courtId) {
@@ -4050,40 +3972,13 @@ async function saveCourtCredential(courtId) {
   court.updatedAt = new Date().toISOString();
   court.updatedBy = currentUser.login || 'tse';
 
-  // 1. Salva no Firebase Realtime Database sob settings/courtCredentials (SDK + REST para garantia absoluta)
-  const payload = {
-    id: court.id,
-    name: court.name,
-    login: newLogin,
-    encPass: court.encPass,
-    role: court.role,
-    state: court.state,
-    city: court.city,
-    type: court.type || court.role,
-    updatedAt: court.updatedAt,
-    updatedBy: court.updatedBy
-  };
-
-  if (db) {
-    try {
-      await db.ref(`settings/courtCredentials/${courtId}`).set(payload);
-    } catch (err) {
-      console.warn("Erro ao salvar no Firebase SDK:", err);
-    }
-  }
-
+  // 1. Cache local criptografado
   try {
-    await fetch(`${FIREBASE_RTDB_URL}/settings/courtCredentials/${courtId}.json`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    });
-  } catch (restErr) {
-    console.warn("Erro ao salvar via REST:", restErr);
-  }
+    localStorage.setItem('brookasil_court_credentials', JSON.stringify(activeCourtCredentials));
+  } catch (e) {}
 
   // 2. Registro no Livro de Auditoria Eleitoral
-  const auditEntry = {
+  saveAuditLog({
     action: 'CREDENTIAL_UPDATE',
     courtId: court.id,
     courtName: court.name,
@@ -4092,29 +3987,10 @@ async function saveCourtCredential(courtId) {
     adminUser: currentUser.login || 'tse',
     adminName: currentUser.name || 'Presidência TSE',
     adminRole: 'tse',
-    reason: `Alteração de credenciais do ${court.name} autorizada pelo TSE`,
-    timestamp: new Date().toISOString()
-  };
+    reason: `Alteração de credenciais do ${court.name} autorizada pelo TSE`
+  });
 
-  if (db) {
-    try {
-      await db.ref('auditLogs').push(auditEntry);
-    } catch (e) {}
-  }
-  try {
-    await fetch(`${FIREBASE_RTDB_URL}/auditLogs.json`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(auditEntry)
-    });
-  } catch (e) {}
-
-  // 3. Cache local criptografado
-  try {
-    localStorage.setItem('brookasil_court_credentials', JSON.stringify(activeCourtCredentials));
-  } catch (e) {}
-
-  showToast('success', `Credenciais do ${court.name} atualizadas e sincronizadas na nuvem!`);
+  showToast('success', `Credenciais do ${court.name} atualizadas com sucesso!`);
   renderAdminSecurityView();
 }
 
@@ -4140,70 +4016,30 @@ async function saveAllCourtCredentials() {
         court.updatedAt = new Date().toISOString();
         court.updatedBy = currentUser.login || 'tse';
         changedCount++;
-
-        const payload = {
-          id: court.id,
-          name: court.name,
-          login: court.login,
-          encPass: court.encPass,
-          role: court.role,
-          state: court.state,
-          city: court.city,
-          type: court.type || court.role,
-          updatedAt: court.updatedAt,
-          updatedBy: court.updatedBy
-        };
-
-        if (db) {
-          try {
-            await db.ref(`settings/courtCredentials/${court.id}`).set(payload);
-          } catch (e) {}
-        }
-        try {
-          await fetch(`${FIREBASE_RTDB_URL}/settings/courtCredentials/${court.id}.json`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-        } catch (e) {}
       }
     }
   }
 
   if (changedCount > 0) {
-    const auditEntry = {
+    try {
+      localStorage.setItem('brookasil_court_credentials', JSON.stringify(activeCourtCredentials));
+    } catch (e) {}
+
+    saveAuditLog({
       action: 'CREDENTIAL_UPDATE',
       courtName: 'Múltiplos Tribunais',
       count: changedCount,
       adminUser: currentUser.login || 'tse',
       adminName: currentUser.name || 'Presidência TSE',
       adminRole: 'tse',
-      reason: `Atualização em lote de ${changedCount} credenciais de tribunais pelo TSE`,
-      timestamp: new Date().toISOString()
-    };
+      reason: `Atualização em lote de ${changedCount} credenciais de tribunais pelo TSE`
+    });
 
-    if (db) {
-      try {
-        await db.ref('auditLogs').push(auditEntry);
-      } catch (e) {}
-    }
-    try {
-      await fetch(`${FIREBASE_RTDB_URL}/auditLogs.json`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(auditEntry)
-      });
-    } catch (e) {}
-
-    try {
-      localStorage.setItem('brookasil_court_credentials', JSON.stringify(activeCourtCredentials));
-    } catch (e) {}
-
-    showToast('success', `${changedCount} tribunais atualizados e sincronizados no cofre da nuvem com sucesso!`);
+    showToast('success', `${changedCount} tribunais atualizados no cofre com sucesso!`);
+    renderAdminSecurityView();
   } else {
     showToast('info', 'Nenhuma alteração detectada nas credenciais.');
   }
-  renderAdminSecurityView();
 }
 
 async function syncCredentialsWithCloud() {
@@ -4222,21 +4058,45 @@ async function syncCredentialsWithCloud() {
 // ========================================================
 // GESTÃO DE ELEIÇÕES (TSE EXCLUSIVO)
 // ========================================================
+function formatIsoForDateTimeInput(isoStr) {
+  if (!isoStr) return '';
+  const d = new Date(isoStr);
+  if (isNaN(d.getTime())) {
+    return String(isoStr).slice(0, 16);
+  }
+  const pad = (n) => String(n).padStart(2, '0');
+  const y = d.getFullYear();
+  const m = pad(d.getMonth() + 1);
+  const day = pad(d.getDate());
+  const h = pad(d.getHours());
+  const min = pad(d.getMinutes());
+  return `${y}-${m}-${day}T${h}:${min}`;
+}
+
 function openElectionModal() {
   const modal = document.getElementById('election-modal');
   if (!modal) return;
   if (currentElection) {
-    document.getElementById('modal-election-title').value = currentElection.title || '';
-    document.getElementById('modal-election-type').value = currentElection.type || 'Federal';
-    document.getElementById('modal-election-status').value = currentElection.status || 'open';
-    if (currentElection.applicationStart) {
-      document.getElementById('modal-election-start').value = currentElection.applicationStart.slice(0, 16);
+    const titleEl = document.getElementById('modal-election-title');
+    if (titleEl) titleEl.value = currentElection.title || '';
+
+    const typeEl = document.getElementById('modal-election-type');
+    if (typeEl) typeEl.value = currentElection.type || 'Federal';
+
+    const statusEl = document.getElementById('modal-election-status');
+    if (statusEl) statusEl.value = currentElection.status || 'open';
+
+    const startEl = document.getElementById('modal-election-start');
+    if (startEl && currentElection.applicationStart) {
+      startEl.value = formatIsoForDateTimeInput(currentElection.applicationStart);
     }
-    if (currentElection.applicationEnd) {
-      document.getElementById('modal-election-end').value = currentElection.applicationEnd.slice(0, 16);
+    const endEl = document.getElementById('modal-election-end');
+    if (endEl && currentElection.applicationEnd) {
+      endEl.value = formatIsoForDateTimeInput(currentElection.applicationEnd);
     }
-    if (currentElection.electionDate) {
-      document.getElementById('modal-election-date').value = currentElection.electionDate.slice(0, 16);
+    const dateEl = document.getElementById('modal-election-date');
+    if (dateEl && currentElection.electionDate) {
+      dateEl.value = formatIsoForDateTimeInput(currentElection.electionDate);
     }
   }
   modal.classList.remove('hidden');
@@ -4250,46 +4110,95 @@ function closeElectionModal() {
 
 async function handleSaveElection(e) {
   e.preventDefault();
-  if (!currentUser || currentUser.role !== 'tse') {
-    showToast('error', 'Apenas magistrados do TSE podem alterar eleições.');
+  const isTse = currentUser && (
+    String(currentUser.role || '').toLowerCase() === 'tse' || 
+    String(currentUser.id || '').toLowerCase() === 'tse' || 
+    String(currentUser.login || '').toLowerCase() === 'tse' ||
+    String(currentUser.role || '').toLowerCase() === 'admin'
+  );
+  if (!isTse) {
+    showToast('error', 'Apenas magistrados do TSE podem alterar as configurações da eleição.');
     return;
   }
 
-  const title = document.getElementById('modal-election-title').value.trim();
-  const type = document.getElementById('modal-election-type').value;
-  const status = document.getElementById('modal-election-status').value;
-  const start = document.getElementById('modal-election-start').value;
-  const end = document.getElementById('modal-election-end').value;
-  const date = document.getElementById('modal-election-date').value;
+  const titleInput = document.getElementById('modal-election-title');
+  const typeInput = document.getElementById('modal-election-type');
+  const statusInput = document.getElementById('modal-election-status');
+  const startInput = document.getElementById('modal-election-start');
+  const endInput = document.getElementById('modal-election-end');
+  const dateInput = document.getElementById('modal-election-date');
+
+  const title = (titleInput?.value || '').trim() || (currentElection && currentElection.title) || 'Eleições Gerais de Brookasil 2026';
+  const type = typeInput?.value || 'Federal';
+  const status = statusInput?.value || 'open';
+  const startVal = startInput?.value;
+  const endVal = endInput?.value;
+  const dateVal = dateInput?.value;
+
+  if (!dateVal) {
+    showToast('error', 'Por favor, selecione a data e horário da votação.');
+    return;
+  }
 
   try {
     const defaultVagas = type === 'Municipal' 
       ? { Prefeito: 10, Vereador: 20 }
       : { Presidente: 8, Governador: 8, Senador: 16, "Deputado Federal": 16, "Deputado Estadual": 16 };
 
+    const startDate = startVal ? new Date(startVal) : new Date();
+    const endDate = endVal ? new Date(endVal) : new Date(Date.now() + 30 * 86400000);
+    const electionDate = new Date(dateVal);
+
     const electionData = {
       title,
       type,
       status,
-      applicationStart: new Date(start).toISOString(),
-      applicationEnd: new Date(end).toISOString(),
-      electionDate: new Date(date).toISOString(),
+      applicationStart: isNaN(startDate.getTime()) ? (currentElection && currentElection.applicationStart) || new Date().toISOString() : startDate.toISOString(),
+      applicationEnd: isNaN(endDate.getTime()) ? (currentElection && currentElection.applicationEnd) || new Date().toISOString() : endDate.toISOString(),
+      electionDate: isNaN(electionDate.getTime()) ? (currentElection && currentElection.electionDate) || new Date().toISOString() : electionDate.toISOString(),
       vagas: (currentElection && currentElection.vagas) || defaultVagas,
       updatedAt: new Date().toISOString()
     };
 
-    if (currentElection && currentElection.id) {
-      await db.ref('elections/' + currentElection.id).update(electionData);
-    } else {
-      await db.ref('elections').push(electionData);
+    currentElection = { id: (currentElection && currentElection.id) || 'elec_2026', ...electionData };
+    
+    // 1. Salva localmente
+    try {
+      localStorage.setItem('brookasil_election', JSON.stringify(currentElection));
+    } catch (e) {}
+
+    // 2. Salva no Servidor Central para sincronizar com todos os acessos
+    try {
+      await fetch('/api/election', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(currentElection)
+      });
+    } catch (apiErr) {
+      console.warn('[Eleição] Aviso de sincronização com o servidor:', apiErr);
     }
 
+    const formattedElectionDate = formatElectionDateDisplay(currentElection.electionDate);
+
+    // 3. Registra Auditoria
+    saveAuditLog({
+      action: 'ELECTION_SETTINGS_UPDATE',
+      reason: `Atualização oficial das configurações eleitorais. Nova data de votação: ${formattedElectionDate}`,
+      adminUser: currentUser.login || currentUser.id || 'tse',
+      adminName: currentUser.name || 'Presidência do TSE',
+      adminRole: currentUser.role || 'tse'
+    });
+
     closeElectionModal();
-    showToast('success', 'Configurações da eleição salvas com sucesso!');
+    
+    // 4. ATUALIZAÇÃO IMEDIATA DA INTERFACE (Banner Home, Card Eleições, Cronômetro)
+    updateElectionUI();
     renderAdminElections();
+    
+    showToast('success', `Eleição salva! Data de votação atualizada para: ${formattedElectionDate}`);
   } catch (err) {
     console.error("Erro ao salvar eleição:", err);
-    showToast('error', 'Falha ao salvar eleição no Firebase.');
+    showToast('error', 'Falha ao salvar configurações da eleição.');
   }
 }
 
@@ -4302,6 +4211,10 @@ function renderAdminElections() {
     return;
   }
 
+  const startFormatted = formatElectionDateDisplay(currentElection.applicationStart);
+  const endFormatted = formatElectionDateDisplay(currentElection.applicationEnd);
+  const electionDateFormatted = formatElectionDateDisplay(currentElection.electionDate);
+
   container.innerHTML = `
     <div class="glass-panel p-6 rounded-2xl border border-brand-border flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
@@ -4312,15 +4225,20 @@ function renderAdminElections() {
           <span class="text-xs text-brand-electric font-semibold">${currentElection.type}</span>
         </div>
         <h4 class="text-lg font-bold text-white mt-1">${currentElection.title}</h4>
-        <p class="text-xs text-slate-400 mt-1">Inscrições: ${new Date(currentElection.applicationStart).toLocaleDateString('pt-BR')} até ${new Date(currentElection.applicationEnd).toLocaleDateString('pt-BR')} • Votação: ${new Date(currentElection.electionDate).toLocaleDateString('pt-BR')}</p>
+        <p class="text-xs text-slate-400 mt-1">
+          Inscrições: <span class="text-slate-300 font-medium">${startFormatted} até ${endFormatted}</span> 
+          • Data da Votação: <strong class="text-brand-gold font-mono font-bold">${electionDateFormatted}</strong>
+        </p>
       </div>
       <div class="flex items-center gap-2">
-        <button onclick="openElectionModal()" class="px-4 py-2 rounded-xl bg-brand-gold/20 hover:bg-brand-gold/30 border border-brand-gold/40 text-brand-gold text-xs font-bold transition">
-          Editar Configurações
+        <button onclick="openElectionModal()" class="px-4 py-2 rounded-xl bg-brand-gold/20 hover:bg-brand-gold/30 border border-brand-gold/40 text-brand-gold text-xs font-bold transition flex items-center gap-1.5">
+          <i data-lucide="edit-3" class="w-3.5 h-3.5"></i>
+          <span>Editar Configurações</span>
         </button>
       </div>
     </div>
   `;
+  initIcons();
 }
 
 // ========================================================
@@ -4563,7 +4481,6 @@ async function handleSaveParty(e) {
     if (partyId) {
       // Atualização de partido existente
       partyData.id = partyId;
-      await db.ref('parties/' + partyId).update(partyData);
 
       // Sincroniza estado local
       const idx = partiesList.findIndex(p => String(p.id) === String(partyId));
@@ -4571,8 +4488,12 @@ async function handleSaveParty(e) {
         partiesList[idx] = { ...partiesList[idx], ...partyData };
       }
 
+      try {
+        localStorage.setItem('brookasil_parties', JSON.stringify(partiesList));
+      } catch (e) {}
+
       // Registra Auditoria
-      await db.ref('auditLogs').push({
+      saveAuditLog({
         action: 'PARTY_UPDATE',
         partyId: String(partyId),
         partyAcronym: acronym || 'SEM_SIGLA',
@@ -4580,8 +4501,7 @@ async function handleSaveParty(e) {
         reason: `Atualização dos dados e registros do partido ${acronym || partyId}`,
         adminUser: (currentUser && currentUser.login) ? currentUser.login : 'tse',
         adminName: (currentUser && currentUser.name) ? currentUser.name : 'Magistrado',
-        adminRole: (currentUser && currentUser.role) ? currentUser.role : 'tse',
-        timestamp: new Date().toISOString()
+        adminRole: (currentUser && currentUser.role) ? currentUser.role : 'tse'
       });
 
       showToast('success', `Partido ${acronym} atualizado com sucesso no TSE!`);
@@ -4591,11 +4511,13 @@ async function handleSaveParty(e) {
       partyData.id = newId;
       partyData.createdAt = new Date().toISOString();
 
-      await db.ref('parties/' + newId).set(partyData);
       partiesList.push(partyData);
+      try {
+        localStorage.setItem('brookasil_parties', JSON.stringify(partiesList));
+      } catch (e) {}
 
       // Registra Auditoria
-      await db.ref('auditLogs').push({
+      saveAuditLog({
         action: 'PARTY_CREATE',
         partyId: String(newId),
         partyAcronym: acronym || 'SEM_SIGLA',
@@ -4603,8 +4525,7 @@ async function handleSaveParty(e) {
         reason: `Registro oficial da legenda partidária ${acronym}`,
         adminUser: (currentUser && currentUser.login) ? currentUser.login : 'tse',
         adminName: (currentUser && currentUser.name) ? currentUser.name : 'Magistrado',
-        adminRole: (currentUser && currentUser.role) ? currentUser.role : 'tse',
-        timestamp: new Date().toISOString()
+        adminRole: (currentUser && currentUser.role) ? currentUser.role : 'tse'
       });
 
       showToast('success', `Partido ${acronym} registrado com sucesso no TSE!`);
@@ -4616,7 +4537,7 @@ async function handleSaveParty(e) {
     populatePartySelects();
   } catch (err) {
     console.error("Erro ao salvar partido:", err);
-    showToast('error', 'Falha ao salvar partido no Firebase.');
+    showToast('error', 'Falha ao salvar partido.');
   }
 }
 
@@ -4710,11 +4631,8 @@ async function executeDeleteParty(partyId) {
   const adminRole = (currentUser && currentUser.role) ? currentUser.role : 'tse';
 
   try {
-    // Remove do Firebase
-    await db.ref('parties/' + targetId).remove();
-
-    // Registra Auditoria Imutável (Garantindo que NENHUM campo seja undefined)
-    await db.ref('auditLogs').push({
+    // Registra Auditoria Imutável
+    saveAuditLog({
       action: 'PARTY_DELETE',
       partyId: String(targetId),
       partyAcronym: acronym || 'DESCONHECIDO',
@@ -4722,12 +4640,14 @@ async function executeDeleteParty(partyId) {
       reason: `Exclusão definitiva da legenda partidária ${acronym} pelo TSE`,
       adminUser: adminUser,
       adminName: adminName,
-      adminRole: adminRole,
-      timestamp: new Date().toISOString()
+      adminRole: adminRole
     });
 
-    // Remove do array local
+    // Remove do array local e salva
     partiesList = partiesList.filter(x => String(x.id) !== String(targetId));
+    try {
+      localStorage.setItem('brookasil_parties', JSON.stringify(partiesList));
+    } catch (e) {}
 
     closeConfirmDeletePartyModal();
     closePartyModal();
@@ -4739,7 +4659,7 @@ async function executeDeleteParty(partyId) {
     populatePartySelects();
   } catch (err) {
     console.error("Erro ao excluir partido:", err);
-    showToast('error', 'Falha ao excluir partido no Firebase.');
+    showToast('error', 'Falha ao excluir partido.');
   }
 }
 
@@ -5362,7 +5282,7 @@ async function executeJudgment(newStatus) {
     }
 
     try {
-      await db.ref('candidates/' + c.id).update({
+      const updates = {
         status: 'pendente',
         rejectionReason: null,
         judgedBy: null,
@@ -5371,9 +5291,29 @@ async function executeJudgment(newStatus) {
         reopenedBy: currentUser.name,
         reopenedAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
-      });
+      };
 
-      await db.ref('auditLogs').push({
+      // Atualização no Banco Supabase (PostgreSQL)
+      try {
+        await fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates?id=eq.${c.id}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_CONFIG.anonKey,
+            'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ status: 'pendente' })
+        });
+      } catch (e) {}
+
+      // Atualiza na memória local
+      const localIdx = candidaciesList.findIndex(item => item.id === c.id || item.protocol === c.protocol);
+      if (localIdx >= 0) {
+        candidaciesList[localIdx] = { ...candidaciesList[localIdx], ...updates };
+      }
+
+      saveAuditLog({
+        action: 'CANDIDACY_REOPEN',
         candidateId: c.id || '',
         candidateProtocol: c.protocol || '',
         ballotName: c.ballotName || '',
@@ -5384,9 +5324,13 @@ async function executeJudgment(newStatus) {
         reason: reason || 'Processo reaberto e devolvido para a fila de julgamento do órgão competente',
         adminUser: currentUser.login || currentUser.id || 'tse',
         adminName: currentUser.name || 'Magistrado',
-        adminRole: currentUser.role || 'tse',
-        timestamp: new Date().toISOString()
+        adminRole: currentUser.role || 'tse'
       });
+
+      updateGlobalStats();
+      renderConfirmedCandidates();
+      renderAdminCandidacies();
+      updateAdminCharts();
 
       showToast('success', `Candidatura devolvida para PENDENTE. O ${compInfo.courtName} fará a homologação.`);
       closeJudgmentModal();
@@ -5436,39 +5380,34 @@ async function executeJudgment(newStatus) {
       candidaciesList[localIdx] = { ...candidaciesList[localIdx], ...updates };
     }
 
-    // 2. Se excluída, libera o número de urna no numberRegistry
-    if (newStatus === 'excluida') {
-      try {
-        fetch(`https://candidatura-cde-2-default-rtdb.firebaseio.com/numberRegistry/${c.electionId}/${c.office}/${c.number}.json`, { method: 'DELETE' }).catch(() => {});
-      } catch(e) {}
-      if (db) {
-        db.ref(`numberRegistry/${c.electionId}/${c.office}/${c.number}`).remove().catch(() => {});
-      }
-    }
-
-    // 3. Atualização REST Direta no Firebase RTDB (Super Resiliente)
+    // 2. Atualização no Banco Supabase (PostgreSQL)
     try {
-      fetch(`https://candidatura-cde-2-default-rtdb.firebaseio.com/candidates/${c.id}.json`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates)
-      }).catch(() => {});
-    } catch (e) {}
-
-    // 4. Atualização via Firebase SDK
-    if (db) {
-      try {
-        await Promise.race([
-          db.ref('candidates/' + c.id).update(updates),
-          new Promise(res => setTimeout(res, 2500))
-        ]);
-      } catch (e) {
-        console.warn('Aviso ao atualizar via SDK:', e.message);
+      if (newStatus === 'excluida') {
+        await fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates?id=eq.${c.id}`, {
+          method: 'DELETE',
+          headers: {
+            'apikey': SUPABASE_CONFIG.anonKey,
+            'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+          }
+        });
+      } else {
+        await fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates?id=eq.${c.id}`, {
+          method: 'PATCH',
+          headers: {
+            'apikey': SUPABASE_CONFIG.anonKey,
+            'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ status: newStatus })
+        });
       }
+    } catch (e) {
+      console.warn('[Supabase] Aviso ao gravar julgamento:', e);
     }
 
-    // 5. Registra Log Imutável de Auditoria
-    const auditEntry = {
+    // 3. Registra Log Imutável de Auditoria
+    saveAuditLog({
+      action: 'CANDIDACY_JUDGMENT',
       candidateId: c.id || '',
       candidateProtocol: c.protocol || '',
       ballotName: c.ballotName || '',
@@ -5481,23 +5420,8 @@ async function executeJudgment(newStatus) {
       adminName: currentUser.name || 'Magistrado',
       adminRole: currentUser.role || 'tse',
       competentCourt: actingCourt,
-      originatingCourt: compInfo.courtName,
-      timestamp: new Date().toISOString()
-    };
-
-    try {
-      fetch('https://candidatura-cde-2-default-rtdb.firebaseio.com/auditLogs.json', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(auditEntry)
-      }).catch(() => {});
-    } catch(e) {}
-
-    if (db) {
-      try {
-        await db.ref('auditLogs').push(auditEntry);
-      } catch (e) {}
-    }
+      originatingCourt: compInfo.courtName
+    });
 
     // Atualização imediata de todas as telas
     updateGlobalStats();
@@ -5744,40 +5668,50 @@ async function handleTseEditCandidateSubmit(e) {
   };
 
   try {
-    // 1. Atualiza no Firebase Realtime Database
-    if (db) {
-      await db.ref('candidates/' + candId).update(updatedCandidate);
-
-      // Se mudou o número e o anterior era diferente, atualiza registro de número
-      if (selectedCandForTseEdit.number !== numberVal) {
-        if (selectedCandForTseEdit.number) {
-          await db.ref(`numberRegistry/${selectedCandForTseEdit.electionId || 'brk2026'}/${selectedCandForTseEdit.office}/${selectedCandForTseEdit.number}`).remove().catch(() => {});
-        }
-        await db.ref(`numberRegistry/${selectedCandForTseEdit.electionId || 'brk2026'}/${office}/${numberVal}`).set({
-          candidateId: candId,
-          ballotName: ballotName,
-          partyAcronym: selectedParty?.acronym || '',
-          reservedAt: new Date().toISOString(),
-          reservedByTse: true
-        }).catch(() => {});
-      }
-
-      // 2. Grava log imutável de auditoria no TSE
-      await db.ref('auditLogs').push({
-        action: 'tse_candidate_rectification',
-        candidateId: candId,
-        candidateProtocol: selectedCandForTseEdit.protocol || '',
-        ballotName: ballotName,
-        office: office,
-        number: numberVal,
-        party: selectedParty?.acronym || '',
-        reason: auditReason,
-        adminUser: currentUser.login || 'tse',
-        adminName: currentUser.name || 'Presidência do TSE',
-        adminRole: 'tse',
-        timestamp: new Date().toISOString()
+    // 1. Atualiza no Supabase (PostgreSQL)
+    try {
+      await fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates?id=eq.${candId}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': SUPABASE_CONFIG.anonKey,
+          'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          fullname: fullName,
+          ballotname: ballotName,
+          number: String(numberVal),
+          office: office,
+          partyid: partyId,
+          partyacronym: selectedParty?.acronym || selectedCandForTseEdit.partyAcronym,
+          partyname: selectedParty?.name || selectedCandForTseEdit.partyName,
+          partynumber: selectedParty?.number || selectedCandForTseEdit.partyNumber,
+          state: stateId || 'Brookhaven',
+          city: cityId || '',
+          status: status,
+          photo: newPhoto,
+          tiktok: tiktok || '',
+          vicename: viceName || ''
+        })
       });
+    } catch (e) {
+      console.warn('[Supabase] Erro ao retificar candidato:', e);
     }
+
+    // 2. Grava log imutável de auditoria no TSE
+    saveAuditLog({
+      action: 'tse_candidate_rectification',
+      candidateId: candId,
+      candidateProtocol: selectedCandForTseEdit.protocol || '',
+      ballotName: ballotName,
+      office: office,
+      number: numberVal,
+      party: selectedParty?.acronym || '',
+      reason: auditReason,
+      adminUser: currentUser.login || 'tse',
+      adminName: currentUser.name || 'Presidência do TSE',
+      adminRole: 'tse'
+    });
 
     // 3. Atualiza localmente no array candidaciesList
     const idx = candidaciesList.findIndex(c => String(c.id) === String(candId));
@@ -5920,23 +5854,46 @@ function updateAdminCharts() {
 }
 
 async function refreshAdminData(silent = false) {
-  if (!silent) showToast('info', 'Sincronizando candidaturas com o Firebase...');
+  if (!silent) showToast('info', 'Sincronizando candidaturas com o banco de dados...');
 
   let cloudCandidates = null;
 
-  // 1. Consulta REST Direta ao Firebase RTDB
+  // 1. Consulta ao Supabase (leve e instantânea)
   try {
-    const res = await fetch('https://candidatura-cde-2-default-rtdb.firebaseio.com/candidates.json');
+    const res = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates?select=id,protocol,fullname,ballotname,number,office,partyid,partyacronym,partyname,partynumber,state,city,status,photo,tiktok,vicename`, {
+      headers: {
+        'apikey': SUPABASE_CONFIG.anonKey,
+        'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+      }
+    });
     if (res.ok) {
       const data = await res.json();
-      if (data && typeof data === 'object' && Object.keys(data).length > 0) {
-        cloudCandidates = Object.entries(data)
-          .map(([id, val]) => (val && typeof val === 'object') ? ({ id: val.id || id, ...val, fbKey: id }) : null)
-          .filter(Boolean);
+      if (Array.isArray(data) && data.length > 0) {
+        cloudCandidates = data.map(c => ({
+          ...c,
+          id: String(c.id),
+          protocol: c.protocol,
+          fullName: c.fullname || c.fullName,
+          ballotName: c.ballotname || c.ballotName,
+          number: c.number,
+          office: c.office,
+          partyId: c.partyid || c.partyId,
+          partyAcronym: c.partyacronym || c.partyAcronym,
+          partyName: c.partyname || c.partyName,
+          partyNumber: c.partynumber || c.partyNumber,
+          state: c.state,
+          stateId: c.state,
+          city: c.city,
+          cityId: c.city,
+          status: c.status,
+          photo: c.photo,
+          tiktok: c.tiktok,
+          viceName: c.vicename || c.viceName
+        }));
       }
     }
   } catch (e) {
-    console.warn('[Sync] Falha na consulta REST do Firebase:', e);
+    console.warn('[Sync Supabase] Falha na consulta:', e);
   }
 
   // 2. Se REST falhar, consulta o backend Express
@@ -5985,12 +5942,12 @@ async function refreshAdminData(silent = false) {
   }
 }
 
-// Sincronizador periódico em segundo plano para o painel administrativo (a cada 7 segundos)
+// Sincronizador periódico em segundo plano para o painel administrativo (a cada 20 segundos)
 setInterval(() => {
   if (currentUser) {
     refreshAdminData(true);
   }
-}, 7000);
+}, 20000);
 
 // ========================================================
 // SISTEMA DE TOASTS
@@ -6043,9 +6000,10 @@ window.renderAdminCandidacies = renderAdminCandidacies;
 window.executeJudgment = executeJudgment;
 
 // ========================================================
-// DIAGNÓSTICO DO FIREBASE (CONSOLE BROWSER & INTEGRAÇÃO)
 // ========================================================
-window.testFirebaseConnection = window.diagnosticoFirebase = async function() {
+// DIAGNÓSTICO DO SUPABASE (CONSOLE BROWSER & INTEGRAÇÃO)
+// ========================================================
+window.testSupabaseConnection = window.diagnosticoSupabase = window.testFirebaseConnection = window.diagnosticoFirebase = async function() {
   const styles = {
     title: "background: #1e3a8a; color: #ffffff; font-weight: bold; padding: 4px 10px; border-radius: 4px; font-size: 13px;",
     success: "color: #10b981; font-weight: bold; font-size: 12px;",
@@ -6054,70 +6012,44 @@ window.testFirebaseConnection = window.diagnosticoFirebase = async function() {
     info: "color: #38bdf8; font-weight: normal; font-size: 11px;"
   };
 
-  console.log("%c🇬🇦 TSE BROOKASIL | DIAGNÓSTICO DE CONEXÃO FIREBASE", styles.title);
-  console.log("%cIniciando testes de conectividade e leitura de nó de teste...", styles.info);
-
-  if (!db) {
-    console.error("%c[FALHA] Objeto do banco de dados (db) não foi inicializado!", styles.error);
-    return { success: false, error: "Firebase DB não inicializado" };
-  }
+  console.log("%c🇬🇦 TSE BROOKASIL | DIAGNÓSTICO DE CONEXÃO SUPABASE (POSTGRESQL)", styles.title);
+  console.log("%cIniciando testes de conectividade com a API REST do Supabase...", styles.info);
 
   try {
-    // 1. Grava e lê nó de teste
-    const testRef = db.ref('_connection_test');
-    const testData = {
-      clientPingAt: new Date().toISOString(),
-      status: "online",
-      agent: navigator.userAgent
-    };
+    const resp = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates?select=*`, {
+      headers: {
+        'apikey': SUPABASE_CONFIG.anonKey,
+        'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+      }
+    });
 
-    await testRef.set(testData);
-    const testSnap = await testRef.once('value');
-    const readVal = testSnap.val();
-
-    if (readVal && readVal.status === "online") {
-      console.log("%c[OK] Conexão com o Firebase bem sucedida! Nó de teste '/_connection_test' lido com sucesso.", styles.success);
-    } else {
-      console.warn("%c[ATENÇÃO] Nó de teste gravado, mas retorno foi inesperado.", styles.warn);
+    if (!resp.ok) {
+      throw new Error(`Status ${resp.status} na API do Supabase`);
     }
 
-    // 2. Leitura e verificação de candidatos
-    const candsSnap = await db.ref('candidates').once('value');
-    const candsData = candsSnap.val() || {};
-    const candsList = Object.entries(candsData).map(([id, val]) => ({ id, ...val }));
+    const candsList = await resp.json();
     const totalCands = candsList.length;
-
     const deferidas = candsList.filter(c => c.status === 'deferida').length;
     const pendentes = candsList.filter(c => c.status === 'pendente').length;
     const indeferidas = candsList.filter(c => c.status === 'indeferida').length;
 
-    console.log(`%c[OK] Candidatos verificados no Firebase: ${totalCands} registros encontrados.`, styles.success);
+    console.log(`%c[OK] Supabase conectado com sucesso! ${totalCands} candidatos registrados no banco.`, styles.success);
     console.log(`%c↳ Deferidas: ${deferidas} | Pendentes: ${pendentes} | Indeferidas: ${indeferidas}`, styles.info);
 
-    // 3. Leitura e verificação de partidos
-    const partiesSnap = await db.ref('parties').once('value');
-    const partiesData = partiesSnap.val() || {};
-    const partiesCount = Array.isArray(partiesData) 
-      ? partiesData.filter(Boolean).length 
-      : Object.keys(partiesData).length;
-
-    console.log(`%c[OK] Partidos verificados no Firebase: ${partiesCount} legendas registradas (Esperado: 44).`, styles.success);
-
-    console.log("%c✅ Todos os serviços do Firebase estão 100% operacionais e sincronizados!", styles.success);
     if (typeof showToast === 'function') {
-      showToast('success', `Conexão Firebase OK! ${totalCands} candidatos e ${partiesCount} partidos operacionais.`);
+      showToast('success', `Conexão Supabase OK! ${totalCands} candidatos operacionais.`);
     }
+
     return {
       success: true,
-      databaseURL: firebaseConfig.databaseURL,
+      url: SUPABASE_CONFIG.url,
       candidatesCount: totalCands,
-      partiesCount: partiesCount,
       statusBreakdown: { deferidas, pendentes, indeferidas }
     };
   } catch (err) {
-    console.error("%c[ERRO] Falha durante o teste de conexão com o Firebase:", styles.error, err);
+    console.error("%c[ERRO] Falha durante o teste de conexão com o Supabase:", styles.error, err);
     if (typeof showToast === 'function') {
-      showToast('error', `Falha de conexão com Firebase: ${err.message || err}`);
+      showToast('error', `Falha de conexão com Supabase: ${err.message || err}`);
     }
     return { success: false, error: err.message || err };
   }
