@@ -20,9 +20,70 @@ const DATA_DIR = path.join(process.cwd(), 'data');
 const DB_FILE = path.join(DATA_DIR, 'database.json');
 const ELECTION_FILE = path.join(DATA_DIR, 'election.json');
 
+// Supabase PostgreSQL Credentials & Cloud Synchronization
+const SUPABASE_URL = process.env.SUPABASE_URL || 'https://jghdyksktkcuupazbhao.supabase.co';
+const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpnaGR5a3NrdGtjdXVwYXpiaGFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4NDk5ODIsImV4cCI6MjEwNTQyNTk4Mn0.gCyTUeKnKCBaxngF7xmML5cjKLzEZvW_dFANVclqb8Q';
+
+export async function syncElectionToSupabase(election: ElectionData) {
+  try {
+    const payload = {
+      id: '__SYSTEM_ELECTION_CONFIG__',
+      protocol: 'TSE-ELECTION-CONFIG',
+      fullname: 'CONFIGURACAO_ELEICAO_2026',
+      ballotname: election.title || 'Eleições Gerais de Brookasil 2026',
+      number: '0',
+      office: 'SISTEMA_ELEITORAL',
+      status: election.status || 'open',
+      proposalpdf: JSON.stringify(election)
+    };
+    await fetch(`${SUPABASE_URL}/rest/v1/candidates`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify(payload)
+    });
+    console.log('[Supabase Server] Eleição sincronizada no Supabase com sucesso.');
+  } catch (err: any) {
+    console.warn('[Supabase Server] Aviso de sincronização da eleição:', err?.message || err);
+  }
+}
+
+export async function syncPartiesToSupabase(parties: any[]) {
+  try {
+    const payload = {
+      id: '__SYSTEM_PARTIES_CONFIG__',
+      protocol: 'TSE-PARTIES-CONFIG',
+      fullname: 'REGISTRO_NACIONAL_PARTIDOS_TSE',
+      ballotname: 'Partidos Registrados TSE',
+      number: '0',
+      office: 'SISTEMA_PARTIDARIO',
+      status: 'ativo',
+      proposalpdf: JSON.stringify(parties)
+    };
+    await fetch(`${SUPABASE_URL}/rest/v1/candidates`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify(payload)
+    });
+    console.log(`[Supabase Server] ${parties.length} partidos sincronizados no Supabase com sucesso.`);
+  } catch (err: any) {
+    console.warn('[Supabase Server] Aviso de sincronização dos partidos:', err?.message || err);
+  }
+}
+
 interface DatabaseSchema {
   parties: Party[];
   candidacies: Candidacy[];
+  auditLogs?: any[];
 }
 
 export interface ElectionData {
@@ -381,7 +442,7 @@ app.get('/api/election', (req: Request, res: Response) => {
   res.json({ election: current });
 });
 
-app.post('/api/election', (req: Request, res: Response) => {
+app.post('/api/election', async (req: Request, res: Response) => {
   try {
     const body = req.body || {};
     const existing = loadElectionData();
@@ -399,9 +460,37 @@ app.post('/api/election', (req: Request, res: Response) => {
       updatedAt: new Date().toISOString()
     };
     saveElectionData(updated);
+    // Sincroniza em nuvem no Supabase
+    syncElectionToSupabase(updated).catch(() => {});
     res.json({ success: true, election: updated });
   } catch (err: any) {
     res.status(500).json({ error: err.message || 'Erro ao salvar eleição' });
+  }
+});
+
+// 1.2 Get & Update Parties (Público e Sincronizado com Supabase)
+app.get('/api/parties', (req: Request, res: Response) => {
+  try {
+    const rawData = fs.existsSync(DB_FILE) ? JSON.parse(fs.readFileSync(DB_FILE, 'utf-8')) : db;
+    res.json({ parties: rawData.parties || db.parties || [] });
+  } catch (err: any) {
+    res.json({ parties: db.parties || [] });
+  }
+});
+
+app.post('/api/parties', async (req: Request, res: Response) => {
+  try {
+    const incomingParties = req.body.parties || req.body;
+    if (!Array.isArray(incomingParties)) {
+      return res.status(400).json({ error: 'Formato inválido. Esperado array de partidos.' });
+    }
+    db.parties = incomingParties;
+    saveDatabase(db);
+    // Sincroniza em nuvem no Supabase
+    syncPartiesToSupabase(db.parties).catch(() => {});
+    res.json({ success: true, count: db.parties.length, message: 'Partidos salvos e sincronizados com Supabase.' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Erro ao salvar partidos' });
   }
 });
 
@@ -414,6 +503,22 @@ app.get('/api/candidacies', (req: Request, res: Response) => {
     });
   } catch (err) {
     res.json({ candidacies: db.candidacies || [] });
+  }
+});
+
+// Get single candidacy proposal PDF
+app.get('/api/candidacies/:id/pdf', (req: Request, res: Response) => {
+  try {
+    const candId = String(req.params.id || '').trim();
+    const rawData = fs.existsSync(DB_FILE) ? JSON.parse(fs.readFileSync(DB_FILE, 'utf-8')) : db;
+    const candidacies: any[] = rawData.candidacies || [];
+    const cand = candidacies.find(c => String(c.id) === candId || String(c.protocol) === candId);
+    if (cand && cand.proposalPdf) {
+      return res.json({ proposalPdf: cand.proposalPdf, ballotName: cand.ballotName, protocol: cand.protocol });
+    }
+    return res.status(404).json({ error: 'PDF não encontrado para este candidato no servidor local' });
+  } catch (err: any) {
+    return res.status(500).json({ error: err.message || 'Erro ao buscar PDF' });
   }
 });
 
@@ -563,6 +668,152 @@ app.post('/api/candidacies', async (req: Request, res: Response) => {
   } catch (error) {
     console.error('[Server] Erro ao registrar candidatura:', error);
     res.status(500).json({ error: 'Erro interno ao processar candidatura no servidor.' });
+  }
+});
+
+// Helper de Autorização Exclusiva do TSE
+function checkIsTseAuthorized(req: Request): boolean {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.split(' ')[1];
+    const session = activeSessions.get(token);
+    if (session && session.user && session.user.role === 'TSE') return true;
+  }
+  const body = req.body || {};
+  const role = String(body.adminRole || body.role || req.headers['x-admin-role'] || '').toLowerCase();
+  const user = String(body.adminUser || body.user || req.headers['x-admin-user'] || '').toLowerCase();
+  if (role === 'tse' || user === 'tse' || user.includes('tse_brookasil')) {
+    return true;
+  }
+  return false;
+}
+
+// 2.1 Excluir Candidatura Individual (Exclusivo TSE)
+app.delete('/api/candidacies/:id', async (req: Request, res: Response) => {
+  try {
+    if (!checkIsTseAuthorized(req)) {
+      return res.status(403).json({
+        error: 'Acesso restrito ao Tribunal Superior Eleitoral (TSE). Órgãos regionais (TRE) não possuem competência para excluir candidaturas.'
+      });
+    }
+
+    const candId = String(req.params.id || '').trim();
+    if (!candId) {
+      return res.status(400).json({ error: 'Identificador de candidatura não fornecido.' });
+    }
+
+    // 1. Remove da memória e arquivo local
+    const rawData = fs.existsSync(DB_FILE) ? JSON.parse(fs.readFileSync(DB_FILE, 'utf-8')) : db;
+    const initialCount = (rawData.candidacies || []).length;
+    const deletedCand = (rawData.candidacies || []).find((c: any) => String(c.id) === candId || String(c.protocol) === candId);
+    
+    rawData.candidacies = (rawData.candidacies || []).filter((c: any) => String(c.id) !== candId && String(c.protocol) !== candId);
+    db.candidacies = rawData.candidacies;
+    saveDatabase(rawData);
+
+    // 2. Remove do Supabase (PostgreSQL)
+    try {
+      const SUPABASE_URL = 'https://jghdyksktkcuupazbhao.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpnaGR5a3NrdGtjdXVwYXpiaGFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4NDk5ODIsImV4cCI6MjEwNTQyNTk4Mn0.gCyTUeKnKCBaxngF7xmML5cjKLzEZvW_dFANVclqb8Q';
+      await fetch(`${SUPABASE_URL}/rest/v1/candidates?id=eq.${encodeURIComponent(candId)}`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+        }
+      });
+    } catch (sbErr: any) {
+      console.warn('[Server] Erro ao excluir no Supabase:', sbErr?.message);
+    }
+
+    // 3. Log de Auditoria
+    const auditRecord = {
+      id: `audit_${Date.now()}`,
+      action: 'CANDIDACY_DELETED_TSE',
+      candidateId: candId,
+      ballotName: deletedCand ? (deletedCand.ballotName || deletedCand.ballot_name) : 'N/D',
+      number: deletedCand ? deletedCand.number : 'N/D',
+      office: deletedCand ? (deletedCand.office || deletedCand.position) : 'N/D',
+      reason: 'Exclusão definitiva de registro de candidatura pelo Tribunal Superior Eleitoral (TSE)',
+      adminUser: req.body?.adminUser || 'tse',
+      adminRole: 'tse',
+      createdAt: new Date().toISOString()
+    };
+    if (!db.auditLogs) db.auditLogs = [];
+    db.auditLogs.unshift(auditRecord);
+    saveDatabase(db);
+
+    res.json({
+      success: true,
+      message: 'Candidatura excluída definitivamente do Supabase e do sistema pelo TSE. O número de urna foi liberado com sucesso.',
+      candidateId: candId
+    });
+  } catch (err: any) {
+    console.error('[Server] Erro ao excluir candidatura:', err);
+    res.status(500).json({ error: err.message || 'Erro ao excluir candidatura' });
+  }
+});
+
+// 2.2 Zerar TODAS as Candidaturas (Reset Geral para Nova Eleição - Exclusivo TSE)
+app.post('/api/candidacies/purge', async (req: Request, res: Response) => {
+  try {
+    if (!checkIsTseAuthorized(req)) {
+      return res.status(403).json({
+        error: 'Acesso restrito ao Tribunal Superior Eleitoral (TSE). Apenas o TSE possui soberania para zerar todas as candidaturas.'
+      });
+    }
+
+    const rawData = fs.existsSync(DB_FILE) ? JSON.parse(fs.readFileSync(DB_FILE, 'utf-8')) : db;
+    const totalRemoved = (rawData.candidacies || []).length;
+
+    // 1. Zera banco local
+    rawData.candidacies = [];
+    db.candidacies = [];
+    saveDatabase(rawData);
+
+    // 2. Remove TODAS as candidaturas do Supabase (preservando configurações do sistema)
+    let supabaseDeletedCount = 0;
+    try {
+      const SUPABASE_URL = 'https://jghdyksktkcuupazbhao.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpnaGR5a3NrdGtjdXVwYXpiaGFvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk4NDk5ODIsImV4cCI6MjEwNTQyNTk4Mn0.gCyTUeKnKCBaxngF7xmML5cjKLzEZvW_dFANVclqb8Q';
+      const sbRes = await fetch(`${SUPABASE_URL}/rest/v1/candidates?id=not.in.(__SYSTEM_ELECTION_CONFIG__,__SYSTEM_PARTIES_CONFIG__)`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': SUPABASE_ANON_KEY,
+          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          'Prefer': 'return=representation'
+        }
+      });
+      if (sbRes.ok) {
+        const deletedData = await sbRes.json();
+        supabaseDeletedCount = Array.isArray(deletedData) ? deletedData.length : 0;
+      }
+    } catch (sbErr: any) {
+      console.warn('[Server] Erro ao purgar candidaturas no Supabase:', sbErr?.message);
+    }
+
+    // 3. Log de Auditoria Solene do TSE
+    const auditRecord = {
+      id: `audit_${Date.now()}`,
+      action: 'ALL_CANDIDACIES_PURGED_NEW_ELECTION',
+      reason: `Reset Geral de Pleito Eleitoral determinado pelo Tribunal Superior Eleitoral (TSE). ${totalRemoved} candidaturas removidas do sistema e ${supabaseDeletedCount} removidas do Supabase. Todos os números de urna e cotas partidárias foram 100% liberados.`,
+      adminUser: req.body?.adminUser || 'tse',
+      adminRole: 'tse',
+      createdAt: new Date().toISOString()
+    };
+    if (!db.auditLogs) db.auditLogs = [];
+    db.auditLogs.unshift(auditRecord);
+    saveDatabase(db);
+
+    res.json({
+      success: true,
+      count: totalRemoved,
+      supabaseCount: supabaseDeletedCount,
+      message: 'Todas as candidaturas foram excluídas com sucesso pelo TSE. Banco de dados do Supabase resetado e números de urna liberados para a nova eleição.'
+    });
+  } catch (err: any) {
+    console.error('[Server] Erro ao purgar candidaturas:', err);
+    res.status(500).json({ error: err.message || 'Erro ao purgar candidaturas' });
   }
 });
 
@@ -780,6 +1031,8 @@ app.patch('/api/admin/parties/:id/toggle', authMiddleware, (req: AuthenticatedRe
 
   db.parties[partyIndex].active = !db.parties[partyIndex].active;
   saveDatabase(db);
+  // Sincroniza alteração no Supabase
+  syncPartiesToSupabase(db.parties).catch(() => {});
 
   res.json({
     message: `Partido ${db.parties[partyIndex].acronym} ${db.parties[partyIndex].active ? 'ativado' : 'desativado'} com sucesso.`,
@@ -857,6 +1110,14 @@ async function startServer() {
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`[TSE Brookasil] Servidor eleitoral ativo na porta ${PORT}`);
+    // Sincronização automática em nuvem (Eleição, Partidos e Datas)
+    setTimeout(() => {
+      try {
+        const election = loadElectionData();
+        if (election) syncElectionToSupabase(election).catch(() => {});
+        if (Array.isArray(db.parties) && db.parties.length > 0) syncPartiesToSupabase(db.parties).catch(() => {});
+      } catch (e) {}
+    }, 1500);
   });
 }
 

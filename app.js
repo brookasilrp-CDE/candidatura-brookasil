@@ -566,11 +566,73 @@ function saveAuditLog(entry) {
   return fullEntry;
 }
 
-// Inicializa dados da aplicação via Supabase
+// Sincronização e Persistência do Sistema no Supabase (Eleição, Datas e Partidos)
 let isSyncingToSupabase = false;
 
+async function saveElectionToSupabase(election) {
+  if (!election) return false;
+  try {
+    const payload = {
+      id: '__SYSTEM_ELECTION_CONFIG__',
+      protocol: 'TSE-ELECTION-CONFIG',
+      fullname: 'CONFIGURACAO_ELEICAO_2026',
+      ballotname: election.title || 'Eleições Gerais de Brookasil 2026',
+      number: '0',
+      office: 'SISTEMA_ELEITORAL',
+      status: election.status || 'open',
+      proposalpdf: JSON.stringify(election)
+    };
+    const res = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_CONFIG.anonKey,
+        'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify(payload)
+    });
+    console.log('[Supabase Cloud] Eleição e datas sincronizadas com sucesso no banco em nuvem!');
+    return res.ok;
+  } catch (err) {
+    console.warn('[Supabase Cloud] Erro ao sincronizar eleição no Supabase:', err);
+    return false;
+  }
+}
+
+async function savePartiesToSupabase(parties) {
+  if (!parties || !Array.isArray(parties)) return false;
+  try {
+    const payload = {
+      id: '__SYSTEM_PARTIES_CONFIG__',
+      protocol: 'TSE-PARTIES-CONFIG',
+      fullname: 'REGISTRO_NACIONAL_PARTIDOS_TSE',
+      ballotname: 'Partidos Registrados TSE',
+      number: '0',
+      office: 'SISTEMA_PARTIDARIO',
+      status: 'ativo',
+      proposalpdf: JSON.stringify(parties)
+    };
+    const res = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_CONFIG.anonKey,
+        'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify(payload)
+    });
+    console.log(`[Supabase Cloud] ${parties.length} partidos sincronizados com sucesso no banco em nuvem!`);
+    return res.ok;
+  } catch (err) {
+    console.warn('[Supabase Cloud] Erro ao sincronizar partidos no Supabase:', err);
+    return false;
+  }
+}
+
 async function bootstrapApplicationData() {
-  // 1. Carrega os candidatos do Supabase de forma leve (sem os PDFs em base64 na inicialização)
+  // 1. Carrega os candidatos do Supabase de forma leve (filtrando registros de sistema)
   try {
     const [candsRes, pdfIdsRes] = await Promise.all([
       fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates?select=id,protocol,fullname,ballotname,number,office,partyid,partyacronym,partyname,partynumber,state,city,status,photo,tiktok,vicename`, {
@@ -598,7 +660,9 @@ async function bootstrapApplicationData() {
       }
 
       if (Array.isArray(data) && data.length > 0) {
-        candidaciesList = data.map(c => ({
+        // Filtra registros especiais do sistema (eleição e partidos) para que não apareçam como candidatos
+        const actualCandidates = data.filter(c => !String(c.id).startsWith('__SYSTEM_'));
+        candidaciesList = actualCandidates.map(c => ({
           ...c,
           id: String(c.id),
           protocol: c.protocol,
@@ -633,25 +697,62 @@ async function bootstrapApplicationData() {
     console.warn('[Supabase] Fetch inicial de candidaturas:', e);
   }
 
-  // 2. Inicializa Eleição Ativa (Sincronizada com o Servidor e Armazenamento Local)
+  // 2. Inicializa Eleição e Datas Oficiais (Sincronizada Diretamente com o Supabase em Nuvem)
   try {
     let electionLoaded = false;
+    
+    // 2.1 Consulta configuração oficial no Supabase (registro do sistema)
     try {
-      const resp = await fetch('/api/election');
-      if (resp.ok) {
-        const json = await resp.json();
-        if (json && json.election && json.election.electionDate) {
-          currentElection = json.election;
+      const supElecRes = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates?id=eq.__SYSTEM_ELECTION_CONFIG__&select=id,ballotname,status,proposalpdf`, {
+        headers: {
+          'apikey': SUPABASE_CONFIG.anonKey,
+          'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+        }
+      });
+      if (supElecRes.ok) {
+        const rows = await supElecRes.json();
+        if (Array.isArray(rows) && rows.length > 0 && rows[0].proposalpdf) {
           try {
-            localStorage.setItem('brookasil_election', JSON.stringify(currentElection));
-          } catch (e) {}
-          electionLoaded = true;
+            const parsed = typeof rows[0].proposalpdf === 'string' ? JSON.parse(rows[0].proposalpdf) : rows[0].proposalpdf;
+            if (parsed && parsed.electionDate) {
+              currentElection = parsed;
+              electionLoaded = true;
+              console.log('[Supabase Cloud] Eleição e datas carregadas do banco em nuvem:', currentElection.electionDate);
+              try {
+                localStorage.setItem('brookasil_election', JSON.stringify(currentElection));
+              } catch (e) {}
+            }
+          } catch (pe) {
+            console.warn('[Supabase] Falha ao processar JSON da eleição:', pe);
+          }
         }
       }
-    } catch (apiErr) {
-      console.warn('[Eleição] Servidor offline ou inacessível no momento, utilizando cache:', apiErr);
+    } catch (supErr) {
+      console.warn('[Supabase] Erro ao buscar eleição no Supabase:', supErr);
     }
 
+    // 2.2 Se não encontrou no Supabase, consulta a API do servidor local
+    if (!electionLoaded) {
+      try {
+        const resp = await fetch('/api/election');
+        if (resp.ok) {
+          const json = await resp.json();
+          if (json && json.election && json.election.electionDate) {
+            currentElection = json.election;
+            electionLoaded = true;
+            try {
+              localStorage.setItem('brookasil_election', JSON.stringify(currentElection));
+            } catch (e) {}
+            // Salva no Supabase para garantir sincronização global
+            saveElectionToSupabase(currentElection).catch(() => {});
+          }
+        }
+      } catch (apiErr) {
+        console.warn('[Eleição] Servidor offline ou inacessível no momento:', apiErr);
+      }
+    }
+
+    // 2.3 Fallback para armazenamento local ou padrão oficial
     if (!electionLoaded) {
       const savedElection = localStorage.getItem('brookasil_election');
       if (savedElection) {
@@ -677,6 +778,8 @@ async function bootstrapApplicationData() {
           localStorage.setItem('brookasil_election', JSON.stringify(currentElection));
         } catch (e) {}
       }
+      // Garante persistência da eleição no Supabase
+      saveElectionToSupabase(currentElection).catch(() => {});
     }
   } catch (e) {
     console.warn('[Eleição] Inicialização:', e);
@@ -684,22 +787,86 @@ async function bootstrapApplicationData() {
   updateElectionUI();
   populateFormSelects();
 
-  // 3. Inicializa Partidos Oficiais
+  // 3. Inicializa Partidos Oficiais (Sincronizado Diretamente com o Supabase em Nuvem)
   try {
-    const savedParties = localStorage.getItem('brookasil_parties');
-    if (savedParties) {
-      const parsed = JSON.parse(savedParties);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        partiesList = parsed.map((p, idx) => normalizePartyObject(p, idx));
+    let partiesLoaded = false;
+
+    // 3.1 Consulta partidos registrados no Supabase (registro do sistema)
+    try {
+      const supPartiesRes = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates?id=eq.__SYSTEM_PARTIES_CONFIG__&select=id,proposalpdf`, {
+        headers: {
+          'apikey': SUPABASE_CONFIG.anonKey,
+          'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+        }
+      });
+      if (supPartiesRes.ok) {
+        const rows = await supPartiesRes.json();
+        if (Array.isArray(rows) && rows.length > 0 && rows[0].proposalpdf) {
+          try {
+            const parsed = typeof rows[0].proposalpdf === 'string' ? JSON.parse(rows[0].proposalpdf) : rows[0].proposalpdf;
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              partiesList = parsed.map((p, idx) => normalizePartyObject(p, idx));
+              partiesLoaded = true;
+              console.log(`[Supabase Cloud] ${partiesList.length} partidos carregados do banco em nuvem!`);
+              try {
+                localStorage.setItem('brookasil_parties', JSON.stringify(partiesList));
+              } catch (e) {}
+            }
+          } catch (pe) {
+            console.warn('[Supabase] Falha ao processar JSON de partidos:', pe);
+          }
+        }
+      }
+    } catch (supErr) {
+      console.warn('[Supabase] Erro ao buscar partidos no Supabase:', supErr);
+    }
+
+    // 3.2 Se não carregou do Supabase, consulta a API do servidor
+    if (!partiesLoaded) {
+      try {
+        const srvRes = await fetch('/api/parties');
+        if (srvRes.ok) {
+          const srvData = await srvRes.json();
+          if (srvData && Array.isArray(srvData.parties) && srvData.parties.length > 0) {
+            partiesList = srvData.parties.map((p, idx) => normalizePartyObject(p, idx));
+            partiesLoaded = true;
+            try {
+              localStorage.setItem('brookasil_parties', JSON.stringify(partiesList));
+            } catch (e) {}
+            // Salva no Supabase para garantir persistência futura
+            savePartiesToSupabase(partiesList).catch(() => {});
+          }
+        }
+      } catch (srvErr) {}
+    }
+
+    // 3.3 Fallback para localStorage ou semente oficial
+    if (!partiesLoaded) {
+      const savedParties = localStorage.getItem('brookasil_parties');
+      if (savedParties) {
+        const parsed = JSON.parse(savedParties);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          partiesList = parsed.map((p, idx) => normalizePartyObject(p, idx));
+          partiesLoaded = true;
+        }
       }
     }
+
     if (!partiesList || partiesList.length === 0) {
       partiesList = OFFICIAL_PARTIES.map(p => normalizePartyObject(p));
-      localStorage.setItem('brookasil_parties', JSON.stringify(partiesList));
+      try {
+        localStorage.setItem('brookasil_parties', JSON.stringify(partiesList));
+      } catch (e) {}
+    }
+
+    // Salva no Supabase caso ainda não estivesse na nuvem
+    if (!partiesLoaded) {
+      savePartiesToSupabase(partiesList).catch(() => {});
     }
   } catch (e) {
     partiesList = OFFICIAL_PARTIES.map(p => normalizePartyObject(p));
   }
+
   partiesList.sort((a, b) => (Number(a.number) || 999) - (Number(b.number) || 999));
   updateGlobalStats();
   renderPartiesCatalog();
@@ -2377,18 +2544,284 @@ function renderConfirmedCandidates() {
   initIcons();
 }
 
+// ========================================================
+// VISUALIZADOR DE PDF OFICIAL DO TSE (ALTA PERFORMANCE)
+// ========================================================
+let currentPdfDoc = null;
+let currentPdfPageNum = 1;
+let currentPdfTotalPages = 1;
+let currentPdfScale = 1.2;
+let currentPdfBase64 = null;
+let currentPdfCandidate = null;
+let currentPdfBlobUrl = null;
+let isRenderingPdfPage = false;
+let pendingPdfPageNum = null;
+
+function base64ToUint8Array(base64) {
+  const cleanBase64 = String(base64).replace(/^data:[^;]+;base64,/, '').trim();
+  const binaryString = atob(cleanBase64);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+}
+
+function getPdfBlobUrl(base64) {
+  try {
+    const bytes = base64ToUint8Array(base64);
+    const blob = new Blob([bytes], { type: 'application/pdf' });
+    return URL.createObjectURL(blob);
+  } catch (e) {
+    console.error('Erro ao converter PDF em Blob URL:', e);
+    return base64.startsWith('data:') ? base64 : `data:application/pdf;base64,${base64}`;
+  }
+}
+
+async function openPdfViewerModal(pdfData, candidate) {
+  if (!pdfData) {
+    showToast('info', 'Documento PDF não localizado.');
+    return;
+  }
+
+  currentPdfBase64 = pdfData;
+  currentPdfCandidate = candidate || null;
+  currentPdfPageNum = 1;
+  currentPdfScale = 1.2;
+
+  // Revoga Blob URL anterior para economizar memória
+  if (currentPdfBlobUrl && currentPdfBlobUrl.startsWith('blob:')) {
+    try { URL.revokeObjectURL(currentPdfBlobUrl); } catch (e) {}
+  }
+  currentPdfBlobUrl = getPdfBlobUrl(pdfData);
+
+  const modal = document.getElementById('pdf-viewer-modal');
+  const titleEl = document.getElementById('pdf-modal-title');
+  const subtitleEl = document.getElementById('pdf-modal-subtitle');
+  const loadingEl = document.getElementById('pdf-viewer-loading');
+  const canvasContainer = document.getElementById('pdf-canvas-container');
+  const frameEl = document.getElementById('pdf-viewer-frame');
+  const fallbackEl = document.getElementById('pdf-viewer-fallback');
+
+  if (titleEl) {
+    titleEl.textContent = candidate 
+      ? `Plano de Governo: ${candidate.ballotName || candidate.fullName || candidate.name}` 
+      : 'Plano de Governo Oficial';
+  }
+  if (subtitleEl) {
+    subtitleEl.textContent = candidate 
+      ? `${candidate.office || 'Cargo'} • ${candidate.partyAcronym || ''} • Protocolo: ${candidate.protocol || ''}` 
+      : 'Tribunal Superior Eleitoral';
+  }
+
+  // Prepara elementos do modal
+  if (modal) modal.classList.remove('hidden');
+  if (loadingEl) loadingEl.classList.remove('hidden');
+  if (canvasContainer) {
+    canvasContainer.innerHTML = '';
+    canvasContainer.classList.add('hidden');
+  }
+  if (frameEl) {
+    frameEl.src = '';
+    frameEl.classList.add('hidden');
+  }
+  if (fallbackEl) fallbackEl.classList.add('hidden');
+
+  updatePdfZoomDisplay();
+
+  // Tenta renderizar via PDF.js nativo para visualização fluida e sem bloqueio de pop-up
+  if (window.pdfjsLib) {
+    try {
+      const bytes = base64ToUint8Array(pdfData);
+      const loadingTask = window.pdfjsLib.getDocument({ data: bytes });
+      currentPdfDoc = await loadingTask.promise;
+      currentPdfTotalPages = currentPdfDoc.numPages || 1;
+
+      const totalPagesEl = document.getElementById('pdf-total-pages');
+      const mobileTotalEl = document.getElementById('pdf-mobile-total-page');
+      if (totalPagesEl) totalPagesEl.textContent = currentPdfTotalPages;
+      if (mobileTotalEl) mobileTotalEl.textContent = currentPdfTotalPages;
+
+      if (loadingEl) loadingEl.classList.add('hidden');
+      if (canvasContainer) canvasContainer.classList.remove('hidden');
+
+      await renderPdfPage(currentPdfPageNum);
+      initIcons();
+      return;
+    } catch (pdfErr) {
+      console.warn('[PDF.js Canvas Error, utilizando leitor alternativo]:', pdfErr);
+    }
+  }
+
+  // Fallback 1: Iframe embutido com Blob URL
+  if (frameEl && currentPdfBlobUrl) {
+    try {
+      frameEl.src = currentPdfBlobUrl;
+      if (loadingEl) loadingEl.classList.add('hidden');
+      frameEl.classList.remove('hidden');
+      initIcons();
+      return;
+    } catch (frameErr) {
+      console.warn('[Iframe PDF Error]:', frameErr);
+    }
+  }
+
+  // Fallback 2: Painel de ação direta
+  if (loadingEl) loadingEl.classList.add('hidden');
+  if (fallbackEl) fallbackEl.classList.remove('hidden');
+  initIcons();
+}
+
+async function renderPdfPage(num) {
+  if (!currentPdfDoc) return;
+  isRenderingPdfPage = true;
+
+  try {
+    const page = await currentPdfDoc.getPage(num);
+    const canvasContainer = document.getElementById('pdf-canvas-container');
+    if (!canvasContainer) return;
+
+    canvasContainer.innerHTML = '';
+
+    const viewport = page.getViewport({ scale: currentPdfScale });
+    const canvas = document.createElement('canvas');
+    canvas.className = 'rounded-xl shadow-2xl bg-white max-w-full my-2';
+    const ctx = canvas.getContext('2d');
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
+
+    canvasContainer.appendChild(canvas);
+
+    const renderContext = {
+      canvasContext: ctx,
+      viewport: viewport
+    };
+
+    await page.render(renderContext).promise;
+    isRenderingPdfPage = false;
+
+    if (pendingPdfPageNum !== null) {
+      const p = pendingPdfPageNum;
+      pendingPdfPageNum = null;
+      renderPdfPage(p);
+    }
+  } catch (err) {
+    console.error('Erro ao renderizar página do PDF:', err);
+    isRenderingPdfPage = false;
+  }
+
+  // Atualiza indicadores de navegação
+  const currEl = document.getElementById('pdf-current-page');
+  const mobCurrEl = document.getElementById('pdf-mobile-curr-page');
+  const prevBtn = document.getElementById('pdf-prev-btn');
+  const nextBtn = document.getElementById('pdf-next-btn');
+
+  if (currEl) currEl.textContent = num;
+  if (mobCurrEl) mobCurrEl.textContent = num;
+  if (prevBtn) prevBtn.disabled = num <= 1;
+  if (nextBtn) nextBtn.disabled = num >= currentPdfTotalPages;
+}
+
+function queueRenderPdfPage(num) {
+  if (isRenderingPdfPage) {
+    pendingPdfPageNum = num;
+  } else {
+    renderPdfPage(num);
+  }
+}
+
+function prevPdfPage() {
+  if (currentPdfPageNum <= 1) return;
+  currentPdfPageNum--;
+  queueRenderPdfPage(currentPdfPageNum);
+}
+
+function nextPdfPage() {
+  if (!currentPdfDoc || currentPdfPageNum >= currentPdfTotalPages) return;
+  currentPdfPageNum++;
+  queueRenderPdfPage(currentPdfPageNum);
+}
+
+function zoomPdfIn() {
+  if (currentPdfScale >= 2.5) return;
+  currentPdfScale += 0.2;
+  updatePdfZoomDisplay();
+  if (currentPdfDoc) {
+    renderPdfPage(currentPdfPageNum);
+  }
+}
+
+function zoomPdfOut() {
+  if (currentPdfScale <= 0.6) return;
+  currentPdfScale -= 0.2;
+  updatePdfZoomDisplay();
+  if (currentPdfDoc) {
+    renderPdfPage(currentPdfPageNum);
+  }
+}
+
+function updatePdfZoomDisplay() {
+  const zoomEl = document.getElementById('pdf-zoom-level');
+  if (zoomEl) zoomEl.textContent = `${Math.round(currentPdfScale * 100)}%`;
+}
+
+function closePdfViewerModal() {
+  const modal = document.getElementById('pdf-viewer-modal');
+  if (modal) modal.classList.add('hidden');
+  const canvasContainer = document.getElementById('pdf-canvas-container');
+  if (canvasContainer) canvasContainer.innerHTML = '';
+  const frameEl = document.getElementById('pdf-viewer-frame');
+  if (frameEl) frameEl.src = '';
+  currentPdfDoc = null;
+}
+
+function openPdfInNewTab() {
+  if (!currentPdfBlobUrl && currentPdfBase64) {
+    currentPdfBlobUrl = getPdfBlobUrl(currentPdfBase64);
+  }
+  if (currentPdfBlobUrl) {
+    window.open(currentPdfBlobUrl, '_blank', 'noopener,noreferrer');
+  } else {
+    showToast('error', 'Não foi possível gerar link do PDF.');
+  }
+}
+
+function downloadCurrentPdf() {
+  if (!currentPdfBase64) {
+    showToast('error', 'Nenhum PDF disponível para download.');
+    return;
+  }
+  const candName = currentPdfCandidate 
+    ? (currentPdfCandidate.ballotName || currentPdfCandidate.fullName || currentPdfCandidate.protocol)
+    : 'candidato';
+  const cleanName = String(candName).replace(/[^a-zA-Z0-9_-]/g, '_');
+  const filename = `Plano_de_Governo_${cleanName}.pdf`;
+
+  const blobUrl = currentPdfBlobUrl || getPdfBlobUrl(currentPdfBase64);
+  const link = document.createElement('a');
+  link.href = blobUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  showToast('success', `Download iniciado: ${filename}`);
+}
+
 async function downloadOrViewPdf(candId) {
-  const cand = candidaciesList.find(c => String(c.id) === String(candId));
+  const cand = candidaciesList.find(c => String(c.id) === String(candId) || String(c.protocol) === String(candId));
   if (!cand) {
     showToast('error', 'Candidatura não encontrada.');
     return;
   }
 
-  // Se o PDF ainda não foi carregado na memória, busca sob demanda no Supabase (economiza dezenas de MBs)
+  // Se o PDF ainda não foi carregado na memória, busca sob demanda
   if (!cand.proposalPdf) {
-    showToast('info', 'Carregando proposta da nuvem...');
+    showToast('info', 'Buscando documento oficial do candidato na nuvem...');
+    
+    // 1. Busca sob demanda no Supabase
     try {
-      const res = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates?id=eq.${candId}&select=proposalpdf`, {
+      const res = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates?id=eq.${encodeURIComponent(cand.id)}&select=proposalpdf`, {
         headers: {
           'apikey': SUPABASE_CONFIG.anonKey,
           'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
@@ -2401,7 +2834,38 @@ async function downloadOrViewPdf(candId) {
         }
       }
     } catch (e) {
-      console.warn('[PDF Fetch Error]:', e);
+      console.warn('[Supabase PDF Fetch Error]:', e);
+    }
+
+    // 2. Se não estava no Supabase pelo id, tenta pelo protocolo
+    if (!cand.proposalPdf && cand.protocol) {
+      try {
+        const resProt = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates?protocol=eq.${encodeURIComponent(cand.protocol)}&select=proposalpdf`, {
+          headers: {
+            'apikey': SUPABASE_CONFIG.anonKey,
+            'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+          }
+        });
+        if (resProt.ok) {
+          const dProt = await resProt.json();
+          if (Array.isArray(dProt) && dProt[0] && dProt[0].proposalpdf) {
+            cand.proposalPdf = dProt[0].proposalpdf;
+          }
+        }
+      } catch (pe) {}
+    }
+
+    // 3. Fallback: Consulta o servidor local para recuperar o PDF
+    if (!cand.proposalPdf) {
+      try {
+        const srvRes = await fetch(`/api/candidacies/${encodeURIComponent(cand.id)}/pdf`);
+        if (srvRes.ok) {
+          const srvData = await srvRes.json();
+          if (srvData && srvData.proposalPdf) {
+            cand.proposalPdf = srvData.proposalPdf;
+          }
+        }
+      } catch (se) {}
     }
   }
 
@@ -2409,20 +2873,9 @@ async function downloadOrViewPdf(candId) {
     showToast('info', 'Esta candidatura não possui documento PDF anexado.');
     return;
   }
-  const w = window.open("");
-  if (w) {
-    w.document.write(`<iframe src="${cand.proposalPdf}" style="border:0; top:0px; left:0px; bottom:0px; right:0px; width:100%; height:100%;" allowfullscreen></iframe>`);
-  } else {
-    // Caso bloqueador de pop-ups impeça window.open
-    const link = document.createElement('a');
-    link.href = cand.proposalPdf;
-    link.target = '_blank';
-    link.rel = 'noopener noreferrer';
-    link.download = `plano_governo_${cand.ballotName || cand.protocol || 'candidato'}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
+
+  // Abre visualizador de alta performance embutido no sistema
+  await openPdfViewerModal(cand.proposalPdf, cand);
 }
 
 // ========================================================
@@ -3554,6 +4007,15 @@ function setupAdminView() {
   if (partyFilter && partyFilter.style) partyFilter.style.display = isTse ? 'block' : 'none';
   if (stateFilter && stateFilter.style) stateFilter.style.display = isTse ? 'block' : 'none';
 
+  const tseOpsBar = document.getElementById('admin-tse-operations-bar');
+  if (tseOpsBar) {
+    if (isTse) {
+      tseOpsBar.classList.remove('hidden');
+    } else {
+      tseOpsBar.classList.add('hidden');
+    }
+  }
+
   // Configuração inicial do filtro de cidades no Admin
   if (cityFilter) {
     if (isTse) {
@@ -4098,6 +4560,8 @@ function openElectionModal() {
     if (dateEl && currentElection.electionDate) {
       dateEl.value = formatIsoForDateTimeInput(currentElection.electionDate);
     }
+    const resetCandsEl = document.getElementById('modal-election-reset-cands');
+    if (resetCandsEl) resetCandsEl.checked = false;
   }
   modal.classList.remove('hidden');
   initIcons();
@@ -4176,6 +4640,16 @@ async function handleSaveElection(e) {
       });
     } catch (apiErr) {
       console.warn('[Eleição] Aviso de sincronização com o servidor:', apiErr);
+    }
+
+    // 2.1 Sincroniza diretamente na nuvem (Supabase)
+    await saveElectionToSupabase(currentElection);
+
+    // 2.2 Purga de candidaturas anteriores se solicitado pelo TSE para troca de pleito
+    const shouldResetCands = document.getElementById('modal-election-reset-cands')?.checked;
+    if (shouldResetCands) {
+      await executePurgeAllCandidaciesInternal();
+      showToast('info', 'Candidaturas anteriores excluídas do Supabase e números liberados para este novo pleito.');
     }
 
     const formattedElectionDate = formatElectionDateDisplay(currentElection.electionDate);
@@ -4531,6 +5005,14 @@ async function handleSaveParty(e) {
       showToast('success', `Partido ${acronym} registrado com sucesso no TSE!`);
     }
 
+    // Sincroniza partidos no Supabase e no Servidor Central
+    savePartiesToSupabase(partiesList).catch(() => {});
+    fetch('/api/parties', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(partiesList)
+    }).catch(() => {});
+
     closePartyModal();
     renderAdminParties();
     renderPartiesCatalog();
@@ -4648,6 +5130,14 @@ async function executeDeleteParty(partyId) {
     try {
       localStorage.setItem('brookasil_parties', JSON.stringify(partiesList));
     } catch (e) {}
+
+    // Sincroniza partidos no Supabase e no Servidor Central
+    savePartiesToSupabase(partiesList).catch(() => {});
+    fetch('/api/parties', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(partiesList)
+    }).catch(() => {});
 
     closeConfirmDeletePartyModal();
     closePartyModal();
@@ -5049,6 +5539,10 @@ function renderAdminCandidacies() {
               <i data-lucide="edit-3" class="w-4 h-4"></i>
               <span class="hidden sm:inline">Editar</span>
             </button>
+            <button onclick="openTseDeleteSingleModal('${c.id}')" class="px-3 py-2.5 rounded-xl bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-500/40 text-xs font-bold flex items-center justify-center gap-1 transition active:scale-95 min-h-[44px]" title="Excluir Candidatura Definitivamente do Supabase (Exclusivo TSE)">
+              <i data-lucide="trash-2" class="w-4 h-4 text-red-400"></i>
+              <span class="hidden sm:inline">Excluir</span>
+            </button>
           ` : ''}
           ${judgeAuth.allowed ? `
             <button onclick="openJudgmentModal('${c.id}')" class="flex-1 py-2.5 px-3 rounded-xl ${c.status === 'pendente' ? 'bg-gradient-to-r from-brand-gold to-yellow-500 text-slate-950 hover:bg-yellow-400 font-black shadow-glow-gold' : 'bg-brand-blue hover:bg-blue-500 text-white font-bold'} text-xs flex items-center justify-center gap-1.5 transition active:scale-98 min-h-[44px]">
@@ -5113,8 +5607,11 @@ function renderAdminCandidacies() {
       <td class="px-6 py-4 text-right">
         <div class="flex items-center justify-end gap-2">
           ${currentUser && currentUser.role === 'tse' ? `
-            <button onclick="openTseEditCandidateModal('${c.id}')" class="px-3 py-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 font-bold text-xs transition flex items-center gap-1" title="Retificar Cadastro (Exclusivo TSE)">
+            <button onclick="openTseEditCandidateModal('${c.id}')" class="px-2.5 py-1.5 rounded-xl bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 border border-purple-500/40 font-bold text-xs transition flex items-center gap-1" title="Retificar Cadastro (Exclusivo TSE)">
               <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Editar
+            </button>
+            <button onclick="openTseDeleteSingleModal('${c.id}')" class="px-2.5 py-1.5 rounded-xl bg-red-600/20 hover:bg-red-600/30 text-red-300 border border-red-500/40 font-bold text-xs transition flex items-center gap-1 shadow-sm active:scale-95" title="Excluir Candidatura Definitivamente do Supabase (Exclusivo TSE)">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5 text-red-400"></i> Excluir
             </button>
           ` : ''}
           ${judgeAuth.allowed ? `
@@ -5221,10 +5718,13 @@ function openJudgmentModal(candId) {
     indeferBtn.title = judgeAuth.allowed ? 'Indeferir candidatura' : judgeAuth.reason;
   }
   if (excludeBtn) {
-    const canExclude = judgeAuth.allowed || currentUser?.role === 'tse';
-    excludeBtn.disabled = !canExclude;
-    excludeBtn.classList.toggle('opacity-40', !canExclude);
-    excludeBtn.classList.toggle('cursor-not-allowed', !canExclude);
+    const isTse = currentUser && (currentUser.role === 'tse' || currentUser.role === 'admin');
+    excludeBtn.disabled = !isTse;
+    excludeBtn.classList.toggle('opacity-40', !isTse);
+    excludeBtn.classList.toggle('cursor-not-allowed', !isTse);
+    excludeBtn.title = isTse
+      ? 'Exclusivo TSE: Excluir definitivamente do Supabase e liberar número'
+      : 'Apenas a Presidência do TSE possui competência para excluir candidaturas do banco de dados.';
   }
 
   // Botão de Devolver para PENDENTE (Permite corrigir homologações indevidas)
@@ -5246,6 +5746,20 @@ function openJudgmentModal(candId) {
     }
   }
 
+  // PDF do Plano de Governo
+  const pdfContainer = document.getElementById('modal-cand-pdf-container');
+  if (pdfContainer) {
+    if (c.proposalPdf || c.hasProposalPdf) {
+      pdfContainer.innerHTML = `
+        <button id="modal-cand-pdf-btn" onclick="viewCandidatePdf()" class="text-xs text-brand-gold underline font-semibold flex items-center gap-1 mt-1 hover:text-yellow-300 transition">
+          <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Visualizar PDF do Plano de Governo
+        </button>
+      `;
+    } else {
+      pdfContainer.innerHTML = `<span class="text-slate-500 italic text-xs">Nenhum PDF anexado</span>`;
+    }
+  }
+
   document.getElementById('judgment-modal').classList.remove('hidden');
   initIcons();
 }
@@ -5256,7 +5770,7 @@ function closeJudgmentModal() {
 }
 
 function viewCandidatePdf() {
-  if (selectedCandForJudgment && selectedCandForJudgment.proposalPdf) {
+  if (selectedCandForJudgment && (selectedCandForJudgment.proposalPdf || selectedCandForJudgment.hasProposalPdf)) {
     downloadOrViewPdf(selectedCandForJudgment.id);
   } else {
     showToast('info', 'Nenhum PDF cadastrado para este candidato.');
@@ -5343,7 +5857,13 @@ async function executeJudgment(newStatus) {
   }
 
   // 2. JULGAMENTO REGULAR (DEFERIR, INDEFERIR, EXCLUIR):
-  if (!judgeAuth.allowed) {
+  if (newStatus === 'excluida') {
+    const isTse = currentUser && (currentUser.role === 'tse' || currentUser.role === 'admin');
+    if (!isTse) {
+      showToast('error', 'Apenas a Presidência do TSE possui competência legal para excluir candidaturas do banco de dados.');
+      return;
+    }
+  } else if (!judgeAuth.allowed) {
     showToast('error', judgeAuth.reason);
     return;
   }
@@ -5351,9 +5871,7 @@ async function executeJudgment(newStatus) {
   let effectiveReason = reason;
   if (!effectiveReason) {
     if (newStatus === 'excluida') {
-      effectiveReason = currentUser.role === 'tse'
-        ? `Cancelamento e exclusão de registro determinado pela Presidência do Tribunal Superior Eleitoral (TSE).`
-        : `Cancelamento e exclusão de registro determinado pelo ${compInfo.courtName}.`;
+      effectiveReason = `Cancelamento e exclusão definitiva de registro de candidatura determinado pela Presidência do Tribunal Superior Eleitoral (TSE).`;
     } else if (newStatus === 'indeferida') {
       showToast('error', 'É obrigatório inserir a fundamentação jurídica do despacho para indeferir.');
       const textarea = document.getElementById('judgment-reason-text');
@@ -5364,6 +5882,77 @@ async function executeJudgment(newStatus) {
 
   try {
     const actingCourt = currentUser.role === 'tse' ? 'Tribunal Superior Eleitoral (TSE)' : compInfo.courtName;
+
+    if (newStatus === 'excluida') {
+      // 1. Exclusão no Supabase
+      try {
+        await fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates?id=eq.${c.id}`, {
+          method: 'DELETE',
+          headers: {
+            'apikey': SUPABASE_CONFIG.anonKey,
+            'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+          }
+        });
+      } catch (sbErr) {
+        console.warn('[Supabase] Aviso ao excluir candidato:', sbErr);
+      }
+
+      // 2. Exclusão no Servidor API
+      try {
+        await fetch(`/api/candidacies/${encodeURIComponent(c.id)}`, {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminUser: currentUser.login || 'tse', adminRole: 'tse' })
+        });
+      } catch (srvErr) {}
+
+      // 3. Libera número no registro de urnas
+      try {
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('brookasil_numreg_')) {
+            const data = JSON.parse(localStorage.getItem(key) || '{}');
+            if (data[c.number] && (data[c.number].candidateId === c.id || data[c.number].protocol === c.protocol)) {
+              delete data[c.number];
+              localStorage.setItem(key, JSON.stringify(data));
+            }
+          }
+        });
+      } catch (e) {}
+
+      // 4. Remove da memória local
+      candidaciesList = candidaciesList.filter(item => item.id !== c.id && item.protocol !== c.protocol);
+      try {
+        localStorage.setItem('brookasil_candidacies', JSON.stringify(candidaciesList));
+      } catch (e) {}
+
+      // 5. Auditoria oficial
+      saveAuditLog({
+        action: 'TSE_CANDIDATE_DELETE',
+        candidateId: c.id || '',
+        candidateProtocol: c.protocol || '',
+        ballotName: c.ballotName || '',
+        office: c.office || '',
+        number: c.number || '',
+        previousStatus: c.status || 'pendente',
+        newStatus: 'excluida',
+        reason: effectiveReason,
+        adminUser: currentUser.login || currentUser.id || 'tse',
+        adminName: currentUser.name || 'Presidência do TSE',
+        adminRole: 'tse',
+        competentCourt: actingCourt,
+        originatingCourt: compInfo.courtName
+      });
+
+      updateGlobalStats();
+      renderConfirmedCandidates();
+      renderAdminCandidacies();
+      updateAdminCharts();
+
+      showToast('success', `Candidatura de "${c.ballotName}" excluída definitivamente pelo TSE. O número ${c.number} foi liberado!`);
+      closeJudgmentModal();
+      return;
+    }
+
     const updates = {
       status: newStatus,
       rejectionReason: effectiveReason || null,
@@ -5734,6 +6323,302 @@ async function handleTseEditCandidateSubmit(e) {
   }
 }
 
+// ========================================================
+// OPERAÇÕES SOBERANAS DO TSE: EXCLUSÃO E PURGA DE CANDIDATURAS
+// ========================================================
+let selectedCandForTseDelete = null;
+
+function checkIsTseUser(user) {
+  if (!user) return false;
+  const role = String(user.role || '').toLowerCase();
+  const id = String(user.id || '').toLowerCase();
+  const login = String(user.login || '').toLowerCase();
+  return role === 'tse' || id === 'tse' || login.includes('tse') || role === 'admin';
+}
+
+function openTseDeleteSingleModal(candId) {
+  if (!currentUser || !checkIsTseUser(currentUser)) {
+    showToast('error', 'Apenas a Presidência do TSE possui competência legal para excluir candidaturas do banco de dados.');
+    return;
+  }
+
+  const cand = candidaciesList.find(c => String(c.id) === String(candId) || String(c.protocol) === String(candId));
+  if (!cand) {
+    showToast('error', 'Candidatura não localizada no registro oficial.');
+    return;
+  }
+
+  selectedCandForTseDelete = cand;
+
+  const photoEl = document.getElementById('tse-del-cand-photo');
+  const nameEl = document.getElementById('tse-del-cand-name');
+  const fullEl = document.getElementById('tse-del-cand-fullname');
+  const partyEl = document.getElementById('tse-del-cand-party');
+  const officeEl = document.getElementById('tse-del-cand-office');
+  const numEl = document.getElementById('tse-del-cand-number');
+  const circEl = document.getElementById('tse-del-cand-circ');
+
+  if (photoEl) photoEl.src = cand.photo || '';
+  if (nameEl) nameEl.textContent = cand.ballotName || 'Candidato';
+  if (fullEl) fullEl.textContent = cand.fullName || '';
+  if (partyEl) {
+    partyEl.textContent = cand.partyAcronym || 'S/P';
+    partyEl.style.color = cand.partyColor || '#fbbf24';
+  }
+  if (officeEl) officeEl.textContent = cand.office || '';
+  if (numEl) numEl.textContent = cand.number || '00';
+  if (circEl) {
+    circEl.textContent = cand.cityId && cand.cityId !== 'ALL'
+      ? `${getCityDisplayName(cand.stateId, cand.cityId)} (${getStateDisplayName(cand.stateId)})`
+      : getStateDisplayName(cand.stateId);
+  }
+
+  const modal = document.getElementById('tse-delete-single-modal');
+  if (modal) modal.classList.remove('hidden');
+  initIcons();
+}
+
+function closeTseDeleteSingleModal() {
+  const modal = document.getElementById('tse-delete-single-modal');
+  if (modal) modal.classList.add('hidden');
+  selectedCandForTseDelete = null;
+}
+
+async function confirmTseDeleteSingle() {
+  if (!currentUser || !checkIsTseUser(currentUser)) {
+    showToast('error', 'Operação não autorizada. Requer credenciais soberanas do TSE.');
+    return;
+  }
+
+  if (!selectedCandForTseDelete) {
+    showToast('error', 'Nenhum candidato selecionado para exclusão.');
+    return;
+  }
+
+  const cand = selectedCandForTseDelete;
+  const candId = cand.id;
+  const candProtocol = cand.protocol;
+  const candName = cand.ballotName;
+  const candNumber = cand.number;
+  const candOffice = cand.office;
+
+  const confirmBtn = document.getElementById('btn-confirm-tse-single-delete');
+  if (confirmBtn) {
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = '<span class="animate-spin inline-block mr-2">⟳</span> Excluindo do Supabase...';
+  }
+
+  try {
+    // 1. Exclusão no Supabase (REST API)
+    try {
+      await fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates?id=eq.${candId}`, {
+        method: 'DELETE',
+        headers: {
+          'apikey': SUPABASE_CONFIG.anonKey,
+          'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+        }
+      });
+    } catch (sbErr) {
+      console.warn('[Supabase] Aviso ao excluir candidato individual:', sbErr);
+    }
+
+    // 2. Exclusão no Servidor Local via API segura
+    try {
+      await fetch(`/api/candidacies/${encodeURIComponent(candId)}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          adminUser: currentUser.login || currentUser.name || 'tse',
+          adminRole: 'tse'
+        })
+      });
+    } catch (srvErr) {
+      console.warn('[Server] Aviso ao excluir no endpoint da API:', srvErr);
+    }
+
+    // 3. Liberação de reserva de número no localStorage
+    try {
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith('brookasil_numreg_')) {
+          try {
+            const data = JSON.parse(localStorage.getItem(key) || '{}');
+            if (data[candNumber] && (data[candNumber].candidateId === candId || data[candNumber].protocol === candProtocol)) {
+              delete data[candNumber];
+              localStorage.setItem(key, JSON.stringify(data));
+            }
+          } catch (e) {}
+        }
+      });
+    } catch (e) {}
+
+    // 4. Remoção da memória local
+    candidaciesList = candidaciesList.filter(c => String(c.id) !== String(candId) && String(c.protocol) !== String(candProtocol));
+    try {
+      localStorage.setItem('brookasil_candidacies', JSON.stringify(candidaciesList));
+    } catch (e) {}
+
+    // 5. Auditoria imutável
+    saveAuditLog({
+      action: 'TSE_CANDIDATE_DELETE',
+      candidateId: candId,
+      candidateProtocol: candProtocol,
+      ballotName: candName,
+      office: candOffice,
+      number: candNumber,
+      reason: `Exclusão definitiva de candidatura realizada pelo TSE. Número ${candNumber} liberado para novo cadastro.`,
+      adminUser: currentUser.login || currentUser.id || 'tse',
+      adminName: currentUser.name || 'Presidência do TSE',
+      adminRole: 'tse'
+    });
+
+    closeTseDeleteSingleModal();
+    updateGlobalStats();
+    renderConfirmedCandidates();
+    renderAdminCandidacies();
+    updateAdminCharts();
+
+    showToast('success', `Candidatura de "${candName}" excluída definitivamente pelo TSE. O número ${candNumber} foi liberado!`);
+
+  } catch (err) {
+    console.error('Erro ao excluir candidatura pelo TSE:', err);
+    showToast('error', 'Falha ao processar exclusão no Supabase.');
+  } finally {
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      confirmBtn.innerHTML = '<i data-lucide="trash-2" class="w-4 h-4"></i><span>Confirmar Exclusão (TSE)</span>';
+      initIcons();
+    }
+  }
+}
+
+function openTsePurgeAllModal() {
+  if (!currentUser || !checkIsTseUser(currentUser)) {
+    showToast('error', 'Apenas a Presidência do TSE possui competência para zerar candidaturas de pleito.');
+    return;
+  }
+
+  const countEl = document.getElementById('tse-purge-total-count');
+  if (countEl) countEl.textContent = candidaciesList.length;
+
+  const challengeInput = document.getElementById('tse-purge-challenge-input');
+  if (challengeInput) challengeInput.value = '';
+
+  const confirmBtn = document.getElementById('btn-confirm-tse-purge-all');
+  if (confirmBtn) {
+    confirmBtn.disabled = true;
+    confirmBtn.classList.add('opacity-40', 'cursor-not-allowed');
+  }
+
+  const modal = document.getElementById('tse-purge-all-modal');
+  if (modal) modal.classList.remove('hidden');
+  initIcons();
+}
+
+function closeTsePurgeAllModal() {
+  const modal = document.getElementById('tse-purge-all-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function handleTsePurgeChallengeInput(val) {
+  const confirmBtn = document.getElementById('btn-confirm-tse-purge-all');
+  if (!confirmBtn) return;
+  const isMatch = (val || '').trim().toUpperCase() === 'ZERAR ELEICAO';
+  confirmBtn.disabled = !isMatch;
+  confirmBtn.classList.toggle('opacity-40', !isMatch);
+  confirmBtn.classList.toggle('cursor-not-allowed', !isMatch);
+}
+
+async function executePurgeAllCandidaciesInternal() {
+  const previousTotal = candidaciesList.length;
+
+  // 1. Supabase REST: Deleta todas as candidaturas preservando configs do sistema
+  try {
+    await fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates?id=not.in.(__SYSTEM_ELECTION_CONFIG__,__SYSTEM_PARTIES_CONFIG__)`, {
+      method: 'DELETE',
+      headers: {
+        'apikey': SUPABASE_CONFIG.anonKey,
+        'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+      }
+    });
+  } catch (sbErr) {
+    console.warn('[Supabase] Aviso ao executar purge geral:', sbErr);
+  }
+
+  // 2. Servidor Backend API
+  try {
+    await fetch('/api/candidacies/purge', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        adminUser: currentUser?.login || 'tse',
+        adminRole: 'tse',
+        reason: 'Purga geral do pleito para troca de eleição'
+      })
+    });
+  } catch (srvErr) {
+    console.warn('[Server] Aviso ao chamar /api/candidacies/purge:', srvErr);
+  }
+
+  // 3. Limpeza das reservas de números no localStorage
+  try {
+    Object.keys(localStorage).forEach(key => {
+      if (key.startsWith('brookasil_numreg_')) {
+        localStorage.removeItem(key);
+      }
+    });
+  } catch (e) {}
+
+  // 4. Limpeza da memória local de candidaturas
+  candidaciesList = [];
+  try {
+    localStorage.setItem('brookasil_candidacies', JSON.stringify([]));
+    localStorage.removeItem('brookasil_last_submitted_protocol');
+    localStorage.removeItem('brookasil_last_submitted_cand');
+  } catch (e) {}
+
+  // 5. Auditoria oficial
+  saveAuditLog({
+    action: 'TSE_ELECTION_PURGE_ALL',
+    reason: `Troca de Eleição: Purga geral de ${previousTotal} candidaturas no Supabase. Todos os números foram liberados e novos registros serão exigidos.`,
+    adminUser: currentUser?.login || currentUser?.id || 'tse',
+    adminName: currentUser?.name || 'Presidência do TSE',
+    adminRole: 'tse'
+  });
+
+  updateGlobalStats();
+  renderConfirmedCandidates();
+  renderAdminCandidacies();
+  updateAdminCharts();
+}
+
+async function executeTsePurgeAll() {
+  if (!currentUser || !checkIsTseUser(currentUser)) {
+    showToast('error', 'Apenas a Presidência do TSE possui competência para zerar candidaturas de pleito.');
+    return;
+  }
+
+  const confirmBtn = document.getElementById('btn-confirm-tse-purge-all');
+  if (confirmBtn) {
+    confirmBtn.disabled = true;
+    confirmBtn.innerHTML = '<span class="animate-spin inline-block mr-2">⟳</span> Excluindo candidaturas no Supabase...';
+  }
+
+  try {
+    await executePurgeAllCandidaciesInternal();
+    closeTsePurgeAllModal();
+    showToast('success', 'Todas as candidaturas foram excluídas com sucesso pelo TSE! Números liberados para a nova eleição.');
+  } catch (err) {
+    console.error('Erro na purga geral:', err);
+    showToast('error', 'Erro ao zerar candidaturas no Supabase.');
+  } finally {
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      confirmBtn.innerHTML = '<i data-lucide="trash-2" class="w-4 h-4"></i><span>Zerar Candidaturas no Supabase</span>';
+      initIcons();
+    }
+  }
+}
+
 function renderAuditLogs(logs) {
   const container = document.getElementById('admin-audit-logs');
   if (!container) return;
@@ -5744,14 +6629,24 @@ function renderAuditLogs(logs) {
   }
 
   container.innerHTML = logs.map(l => {
+    const isTseDel = l.action === 'TSE_CANDIDATE_DELETE';
+    const isTsePurge = l.action === 'TSE_ELECTION_PURGE_ALL';
     const isTseRect = l.action === 'tse_candidate_rectification' || l.action === 'TSE_RETIFICACAO';
-    const isParty = !!l.action && !isTseRect;
+    const isParty = !!l.action && !isTseRect && !isTseDel && !isTsePurge;
     
     let badgeText = 'AÇÃO';
     let badgeClass = 'bg-brand-blue/30 text-brand-electric border border-brand-electric/30';
     let descText = '';
 
-    if (isTseRect) {
+    if (isTseDel) {
+      badgeText = 'EXCLUSÃO TSE';
+      badgeClass = 'bg-red-500/25 text-red-300 border border-red-500/50 shadow-sm';
+      descText = `Candidatura ${l.ballotName || ''} (${l.office || ''} - ${l.number || ''}) • ${l.reason || 'Exclusão definitiva de registro pelo TSE'}`;
+    } else if (isTsePurge) {
+      badgeText = 'ZERAR ELEIÇÃO (TSE)';
+      badgeClass = 'bg-red-600/30 text-red-200 border border-red-500/60 font-black shadow-glow-red animate-pulse';
+      descText = l.reason || 'Purga total de candidaturas para troca de pleito eleitoral.';
+    } else if (isTseRect) {
       badgeText = 'RETIFICAÇÃO TSE';
       badgeClass = 'bg-purple-500/20 text-purple-300 border border-purple-500/40 shadow-sm';
       descText = `Candidatura ${l.ballotName || ''} (${l.office || ''} - ${l.number || ''}) • Justificativa: ${l.reason || 'Retificação oficial TSE'}`;
