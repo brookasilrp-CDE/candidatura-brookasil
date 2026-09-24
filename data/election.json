@@ -1,11 +1,11 @@
 {
   "id": "elec_2026",
-  "title": "Eleições Gerais de Brookasil 2026",
-  "type": "Federal",
+  "title": "Eleições Municipais de Brookasil 2026",
+  "type": "Municipal",
   "status": "open",
-  "applicationStart": "2026-08-01T00:00:00.000Z",
-  "applicationEnd": "2026-10-15T23:59:59.000Z",
-  "electionDate": "2026-11-15T08:00:00.000Z",
+  "applicationStart": "2026-09-24T00:00:00.000Z",
+  "applicationEnd": "2026-09-27T02:59:00.000Z",
+  "electionDate": "2026-09-27T15:00:00.000Z",
   "vagas": {
     "Presidente": 8,
     "Governador": 8,
@@ -13,5 +13,5 @@
     "Deputado Federal": 16,
     "Deputado Estadual": 16
   },
-  "updatedAt": "2026-09-24T22:41:08.983Z"
+  "updatedAt": "2026-09-24T22:43:06.069Z"
 }

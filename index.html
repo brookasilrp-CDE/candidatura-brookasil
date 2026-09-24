@@ -8,6 +8,23 @@
   <meta property="og:title" content="Candidaturas | Brookasil RP 🇬🇦">
   <meta property="og:description" content="Sistema Oficial de Registro e Consulta de Candidaturas da Justiça Eleitoral de Brookasil RP.">
   <meta property="og:type" content="website">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+
+  <!-- Script de Sanitização Eleitoral Imediata (Zero Cache Bug) -->
+  <script>
+    try {
+      var _se = localStorage.getItem('brookasil_election');
+      if (_se) {
+        var _pe = JSON.parse(_se);
+        if (_pe && (_pe.status === 'closed' || _pe.status === 'encerrada')) {
+          _pe.status = 'open';
+          localStorage.setItem('brookasil_election', JSON.stringify(_pe));
+        }
+      }
+    } catch (e) {}
+  </script>
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2823,6 +2840,6 @@
   <div id="toast-container" class="fixed bottom-20 lg:bottom-6 right-4 sm:right-6 z-[110] flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- Companion JavaScript Engine -->
-  <script src="./app.js"></script>
+  <script src="./app.js?v=20260924_tse_open_v3"></script>
 </body>
 </html>

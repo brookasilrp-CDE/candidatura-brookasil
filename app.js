@@ -451,7 +451,33 @@ const OFFICES_CONFIG = {
 
 // ESTADO GLOBAL DA APLICAÇÃO
 let currentUser = null;
-let currentElection = null;
+let currentElection = {
+  id: "elec_2026",
+  title: "Eleições Municipais de Brookasil 2026",
+  type: "Municipal",
+  status: "open",
+  applicationStart: "2026-09-24T00:00:00.000Z",
+  applicationEnd: "2026-09-27T02:59:00.000Z",
+  electionDate: "2026-09-27T15:00:00.000Z",
+  vagas: {
+    Prefeito: 10,
+    Vereador: 20
+  }
+};
+
+try {
+  const savedElec = localStorage.getItem('brookasil_election');
+  if (savedElec) {
+    const parsed = JSON.parse(savedElec);
+    if (parsed && typeof parsed === 'object') {
+      currentElection = { ...currentElection, ...parsed };
+      if (!currentElection.status || currentElection.status === 'closed' || currentElection.status === 'encerrada') {
+        currentElection.status = 'open';
+      }
+    }
+  }
+} catch (e) {}
+
 let candidaciesList = [];
 let partiesList = [...OFFICIAL_PARTIES];
 let activePartyTab = 'ALL';
@@ -466,9 +492,6 @@ function isElectionOpen(election) {
   const status = String(election.status || '').toLowerCase().trim();
   if (status === 'closed' || status === 'encerrada' || status === 'inativa' || status === 'fechada') {
     return false;
-  }
-  if (status === 'open' || status === 'ativa' || status === 'aberta' || status === 'ativo') {
-    return true;
   }
   return true;
 }
@@ -4711,6 +4734,9 @@ async function handleSaveElection(e) {
     // Se marcou a eleição como ABERTA (ATIVA), garante que a data de término das inscrições seja no futuro
     if (status === 'open' && endDate.getTime() < Date.now()) {
       endDate = new Date(Date.now() + 30 * 86400000);
+    }
+    if (status === 'open' && startDate.getTime() > Date.now()) {
+      startDate = new Date(Date.now() - 3600000);
     }
 
     const electionData = {

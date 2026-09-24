@@ -13,6 +13,14 @@ const PORT = 3000;
 app.use(express.json({ limit: '15mb' }));
 app.use(express.urlencoded({ extended: true, limit: '15mb' }));
 
+// Anti-cache header to guarantee live synchronization on all devices
+app.use((req, res, next) => {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
+
 // ----------------------------------------------------
 // DATABASE & PERSISTENCE
 // ----------------------------------------------------
@@ -459,8 +467,13 @@ app.post('/api/election', async (req: Request, res: Response) => {
     const isClosed = rawStatus === 'closed' || rawStatus === 'encerrada' || rawStatus === 'fechada';
     const status = isClosed ? 'closed' : 'open';
 
+    let appStart = body.applicationStart || existing.applicationStart;
     let appEnd = body.applicationEnd || existing.applicationEnd;
     if (status === 'open') {
+      const startTimestamp = new Date(appStart).getTime();
+      if (isNaN(startTimestamp) || startTimestamp > Date.now()) {
+        appStart = new Date(Date.now() - 3600000).toISOString();
+      }
       const endTimestamp = new Date(appEnd).getTime();
       if (isNaN(endTimestamp) || endTimestamp < Date.now()) {
         appEnd = new Date(Date.now() + 30 * 86400000).toISOString();
@@ -474,7 +487,7 @@ app.post('/api/election', async (req: Request, res: Response) => {
       title: body.title || existing.title,
       type: body.type || existing.type,
       status: status,
-      applicationStart: body.applicationStart || existing.applicationStart,
+      applicationStart: appStart,
       applicationEnd: appEnd,
       electionDate: body.electionDate || existing.electionDate,
       vagas: body.vagas || existing.vagas,
