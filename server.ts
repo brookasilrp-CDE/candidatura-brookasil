@@ -426,6 +426,15 @@ function authMiddleware(req: AuthenticatedRequest, res: Response, next: NextFunc
 // PUBLIC API ROUTES
 // ----------------------------------------------------
 
+// Health Check Endpoint
+app.get('/api/health', (req: Request, res: Response) => {
+  res.json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime()
+  });
+});
+
 // 1. Get system configuration (positions, states, active parties)
 app.get('/api/public/config', (req: Request, res: Response) => {
   const activeParties = db.parties.filter((p) => p.active);
@@ -446,15 +455,27 @@ app.post('/api/election', async (req: Request, res: Response) => {
   try {
     const body = req.body || {};
     const existing = loadElectionData();
+    const rawStatus = String(body.status || existing.status || 'open').toLowerCase().trim();
+    const isClosed = rawStatus === 'closed' || rawStatus === 'encerrada' || rawStatus === 'fechada';
+    const status = isClosed ? 'closed' : 'open';
+
+    let appEnd = body.applicationEnd || existing.applicationEnd;
+    if (status === 'open') {
+      const endTimestamp = new Date(appEnd).getTime();
+      if (isNaN(endTimestamp) || endTimestamp < Date.now()) {
+        appEnd = new Date(Date.now() + 30 * 86400000).toISOString();
+      }
+    }
+
     const updated: ElectionData = {
       ...existing,
       ...body,
       id: body.id || existing.id || 'elec_2026',
       title: body.title || existing.title,
       type: body.type || existing.type,
-      status: body.status || existing.status,
+      status: status,
       applicationStart: body.applicationStart || existing.applicationStart,
-      applicationEnd: body.applicationEnd || existing.applicationEnd,
+      applicationEnd: appEnd,
       electionDate: body.electionDate || existing.electionDate,
       vagas: body.vagas || existing.vagas,
       updatedAt: new Date().toISOString()
@@ -1090,6 +1111,34 @@ app.get('/api/seed-database', (req: Request, res: Response) => {
   }
 });
 
+// Serve files from data directory safely
+app.get('/data/:filename', (req: Request, res: Response) => {
+  const safeFilename = path.basename(req.params.filename);
+  const filePath = path.join(process.cwd(), 'data', safeFilename);
+  if (fs.existsSync(filePath)) {
+    res.setHeader('Content-Type', 'application/json');
+    res.sendFile(filePath);
+  } else {
+    res.status(404).json({ error: 'Arquivo não encontrado' });
+  }
+});
+
+// Explicit 404 for unhandled /api/* routes (prevents HTML fallback)
+app.all('/api/*', (req: Request, res: Response) => {
+  res.status(404).json({ error: `Rota de API '${req.method} ${req.path}' não encontrada.` });
+});
+
+// Global Express error handler
+app.use((err: any, req: Request, res: Response, next: NextFunction) => {
+  console.error('[Express Server Error]', err);
+  if (res.headersSent) {
+    return next(err);
+  }
+  res.status(err.status || 500).json({
+    error: err.message || 'Erro interno no servidor'
+  });
+});
+
 // ----------------------------------------------------
 // VITE INTEGRATION & STATIC SERVING
 // ----------------------------------------------------
@@ -1103,6 +1152,8 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
+    // Provide root app.js and static assets directly if not present in dist
+    app.use(express.static(process.cwd()));
     app.get('*', (req: Request, res: Response) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });

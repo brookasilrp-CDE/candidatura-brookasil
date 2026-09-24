@@ -460,6 +460,19 @@ let selectedCandForJudgment = null;
 let uploadedPhotoBase64 = '';
 let uploadedPdfBase64 = '';
 
+// Helper para validar status ativo/aberto da eleição
+function isElectionOpen(election) {
+  if (!election) return true;
+  const status = String(election.status || '').toLowerCase().trim();
+  if (status === 'closed' || status === 'encerrada' || status === 'inativa' || status === 'fechada') {
+    return false;
+  }
+  if (status === 'open' || status === 'ativa' || status === 'aberta' || status === 'ativo') {
+    return true;
+  }
+  return true;
+}
+
 // Inicialização imediata dos 51 candidatos e legendas a partir do Seed oficial
 if (typeof window !== 'undefined' && window.INITIAL_SEED_DATABASE) {
   try {
@@ -476,7 +489,10 @@ if (typeof window !== 'undefined' && window.INITIAL_SEED_DATABASE) {
     if (window.INITIAL_SEED_DATABASE.elections) {
       const eData = window.INITIAL_SEED_DATABASE.elections;
       const eArr = Object.entries(eData).map(([id, val]) => ({ id, ...val }));
-      currentElection = eArr.find(e => e.status === 'open') || eArr[0];
+      currentElection = eArr.find(e => isElectionOpen(e)) || eArr[0];
+      if (currentElection && !currentElection.status) {
+        currentElection.status = 'open';
+      }
     }
     if (window.INITIAL_SEED_DATABASE.settings && window.INITIAL_SEED_DATABASE.settings.courtCredentials) {
       const cCreds = window.INITIAL_SEED_DATABASE.settings.courtCredentials;
@@ -686,6 +702,9 @@ async function bootstrapApplicationData() {
           viceName: c.vicename || c.viceName
         }));
         console.log(`[Supabase] ${candidaciesList.length} candidaturas carregadas com alta performance!`);
+        try {
+          localStorage.setItem('brookasil_candidacies', JSON.stringify(candidaciesList));
+        } catch (e) {}
         updateGlobalStats();
         renderConfirmedCandidates();
         if (currentUser) {
@@ -695,6 +714,66 @@ async function bootstrapApplicationData() {
     }
   } catch (e) {
     console.warn('[Supabase] Fetch inicial de candidaturas:', e);
+  }
+
+  // Fallback resiliente: se Supabase estiver offline ou sem registros, restaura do cache local ou do servidor
+  if (candidaciesList.length === 0) {
+    try {
+      const cached = localStorage.getItem('brookasil_candidacies');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          candidaciesList = parsed;
+          console.log(`[Cache Local] ${candidaciesList.length} candidaturas restauradas do cache.`);
+        }
+      }
+    } catch (e) {}
+
+    if (candidaciesList.length === 0) {
+      try {
+        const srvRes = await fetch('/api/candidacies');
+        if (srvRes.ok) {
+          const srvData = await srvRes.json();
+          if (srvData && Array.isArray(srvData.candidacies) && srvData.candidacies.length > 0) {
+            candidaciesList = srvData.candidacies.map(c => ({
+              ...c,
+              id: String(c.id),
+              fullName: c.fullName || c.full_name || '',
+              ballotName: c.ballotName || c.ballot_name || '',
+              number: String(c.number || ''),
+              office: c.office || c.position || '',
+              partyId: c.partyId || c.partyid || '',
+              partyAcronym: c.partyAcronym || c.partyacronym || '',
+              partyName: c.partyName || c.partyname || '',
+              partyNumber: c.partyNumber || c.partynumber || '',
+              partyColor: c.partyColor || c.party?.color || '#2563eb',
+              stateId: c.stateId || c.state || 'brookhaven',
+              state: c.state || c.stateId || 'brookhaven',
+              cityId: c.cityId || c.city || 'ALL',
+              city: c.city || c.cityId || 'ALL',
+              status: (c.status || 'pendente').toLowerCase(),
+              photo: c.photo || '',
+              hasProposalPdf: !!c.proposalPdf,
+              proposalPdf: c.proposalPdf || null,
+              tiktok: c.tiktok || '',
+              viceName: c.viceName || c.vicename || ''
+            }));
+            console.log(`[Servidor Local] ${candidaciesList.length} candidaturas carregadas do banco local.`);
+            try {
+              localStorage.setItem('brookasil_candidacies', JSON.stringify(candidaciesList));
+            } catch (e) {}
+          }
+        }
+      } catch (e) {}
+    }
+
+    if (candidaciesList.length > 0) {
+      updateGlobalStats();
+      renderConfirmedCandidates();
+      if (currentUser) {
+        renderAdminCandidacies();
+      }
+    }
   }
 
   // 2. Inicializa Eleição e Datas Oficiais (Sincronizada Diretamente com o Supabase em Nuvem)
@@ -1038,6 +1117,9 @@ function navigateTo(viewId) {
     renderPartiesCatalog();
   } else if (viewId === 'home') {
     updateGlobalStats();
+    updateElectionUI();
+  } else if (viewId === 'candidaturas' || viewId === 'eleicoes') {
+    updateElectionUI();
   }
 
   // Sincroniza botões da barra superior e menu mobile para a tela atual
@@ -1142,17 +1224,30 @@ function formatElectionDateDisplay(dateStr) {
 function updateElectionUI() {
   if (!currentElection) return;
 
+  const isOpen = isElectionOpen(currentElection);
   const startFormatted = formatElectionDateDisplay(currentElection.applicationStart);
   const endFormatted = formatElectionDateDisplay(currentElection.applicationEnd);
   const electionDateFormatted = formatElectionDateDisplay(currentElection.electionDate);
 
   // Home Banner
   const titleEl = document.getElementById('home-election-title');
-  if (titleEl) titleEl.textContent = currentElection.title || 'Eleições Gerais de Brookasil';
+  if (titleEl) titleEl.textContent = currentElection.title || 'Eleições Gerais de Brookasil 2026';
 
   const datesEl = document.getElementById('home-election-dates');
   if (datesEl) {
     datesEl.textContent = `Inscrições até: ${endFormatted} • Votação: ${electionDateFormatted}`;
+  }
+
+  // Home Banner Status Badge
+  const homeStatusBadge = document.getElementById('home-election-status-badge');
+  if (homeStatusBadge) {
+    if (isOpen) {
+      homeStatusBadge.className = "text-xs uppercase font-bold tracking-widest text-emerald-400 flex items-center gap-1.5";
+      homeStatusBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Eleição Ativa / Inscrições Abertas';
+    } else {
+      homeStatusBadge.className = "text-xs uppercase font-bold tracking-widest text-red-400 flex items-center gap-1.5";
+      homeStatusBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-red-400"></span> Eleição Encerrada';
+    }
   }
 
   // Eleições View
@@ -1161,11 +1256,11 @@ function updateElectionUI() {
     elecCard.innerHTML = `
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <span class="px-3 py-1 rounded-full text-xs font-bold uppercase ${currentElection.status === 'open' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/20 text-red-400'}">
-            ${currentElection.status === 'open' ? '● ELEIÇÃO ABERTA' : '● ELEIÇÃO ENCERRADA'}
+          <span class="px-3 py-1 rounded-full text-xs font-bold uppercase ${isOpen ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'}">
+            ${isOpen ? '● ELEIÇÃO ABERTA' : '● ELEIÇÃO ENCERRADA'}
           </span>
-          <h3 class="text-2xl sm:text-3xl font-cinzel font-bold text-white mt-2">${currentElection.title}</h3>
-          <p class="text-sm text-slate-300 mt-1">Modalidade: <strong>${currentElection.type}</strong> • 4 Estados Representados</p>
+          <h3 class="text-2xl sm:text-3xl font-cinzel font-bold text-white mt-2">${currentElection.title || 'Eleições Gerais de Brookasil 2026'}</h3>
+          <p class="text-sm text-slate-300 mt-1">Modalidade: <strong>${currentElection.type || 'Federal'}</strong> • 4 Estados Representados</p>
           <div class="flex flex-wrap items-center gap-3 mt-3 text-xs">
             <span class="text-slate-300 bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg">
               <strong class="text-brand-electric">Inscrições:</strong> ${startFormatted} até ${endFormatted}
@@ -1176,7 +1271,7 @@ function updateElectionUI() {
           </div>
         </div>
         <button onclick="navigateTo('candidaturas')" class="px-6 py-3 rounded-xl font-bold text-slate-950 bg-gradient-to-r from-brand-gold to-yellow-500 hover:to-brand-gold transition shadow-glow-gold text-sm whitespace-nowrap">
-          Participar da Disputa
+          ${isOpen ? 'Participar da Disputa' : 'Ver Candidaturas'}
         </button>
       </div>
     `;
@@ -1203,11 +1298,6 @@ function updateElectionUI() {
   }
 
   // Candidacy period validation
-  const now = new Date();
-  const start = new Date(currentElection.applicationStart);
-  const end = new Date(currentElection.applicationEnd);
-  const isOpen = currentElection.status === 'open' && now >= start && now <= end;
-
   const closedAlert = document.getElementById('candidacy-closed-alert');
   const form = document.getElementById('candidacy-form');
   const badge = document.getElementById('candidacy-period-badge');
@@ -2056,10 +2146,13 @@ async function handleCandidacySubmit(e) {
     }
 
     // Validação estrita: Proibir que candidatos da mesma cidade concorram ao cargo majoritário pelo mesmo partido
+    const activeElecId = (currentElection && currentElection.id) || 'elec_2026';
+    const activeElecTitle = (currentElection && currentElection.title) || 'Eleições Gerais de Brookasil 2026';
+
     if (isMunicipalOffice(officeId) && isMajorOffice(officeId)) {
       const existingMajor = candidaciesList.find(c =>
         c.status !== 'excluida' &&
-        c.electionId === currentElection.id &&
+        (c.electionId === activeElecId || !c.electionId) &&
         c.office === officeId &&
         String(c.partyId) === String(selectedParty.id) &&
         c.cityId === cityId
@@ -2080,7 +2173,7 @@ async function handleCandidacySubmit(e) {
     // Verificação de colisão de número de urna na circunscrição
     const numberCollision = candidaciesList.find(c => {
       if (c.status === 'excluida') return false;
-      if (c.electionId !== currentElection.id) return false;
+      if (c.electionId && c.electionId !== activeElecId) return false;
       if (c.office !== officeId) return false;
       if (String(c.number) !== String(finalNumber)) return false;
 
@@ -2105,8 +2198,8 @@ async function handleCandidacySubmit(e) {
 
     const candidateData = {
       protocol: protocol,
-      electionId: currentElection.id,
-      electionTitle: currentElection.title,
+      electionId: activeElecId,
+      electionTitle: activeElecTitle,
       office: officeId,
       position: officeId,
       stateId: stateId,
@@ -4546,7 +4639,7 @@ function openElectionModal() {
     if (typeEl) typeEl.value = currentElection.type || 'Federal';
 
     const statusEl = document.getElementById('modal-election-status');
-    if (statusEl) statusEl.value = currentElection.status || 'open';
+    if (statusEl) statusEl.value = isElectionOpen(currentElection) ? 'open' : 'closed';
 
     const startEl = document.getElementById('modal-election-start');
     if (startEl && currentElection.applicationStart) {
@@ -4599,27 +4692,34 @@ async function handleSaveElection(e) {
   const endVal = endInput?.value;
   const dateVal = dateInput?.value;
 
-  if (!dateVal) {
-    showToast('error', 'Por favor, selecione a data e horário da votação.');
-    return;
-  }
-
   try {
     const defaultVagas = type === 'Municipal' 
       ? { Prefeito: 10, Vereador: 20 }
       : { Presidente: 8, Governador: 8, Senador: 16, "Deputado Federal": 16, "Deputado Estadual": 16 };
 
     const startDate = startVal ? new Date(startVal) : new Date();
-    const endDate = endVal ? new Date(endVal) : new Date(Date.now() + 30 * 86400000);
-    const electionDate = new Date(dateVal);
+    let electionDate = dateVal ? new Date(dateVal) : (currentElection?.electionDate ? new Date(currentElection.electionDate) : new Date(Date.now() + 60 * 86400000));
+    if (isNaN(electionDate.getTime())) {
+      electionDate = new Date(Date.now() + 60 * 86400000);
+    }
+
+    let endDate = endVal ? new Date(endVal) : new Date(Date.now() + 30 * 86400000);
+    if (isNaN(endDate.getTime())) {
+      endDate = new Date(Date.now() + 30 * 86400000);
+    }
+
+    // Se marcou a eleição como ABERTA (ATIVA), garante que a data de término das inscrições seja no futuro
+    if (status === 'open' && endDate.getTime() < Date.now()) {
+      endDate = new Date(Date.now() + 30 * 86400000);
+    }
 
     const electionData = {
       title,
       type,
       status,
       applicationStart: isNaN(startDate.getTime()) ? (currentElection && currentElection.applicationStart) || new Date().toISOString() : startDate.toISOString(),
-      applicationEnd: isNaN(endDate.getTime()) ? (currentElection && currentElection.applicationEnd) || new Date().toISOString() : endDate.toISOString(),
-      electionDate: isNaN(electionDate.getTime()) ? (currentElection && currentElection.electionDate) || new Date().toISOString() : electionDate.toISOString(),
+      applicationEnd: endDate.toISOString(),
+      electionDate: electionDate.toISOString(),
       vagas: (currentElection && currentElection.vagas) || defaultVagas,
       updatedAt: new Date().toISOString()
     };
@@ -4657,7 +4757,7 @@ async function handleSaveElection(e) {
     // 3. Registra Auditoria
     saveAuditLog({
       action: 'ELECTION_SETTINGS_UPDATE',
-      reason: `Atualização oficial das configurações eleitorais. Nova data de votação: ${formattedElectionDate}`,
+      reason: `Atualização oficial das configurações eleitorais (${status === 'open' ? 'Aberta/Ativa' : 'Encerrada'}). Nova data de votação: ${formattedElectionDate}`,
       adminUser: currentUser.login || currentUser.id || 'tse',
       adminName: currentUser.name || 'Presidência do TSE',
       adminRole: currentUser.role || 'tse'
@@ -4669,7 +4769,7 @@ async function handleSaveElection(e) {
     updateElectionUI();
     renderAdminElections();
     
-    showToast('success', `Eleição salva! Data de votação atualizada para: ${formattedElectionDate}`);
+    showToast('success', `Eleição salva! Status: ${status === 'open' ? 'Aberta (Ativa)' : 'Encerrada'} • Votação: ${formattedElectionDate}`);
   } catch (err) {
     console.error("Erro ao salvar eleição:", err);
     showToast('error', 'Falha ao salvar configurações da eleição.');
@@ -4685,6 +4785,7 @@ function renderAdminElections() {
     return;
   }
 
+  const isOpen = isElectionOpen(currentElection);
   const startFormatted = formatElectionDateDisplay(currentElection.applicationStart);
   const endFormatted = formatElectionDateDisplay(currentElection.applicationEnd);
   const electionDateFormatted = formatElectionDateDisplay(currentElection.electionDate);
@@ -4694,11 +4795,11 @@ function renderAdminElections() {
       <div>
         <div class="flex items-center gap-2">
           <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
-            currentElection.status === 'open' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/20 text-red-400'
-          }">${currentElection.status === 'open' ? 'Ativa / Inscrições Abertas' : 'Encerrada'}</span>
-          <span class="text-xs text-brand-electric font-semibold">${currentElection.type}</span>
+            isOpen ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-red-500/20 text-red-400 border border-red-500/30'
+          }">${isOpen ? 'Ativa / Inscrições Abertas' : 'Encerrada'}</span>
+          <span class="text-xs text-brand-electric font-semibold">${currentElection.type || 'Federal'}</span>
         </div>
-        <h4 class="text-lg font-bold text-white mt-1">${currentElection.title}</h4>
+        <h4 class="text-lg font-bold text-white mt-1">${currentElection.title || 'Eleições Gerais de Brookasil 2026'}</h4>
         <p class="text-xs text-slate-400 mt-1">
           Inscrições: <span class="text-slate-300 font-medium">${startFormatted} até ${endFormatted}</span> 
           • Data da Votação: <strong class="text-brand-gold font-mono font-bold">${electionDateFormatted}</strong>
