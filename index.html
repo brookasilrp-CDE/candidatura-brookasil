@@ -98,6 +98,7 @@
 
   <!-- PDF.js CDN para visualização nativa de PDF em alta resolução sem bloqueio de navegador -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
   <script>
     if (window.pdfjsLib) {
       window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -2839,7 +2840,10 @@
   <!-- Toast Notification Container -->
   <div id="toast-container" class="fixed bottom-20 lg:bottom-6 right-4 sm:right-6 z-[110] flex flex-col gap-2 pointer-events-none"></div>
 
+  <!-- Seed Database Offline & Instant Load -->
+  <script src="./seed_data.js"></script>
+
   <!-- Companion JavaScript Engine -->
-  <script src="./app.js?v=20260924_tse_open_v3"></script>
+  <script src="./app.js?v=20260927_propostas_fix_v6"></script>
 </body>
 </html>

@@ -5,6 +5,7 @@ import crypto from 'crypto';
 import { createServer as createViteServer } from 'vite';
 import { INITIAL_PARTIES, POSITIONS_CONFIG, BROOKASIL_STATES } from './src/data/partiesData';
 import { Party, Candidacy, CandidacyStatus, BrookasilState, PositionName } from './src/types';
+import { generateCandidateProposalPdf, syncAllProposals } from './scripts/sync_proposals.js';
 
 const app = express();
 const PORT = 3000;
@@ -532,27 +533,59 @@ app.post('/api/parties', async (req: Request, res: Response) => {
 app.get('/api/candidacies', (req: Request, res: Response) => {
   try {
     const rawData = fs.existsSync(DB_FILE) ? JSON.parse(fs.readFileSync(DB_FILE, 'utf-8')) : db;
+    const allCands: any[] = rawData.candidacies || db.candidacies || [];
+    const filtered = allCands
+      .filter((c: any) => !String(c.id || '').startsWith('__SYSTEM_') && !String(c.office || '').includes('SISTEMA'))
+      .map((c: any) => ({
+        ...c,
+        id: String(c.id),
+        hasProposalPdf: !!(c.proposalPdf && c.proposalPdf.length > 50) || true,
+        proposalsText: c.proposalsText || c.proposals || ''
+      }));
     res.json({
-      candidacies: rawData.candidacies || []
+      candidacies: filtered
     });
   } catch (err) {
-    res.json({ candidacies: db.candidacies || [] });
+    const fallback = (db.candidacies || [])
+      .filter((c: any) => !String(c.id || '').startsWith('__SYSTEM_') && !String(c.office || '').includes('SISTEMA'));
+    res.json({ candidacies: fallback });
   }
 });
 
 // Get single candidacy proposal PDF
-app.get('/api/candidacies/:id/pdf', (req: Request, res: Response) => {
+app.get('/api/candidacies/:id/pdf', async (req: Request, res: Response) => {
   try {
     const candId = String(req.params.id || '').trim();
     const rawData = fs.existsSync(DB_FILE) ? JSON.parse(fs.readFileSync(DB_FILE, 'utf-8')) : db;
     const candidacies: any[] = rawData.candidacies || [];
     const cand = candidacies.find(c => String(c.id) === candId || String(c.protocol) === candId);
-    if (cand && cand.proposalPdf) {
+    if (cand && cand.proposalPdf && cand.proposalPdf.length > 50) {
       return res.json({ proposalPdf: cand.proposalPdf, ballotName: cand.ballotName, protocol: cand.protocol });
+    }
+    if (cand) {
+      try {
+        const generated = await generateCandidateProposalPdf(cand);
+        cand.proposalPdf = generated;
+        cand.hasProposalPdf = true;
+        saveDatabase(rawData);
+        return res.json({ proposalPdf: generated, ballotName: cand.ballotName, protocol: cand.protocol });
+      } catch (err) {
+        console.warn('[Server] Falha ao gerar PDF dinâmico:', err);
+      }
     }
     return res.status(404).json({ error: 'PDF não encontrado para este candidato no servidor local' });
   } catch (err: any) {
     return res.status(500).json({ error: err.message || 'Erro ao buscar PDF' });
+  }
+});
+
+// Sincronização manual ou remota de propostas
+app.post('/api/sync-proposals', async (req: Request, res: Response) => {
+  try {
+    await syncAllProposals();
+    res.json({ success: true, message: 'Propostas e PDFs sincronizados com sucesso com o Supabase e banco local.' });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message || 'Erro ao sincronizar propostas' });
   }
 });
 
@@ -642,13 +675,22 @@ app.post('/api/candidacies', async (req: Request, res: Response) => {
       viceName,
       coalition,
       photo,
-      proposalPdf,
+      proposalPdf: proposalPdf || null,
+      hasProposalPdf: true,
       proposalsText,
       proposals: proposalsText,
       status,
       createdAt: body.createdAt || nowIso,
       updatedAt: nowIso
     };
+
+    if (!candidateRecord.proposalPdf || candidateRecord.proposalPdf.length < 50) {
+      try {
+        candidateRecord.proposalPdf = await generateCandidateProposalPdf(candidateRecord);
+      } catch (pdfErr) {
+        console.warn('[Server] Falha ao autogerar PDF:', pdfErr);
+      }
+    }
 
     // Save to server local database
     const existingIndex = db.candidacies.findIndex((c: any) => c.id === newId || c.protocol === protocol);

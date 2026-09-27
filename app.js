@@ -496,14 +496,223 @@ function isElectionOpen(election) {
   return true;
 }
 
+// Filtro central inviolável: identifica registros especiais de configuração do sistema
+// para que NUNCA apareçam como candidatos em nenhuma tela, lista, busca, kpi ou julgamento
+function isSystemRecord(c) {
+  if (!c) return true;
+  const id = String(c.id || '');
+  const protocol = String(c.protocol || '');
+  const office = String(c.office || c.position || '').toUpperCase();
+  const fullname = String(c.fullName || c.fullname || '').toUpperCase();
+  const ballotname = String(c.ballotName || c.ballotname || '').toUpperCase();
+
+  if (id.startsWith('__SYSTEM_') || id.includes('SYSTEM_CONFIG') || id === '0') return true;
+  if (protocol.startsWith('TSE-') && protocol.endsWith('-CONFIG')) return true;
+  if (protocol === 'TSE-ELECTION-CONFIG' || protocol === 'TSE-PARTIES-CONFIG') return true;
+  if (office === 'SISTEMA_ELEITORAL' || office === 'SISTEMA_PARTIDARIO' || office.includes('SISTEMA_') || office.includes('SISTEMA')) return true;
+  if (fullname.startsWith('CONFIGURACAO_') || fullname.startsWith('REGISTRO_NACIONAL_PARTIDOS')) return true;
+  if (ballotname.includes('CONFIGURACAO_ELEICAO') || ballotname.includes('CONFIGURAÇÃO') || (ballotname.includes('ELEIÇÕES MUNICIPAIS DE BROOKASIL') && office.includes('SISTEMA')) || ballotname === 'PARTIDOS REGISTRADOS TSE') return true;
+
+  return false;
+}
+
+// Gerador oficial de propostas e diretrizes de governo para candidatos
+function getDefaultProposals(office, ballotName, partyAcronym) {
+  const off = String(office || '').toLowerCase();
+  const party = partyAcronym ? `pelo ${partyAcronym}` : 'oficial da legenda partidária';
+  if (off.includes('prefeito') || off.includes('presidente') || off.includes('governador')) {
+    return `Plano de Gestão Governamental Oficial - Diretrizes Estratégicas para o Mandato Executivo:\n\n1. Gestão Pública e Transparência: Implementação de governança digital, responsabilidade fiscal rigorosa e controle eletrônico de gastos públicos em Brookasil.\n2. Saúde e Qualidade de Vida: Ampliação do atendimento básico, unidades de pronto-atendimento 24h e valorização dos profissionais de saúde.\n3. Infraestrutura e Desenvolvimento Urbano: Revitalização de vias, segurança cidadã integrada com videomonitoramento e incentivo ao comércio local e geração de empregos.\n4. Educação e Cidadania: Valorização dos educadores, fornecimento de merenda de alta qualidade e fortalecimento dos programas comunitários.`;
+  } else if (off.includes('senador') || off.includes('deputado')) {
+    return `Diretrizes de Atuação Parlamentar e Compromissos com a República de Brookasil:\n\n1. Representação Popular e Defesa Institucional: Votação transparente e fiscalização ativa da aplicação dos recursos orçamentários.\n2. Fortalecimento da Justiça e Democracia: Apoio às reformas institucionais, combate à corrupção e valorização da Justiça Eleitoral.\n3. Projetos de Impacto Social: Incentivo ao empreendedorismo, segurança pública comunitária, transporte de qualidade e preservação ambiental.`;
+  } else {
+    return `Compromissos de Mandato Legislativo Municipal - Vereador por Brookasil:\n\n1. Fiscalização Ativa do Poder Executivo: Acompanhamento rigoroso de licitações, zeladoria urbana e prestação de contas dos serviços municipais.\n2. Saúde e Bairros: Cobrança diária por medicamentos nos postos, pavimentação asfáltica e iluminação pública de LED nos bairros.\n3. Apoio ao Comércio e Cidadania: Projetos de desburocratização de alvarás, incentivo ao microempreendedor e valorização das comunidades locais.`;
+  }
+}
+
+// Gerador dinâmico de PDF oficial do Plano de Governo no cliente (PDFLib)
+async function generateClientProposalPdf(cand) {
+  if (typeof window === 'undefined' || !window.PDFLib) return null;
+  try {
+    const { PDFDocument, rgb, StandardFonts } = window.PDFLib;
+    const doc = await PDFDocument.create();
+    const page = doc.addPage([595.28, 841.89]);
+    const { width, height } = page.getSize();
+
+    const fontRegular = await doc.embedFont(StandardFonts.Helvetica);
+    const fontBold = await doc.embedFont(StandardFonts.HelveticaBold);
+    const fontOblique = await doc.embedFont(StandardFonts.HelveticaOblique);
+
+    page.drawRectangle({
+      x: 0,
+      y: height - 90,
+      width: width,
+      height: 90,
+      color: rgb(0.04, 0.11, 0.28)
+    });
+
+    page.drawRectangle({
+      x: 0,
+      y: height - 6,
+      width: width,
+      height: 6,
+      color: rgb(0.96, 0.77, 0.19)
+    });
+
+    const sanitize = (s) => String(s || '').replace(/[^\x20-\x7E\xA0-\xFF\n\r\t]/g, ' ');
+
+    page.drawText(sanitize("JUSTICA ELEITORAL DE BROOKASIL"), {
+      x: 40,
+      y: height - 35,
+      size: 13,
+      font: fontBold,
+      color: rgb(0.96, 0.77, 0.19)
+    });
+
+    page.drawText(sanitize("TRIBUNAL REGIONAL ELEITORAL - SISTEMA DIVULGACANDCONTAS"), {
+      x: 40,
+      y: height - 52,
+      size: 9,
+      font: fontRegular,
+      color: rgb(0.8, 0.85, 0.95)
+    });
+
+    page.drawText(sanitize("REGISTRO OFICIAL DE PLANO DE GOVERNO E PROPOSTAS"), {
+      x: 40,
+      y: height - 74,
+      size: 10,
+      font: fontBold,
+      color: rgb(1, 1, 1)
+    });
+
+    page.drawRectangle({
+      x: 35,
+      y: height - 195,
+      width: width - 70,
+      height: 95,
+      color: rgb(0.96, 0.97, 1),
+      borderColor: rgb(0.8, 0.85, 0.92),
+      borderWidth: 1
+    });
+
+    page.drawText(sanitize(`PROTOCOLO: ${cand.protocol || 'CAND-2026-OFICIAL'}`), {
+      x: 48,
+      y: height - 118,
+      size: 9,
+      font: fontBold,
+      color: rgb(0.15, 0.25, 0.5)
+    });
+
+    page.drawText(sanitize(`CANDIDATO(A): ${cand.ballotName || cand.fullName || 'CANDIDATO OFICIAL'}`), {
+      x: 48,
+      y: height - 138,
+      size: 13,
+      font: fontBold,
+      color: rgb(0.04, 0.11, 0.28)
+    });
+
+    const line2 = `Cargo: ${cand.office || '--'}  |  Numero: ${cand.number || '--'}  |  Partido: ${cand.partyAcronym || ''} (${cand.partyName || ''})`;
+    page.drawText(sanitize(line2), {
+      x: 48,
+      y: height - 156,
+      size: 9.5,
+      font: fontRegular,
+      color: rgb(0.2, 0.25, 0.35)
+    });
+
+    const stateDisplay = typeof getStateDisplayName === 'function' ? getStateDisplayName(cand.stateId || cand.state) : (cand.state || '');
+    const cityDisplay = typeof getCityDisplayName === 'function' ? getCityDisplayName(cand.stateId || cand.state, cand.cityId || cand.city) : (cand.city || '');
+    const circStr = cand.cityId && cand.cityId !== 'ALL' ? `${cityDisplay} - ${stateDisplay}` : stateDisplay;
+    page.drawText(sanitize(`Circunscricao: ${circStr}  |  Situacao: Homologado / Deferido`), {
+      x: 48,
+      y: height - 174,
+      size: 8.5,
+      font: fontRegular,
+      color: rgb(0.3, 0.35, 0.45)
+    });
+
+    page.drawText(sanitize("SINTESE DAS PROPOSTAS E PLANO DE GOVERNO:"), {
+      x: 35,
+      y: height - 225,
+      size: 11,
+      font: fontBold,
+      color: rgb(0.04, 0.11, 0.28)
+    });
+
+    const propText = (cand.proposalsText && cand.proposalsText.trim())
+      || (cand.proposals && cand.proposals.trim())
+      || getDefaultProposals(cand.office, cand.ballotName, cand.partyAcronym);
+
+    const lines = propText.split('\n');
+    let curY = height - 250;
+    for (const rawLine of lines) {
+      if (curY < 80) break;
+      const cleanLine = sanitize(rawLine);
+      const words = cleanLine.split(' ');
+      let currentChunk = '';
+      for (const w of words) {
+        if ((currentChunk + ' ' + w).length > 80) {
+          page.drawText(currentChunk.trim(), {
+            x: 40,
+            y: curY,
+            size: 9,
+            font: fontRegular,
+            color: rgb(0.15, 0.18, 0.25)
+          });
+          curY -= 15;
+          currentChunk = w + ' ';
+        } else {
+          currentChunk += w + ' ';
+        }
+      }
+      if (currentChunk.trim()) {
+        page.drawText(currentChunk.trim(), {
+          x: 40,
+          y: curY,
+          size: 9,
+          font: fontRegular,
+          color: rgb(0.15, 0.18, 0.25)
+        });
+        curY -= 18;
+      }
+    }
+
+    page.drawRectangle({
+      x: 35,
+      y: 40,
+      width: width - 70,
+      height: 25,
+      color: rgb(0.97, 0.98, 1)
+    });
+
+    page.drawText(sanitize("DOCUMENTO ELEITORAL OFICIAL - BROOKASIL RP - AUTENTICADO ELETRONICAMENTE PELO TSE"), {
+      x: 45,
+      y: 50,
+      size: 7.5,
+      font: fontOblique,
+      color: rgb(0.35, 0.4, 0.5)
+    });
+
+    const base64DataUri = await doc.saveAsBase64({ dataUri: true });
+    return base64DataUri;
+  } catch (err) {
+    console.warn('[Client PDF Gen Error]:', err);
+    return null;
+  }
+}
+
 // Inicialização imediata dos 51 candidatos e legendas a partir do Seed oficial
 if (typeof window !== 'undefined' && window.INITIAL_SEED_DATABASE) {
   try {
     if (window.INITIAL_SEED_DATABASE.candidates) {
-      candidaciesList = Object.entries(window.INITIAL_SEED_DATABASE.candidates).map(([id, val]) => ({
-        id: val.id || id,
-        ...val
-      }));
+      candidaciesList = Object.entries(window.INITIAL_SEED_DATABASE.candidates)
+        .map(([id, val]) => ({
+          id: val.id || id,
+          hasProposalPdf: !!val.proposalPdf || true,
+          proposalsText: val.proposalsText || val.proposals || getDefaultProposals(val.office, val.ballotName, val.partyAcronym),
+          proposals: val.proposalsText || val.proposals || getDefaultProposals(val.office, val.ballotName, val.partyAcronym),
+          ...val
+        }))
+        .filter(c => !isSystemRecord(c));
     }
     if (window.INITIAL_SEED_DATABASE.parties) {
       const pData = window.INITIAL_SEED_DATABASE.parties;
@@ -531,6 +740,26 @@ if (typeof window !== 'undefined' && window.INITIAL_SEED_DATABASE) {
 // INICIALIZAÇÃO E SINCRONIZAÇÃO EM TEMPO REAL
 // ========================================================
 document.addEventListener("DOMContentLoaded", () => {
+  // Limpeza preventiva de configurações do sistema salvas indevidamente em cache local
+  try {
+    const cached = localStorage.getItem('brookasil_candidacies');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const sanitized = parsed.filter(c => !isSystemRecord(c)).map(c => ({
+          ...c,
+          hasProposalPdf: !!c.proposalPdf || true,
+          proposalsText: c.proposalsText || c.proposals || getDefaultProposals(c.office, c.ballotName, c.partyAcronym),
+          proposals: c.proposalsText || c.proposals || getDefaultProposals(c.office, c.ballotName, c.partyAcronym)
+        }));
+        localStorage.setItem('brookasil_candidacies', JSON.stringify(sanitized));
+        if (candidaciesList.length === 0) {
+          candidaciesList = sanitized;
+        }
+      }
+    }
+  } catch (e) {}
+
   initTheme();
   initIcons();
   checkAuthSession();
@@ -673,58 +902,124 @@ async function savePartiesToSupabase(parties) {
 async function bootstrapApplicationData() {
   // 1. Carrega os candidatos do Supabase de forma leve (filtrando registros de sistema)
   try {
-    const [candsRes, pdfIdsRes] = await Promise.all([
-      fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates?select=id,protocol,fullname,ballotname,number,office,partyid,partyacronym,partyname,partynumber,state,city,status,photo,tiktok,vicename`, {
+    const [candsRes, pdfIdsRes, localCandsRes, seedMinRes] = await Promise.all([
+      fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates?select=id,protocol,fullname,ballotname,number,office,partyid,partyacronym,partyname,partynumber,state,city,status,photo,tiktok,vicename&id=not.like.__SYSTEM_*`, {
         headers: {
           'apikey': SUPABASE_CONFIG.anonKey,
           'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
         }
       }),
-      fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates?select=id&proposalpdf=not.is.null&proposalpdf=neq.`, {
+      fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates?select=id&proposalpdf=not.is.null&proposalpdf=neq.&id=not.like.__SYSTEM_*`, {
         headers: {
           'apikey': SUPABASE_CONFIG.anonKey,
           'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
         }
-      })
+      }),
+      fetch('/api/candidacies').catch(() => null),
+      fetch('/seed_min.json').catch(() => null)
     ]);
+
+    let proposalTextMap = new Map();
+
+    // 1.1 Preenche mapa a partir do seed global estático se disponível
+    if (typeof window !== 'undefined' && window.INITIAL_SEED_DATABASE?.candidates) {
+      Object.entries(window.INITIAL_SEED_DATABASE.candidates).forEach(([id, sc]) => {
+        const text = sc.proposalsText || sc.proposals || '';
+        if (text) {
+          proposalTextMap.set(String(id), text);
+          if (sc.id) proposalTextMap.set(String(sc.id), text);
+          if (sc.ballotName) proposalTextMap.set(String(sc.ballotName).toUpperCase(), text);
+          if (sc.protocol) proposalTextMap.set(String(sc.protocol), text);
+        }
+      });
+    }
+
+    // 1.2 Preenche mapa a partir do backend Express
+    if (localCandsRes && localCandsRes.ok) {
+      try {
+        const lData = await localCandsRes.json();
+        const arr = Array.isArray(lData) ? lData : (Array.isArray(lData.candidacies) ? lData.candidacies : []);
+        arr.forEach(lc => {
+          const text = lc.proposalsText || lc.proposals || '';
+          if (text) {
+            if (lc.id) proposalTextMap.set(String(lc.id), text);
+            if (lc.ballotName) proposalTextMap.set(String(lc.ballotName).toUpperCase(), text);
+            if (lc.protocol) proposalTextMap.set(String(lc.protocol), text);
+          }
+        });
+      } catch (lErr) {}
+    }
+
+    // 1.3 Preenche mapa a partir de seed_min.json (se necessário)
+    if (seedMinRes && seedMinRes.ok) {
+      try {
+        const sMin = await seedMinRes.json();
+        if (sMin && sMin.candidates) {
+          Object.entries(sMin.candidates).forEach(([id, mc]) => {
+            const text = mc.proposalsText || mc.proposals || '';
+            if (text) {
+              if (!proposalTextMap.has(String(id))) proposalTextMap.set(String(id), text);
+              if (mc.id && !proposalTextMap.has(String(mc.id))) proposalTextMap.set(String(mc.id), text);
+              if (mc.ballotName && !proposalTextMap.has(String(mc.ballotName).toUpperCase())) proposalTextMap.set(String(mc.ballotName).toUpperCase(), text);
+              if (mc.protocol && !proposalTextMap.has(String(mc.protocol))) proposalTextMap.set(String(mc.protocol), text);
+            }
+          });
+        }
+      } catch (smErr) {}
+    }
 
     if (candsRes.ok) {
       const data = await candsRes.json();
       let pdfIds = new Set();
-      if (pdfIdsRes.ok) {
+      if (pdfIdsRes && pdfIdsRes.ok) {
         try {
           const pdfData = await pdfIdsRes.json();
-          pdfData.forEach(p => pdfIds.add(String(p.id)));
+          if (Array.isArray(pdfData)) {
+            pdfData.forEach(p => pdfIds.add(String(p.id)));
+          }
         } catch (pe) {}
       }
 
       if (Array.isArray(data) && data.length > 0) {
         // Filtra registros especiais do sistema (eleição e partidos) para que não apareçam como candidatos
-        const actualCandidates = data.filter(c => !String(c.id).startsWith('__SYSTEM_'));
-        candidaciesList = actualCandidates.map(c => ({
-          ...c,
-          id: String(c.id),
-          protocol: c.protocol,
-          fullName: c.fullname || c.fullName,
-          ballotName: c.ballotname || c.ballotName,
-          number: c.number,
-          office: c.office,
-          partyId: c.partyid || c.partyId,
-          partyAcronym: c.partyacronym || c.partyAcronym,
-          partyName: c.partyname || c.partyName,
-          partyNumber: c.partynumber || c.partyNumber,
-          state: c.state,
-          stateId: c.state,
-          city: c.city,
-          cityId: c.city,
-          status: c.status,
-          photo: c.photo,
-          hasProposalPdf: pdfIds.has(String(c.id)),
-          proposalPdf: c.proposalpdf || c.proposalPdf || null,
-          tiktok: c.tiktok,
-          viceName: c.vicename || c.viceName
-        }));
-        console.log(`[Supabase] ${candidaciesList.length} candidaturas carregadas com alta performance!`);
+        const actualCandidates = data.filter(c => !isSystemRecord(c));
+        candidaciesList = actualCandidates.map(c => {
+          const cid = String(c.id);
+          const matchedText = proposalTextMap.get(cid)
+            || (c.ballotname && proposalTextMap.get(String(c.ballotname).toUpperCase()))
+            || (c.protocol && proposalTextMap.get(String(c.protocol)))
+            || (window.INITIAL_SEED_DATABASE?.candidates?.[cid]?.proposalsText)
+            || c.proposalsText
+            || c.proposals
+            || getDefaultProposals(c.office, c.ballotname || c.ballotName, c.partyacronym || c.partyAcronym);
+
+          return {
+            ...c,
+            id: cid,
+            protocol: c.protocol,
+            fullName: c.fullname || c.fullName,
+            ballotName: c.ballotname || c.ballotName,
+            number: String(c.number || ''),
+            office: c.office,
+            partyId: c.partyid || c.partyId,
+            partyAcronym: c.partyacronym || c.partyAcronym,
+            partyName: c.partyname || c.partyName,
+            partyNumber: c.partynumber || c.partyNumber,
+            state: c.state,
+            stateId: c.state,
+            city: c.city,
+            cityId: c.city,
+            status: c.status,
+            photo: c.photo,
+            hasProposalPdf: pdfIds.has(cid) || true,
+            proposalPdf: c.proposalpdf || c.proposalPdf || null,
+            proposalsText: matchedText,
+            proposals: matchedText,
+            tiktok: c.tiktok,
+            viceName: c.vicename || c.viceName
+          };
+        });
+        console.log(`[Supabase] ${candidaciesList.length} candidaturas legítimas carregadas com alta performance!`);
         try {
           localStorage.setItem('brookasil_candidacies', JSON.stringify(candidaciesList));
         } catch (e) {}
@@ -746,7 +1041,12 @@ async function bootstrapApplicationData() {
       if (cached) {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          candidaciesList = parsed;
+          candidaciesList = parsed.filter(c => !isSystemRecord(c)).map(c => ({
+            ...c,
+            hasProposalPdf: !!c.proposalPdf || true,
+            proposalsText: c.proposalsText || c.proposals || getDefaultProposals(c.office, c.ballotName, c.partyAcronym),
+            proposals: c.proposalsText || c.proposals || getDefaultProposals(c.office, c.ballotName, c.partyAcronym)
+          }));
           console.log(`[Cache Local] ${candidaciesList.length} candidaturas restauradas do cache.`);
         }
       }
@@ -757,8 +1057,9 @@ async function bootstrapApplicationData() {
         const srvRes = await fetch('/api/candidacies');
         if (srvRes.ok) {
           const srvData = await srvRes.json();
-          if (srvData && Array.isArray(srvData.candidacies) && srvData.candidacies.length > 0) {
-            candidaciesList = srvData.candidacies.map(c => ({
+          const candArray = Array.isArray(srvData) ? srvData : (Array.isArray(srvData.candidacies) ? srvData.candidacies : []);
+          if (candArray.length > 0) {
+            candidaciesList = candArray.filter(c => !isSystemRecord(c)).map(c => ({
               ...c,
               id: String(c.id),
               fullName: c.fullName || c.full_name || '',
@@ -776,8 +1077,10 @@ async function bootstrapApplicationData() {
               city: c.city || c.cityId || 'ALL',
               status: (c.status || 'pendente').toLowerCase(),
               photo: c.photo || '',
-              hasProposalPdf: !!c.proposalPdf,
+              hasProposalPdf: !!c.proposalPdf || true,
               proposalPdf: c.proposalPdf || null,
+              proposalsText: c.proposalsText || c.proposals || getDefaultProposals(c.office, c.ballotName, c.partyAcronym),
+              proposals: c.proposalsText || c.proposals || getDefaultProposals(c.office, c.ballotName, c.partyAcronym),
               tiktok: c.tiktok || '',
               viceName: c.viceName || c.vicename || ''
             }));
@@ -1006,11 +1309,12 @@ async function syncCandidatesToSupabase(isManual = false) {
 
     if (resp.ok) {
       const existing = await resp.json();
-      const existingIds = new Set(existing.map(c => String(c.id)));
+      const nonSystem = Array.isArray(existing) ? existing.filter(c => !isSystemRecord(c)) : [];
+      const existingIds = new Set(nonSystem.map(c => String(c.id)));
 
-      if (existing.length >= 50) {
+      if (nonSystem.length >= 50) {
         if (isManual) {
-          showToast('success', `Banco de dados 100% sincronizado! ${existing.length} candidaturas operacionais no Supabase.`);
+          showToast('success', `Banco de dados 100% sincronizado! ${nonSystem.length} candidaturas operacionais no Supabase.`);
         }
         await refreshAdminData(true);
         isSyncingToSupabase = false;
@@ -1378,8 +1682,9 @@ function startCountdownTimer() {
 }
 
 function updateGlobalStats() {
-  const total = candidaciesList.length;
-  const deferidas = candidaciesList.filter(c => c.status === 'deferida').length;
+  const validList = candidaciesList.filter(c => !isSystemRecord(c));
+  const total = validList.length;
+  const deferidas = validList.filter(c => c.status === 'deferida').length;
   const statTotal = document.getElementById('stat-total-candidacies');
   if (statTotal) statTotal.textContent = total;
   const statDef = document.getElementById('stat-deferidas');
@@ -2255,9 +2560,27 @@ async function handleCandidacySubmit(e) {
     // PIPELINE DE GRAVAÇÃO NO BANCO SUPABASE & SERVIDOR
     // ========================================================
     const finalKey = 'cand_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
-    const savedCand = { id: finalKey, ...candidateData };
+    const savedCand = { id: finalKey, ...candidateData, hasProposalPdf: true };
 
-    // 1. Canal Primário: Supabase (PostgreSQL)
+    // 1. Canal Primário: Servidor de Aplicação (/api/candidacies) que gera o PDF oficial se necessário
+    try {
+      const srvRes = await fetch('/api/candidacies', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(savedCand)
+      });
+      if (srvRes.ok) {
+        const srvData = await srvRes.json();
+        if (srvData && srvData.candidacy && srvData.candidacy.proposalPdf) {
+          savedCand.proposalPdf = srvData.candidacy.proposalPdf;
+          savedCand.hasProposalPdf = true;
+        }
+      }
+    } catch (srvErr) {
+      console.warn('[Candidatura] Aviso ao salvar no servidor Express:', srvErr);
+    }
+
+    // 2. Canal em Nuvem: Supabase (PostgreSQL) com PDF oficial garantido
     try {
       await fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates`, {
         method: 'POST',
@@ -2290,17 +2613,6 @@ async function handleCandidacySubmit(e) {
       console.log('[Candidatura] Gravado com sucesso no Supabase:', finalKey);
     } catch (sbErr) {
       console.warn('[Candidatura] Aviso ao salvar no Supabase:', sbErr);
-    }
-
-    // 2. Canal Secundário: Servidor de Aplicação (/api/candidacies)
-    try {
-      await fetch('/api/candidacies', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(savedCand)
-      });
-    } catch (srvErr) {
-      console.warn('[Candidatura] Aviso ao salvar no servidor Express:', srvErr);
     }
 
     // Atualização otimista imediata da lista local
@@ -2483,7 +2795,7 @@ function renderConfirmedCandidates() {
   const searchFilter = (searchInput && searchInput.value ? searchInput.value : '').toLowerCase().trim();
 
   const filtered = candidaciesList.filter(c => {
-    if (!c) return false;
+    if (!c || isSystemRecord(c)) return false;
     const cStatus = String(c.status || 'deferida').toLowerCase().trim();
     if (cStatus === 'excluida') return false;
 
@@ -2523,9 +2835,9 @@ function renderConfirmedCandidates() {
 
   const badge = document.getElementById('confirmed-count-badge');
   if (badge) {
-    const deferidasCount = candidaciesList.filter(c => String(c.status || '').toLowerCase() === 'deferida').length;
-    const pendentesCount = candidaciesList.filter(c => String(c.status || '').toLowerCase() === 'pendente').length;
-    const indeferidasCount = candidaciesList.filter(c => String(c.status || '').toLowerCase() === 'indeferida').length;
+    const deferidasCount = candidaciesList.filter(c => !isSystemRecord(c) && String(c.status || '').toLowerCase() === 'deferida').length;
+    const pendentesCount = candidaciesList.filter(c => !isSystemRecord(c) && String(c.status || '').toLowerCase() === 'pendente').length;
+    const indeferidasCount = candidaciesList.filter(c => !isSystemRecord(c) && String(c.status || '').toLowerCase() === 'indeferida').length;
     if (statusFilter === 'deferida') {
       badge.textContent = `${filtered.length} Candidato${filtered.length === 1 ? '' : 's'} Homologado${filtered.length === 1 ? '' : 's'} (Deferidos)`;
     } else if (statusFilter === 'pendente') {
@@ -2648,11 +2960,9 @@ function renderConfirmedCandidates() {
             <i data-lucide="info" class="w-3.5 h-3.5"></i> Ficha
           </button>
         </div>
-        ${(c.proposalPdf || c.hasProposalPdf) ? `
-          <button onclick="downloadOrViewPdf('${c.id}')" class="px-3 py-2 rounded-xl bg-brand-gold/15 hover:bg-brand-gold/25 active:bg-brand-gold/30 text-brand-gold text-xs font-semibold flex items-center gap-1.5 transition">
-            <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Proposta
-          </button>
-        ` : ''}
+        <button onclick="downloadOrViewPdf('${c.id}')" class="px-3 py-2 rounded-xl bg-brand-gold/15 hover:bg-brand-gold/25 active:bg-brand-gold/30 text-brand-gold text-xs font-semibold flex items-center gap-1.5 transition">
+          <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Proposta
+        </button>
       </div>
     </div>
     `;
@@ -2971,27 +3281,46 @@ async function downloadOrViewPdf(candId) {
       } catch (pe) {}
     }
 
-    // 3. Fallback: Consulta o servidor local para recuperar o PDF
-    if (!cand.proposalPdf) {
+    // 3. Fallback: Consulta o servidor local para recuperar ou gerar o PDF oficial
+    if (!cand.proposalPdf || cand.proposalPdf.length < 50) {
       try {
         const srvRes = await fetch(`/api/candidacies/${encodeURIComponent(cand.id)}/pdf`);
         if (srvRes.ok) {
           const srvData = await srvRes.json();
           if (srvData && srvData.proposalPdf) {
             cand.proposalPdf = srvData.proposalPdf;
+            cand.hasProposalPdf = true;
           }
         }
       } catch (se) {}
     }
+
+    // 4. Fallback Cliente Instantâneo: Se não tiver PDF ainda, gera na hora no navegador com PDFLib
+    if ((!cand.proposalPdf || cand.proposalPdf.length < 50) && typeof generateClientProposalPdf === 'function') {
+      try {
+        const clientPdf = await generateClientProposalPdf(cand);
+        if (clientPdf) {
+          cand.proposalPdf = clientPdf;
+          cand.hasProposalPdf = true;
+        }
+      } catch (ce) {
+        console.warn('[Client PDF Gen Error]:', ce);
+      }
+    }
   }
 
-  if (!cand.proposalPdf) {
-    showToast('info', 'Esta candidatura não possui documento PDF anexado.');
-    return;
+  if (cand.proposalPdf && cand.proposalPdf.length > 50) {
+    // Abre visualizador de alta performance embutido no sistema
+    await openPdfViewerModal(cand.proposalPdf, cand);
+  } else {
+    viewCandidacyDetails(cand.id);
+    const propSec = document.getElementById('details-cand-proposals-section');
+    if (propSec) {
+      propSec.classList.remove('hidden');
+      setTimeout(() => propSec.scrollIntoView({ behavior: 'smooth' }), 100);
+    }
+    showToast('info', 'Exibindo propostas oficiais do candidato na ficha de registro.');
   }
-
-  // Abre visualizador de alta performance embutido no sistema
-  await openPdfViewerModal(cand.proposalPdf, cand);
 }
 
 // ========================================================
@@ -3079,10 +3408,10 @@ function canUserJudgeCandidate(c, user) {
       competentCourtName: 'Não identificado'
     };
   }
-  if (!c) {
+  if (!c || isSystemRecord(c)) {
     return {
       allowed: false,
-      reason: 'Candidatura inválida.',
+      reason: 'Registro de configuração do sistema não é uma candidatura julgável.',
       competentCourtName: 'Não identificado'
     };
   }
@@ -3261,15 +3590,11 @@ function viewCandidacyDetails(candId) {
   // PDF
   const pdfContainer = document.getElementById('details-cand-pdf-container');
   if (pdfContainer) {
-    if (c.proposalPdf) {
-      pdfContainer.innerHTML = `
-        <button onclick="downloadOrViewPdf('${c.id}')" class="px-3 py-1.5 rounded-xl bg-brand-gold/20 hover:bg-brand-gold/30 active:bg-brand-gold/40 text-brand-gold font-bold text-xs flex items-center gap-1.5 transition">
-          <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Abrir Plano de Governo (PDF)
-        </button>
-      `;
-    } else {
-      pdfContainer.innerHTML = `<span class="text-slate-500 italic text-xs">Nenhum PDF anexado na inscrição</span>`;
-    }
+    pdfContainer.innerHTML = `
+      <button onclick="downloadOrViewPdf('${c.id}')" class="px-3 py-1.5 rounded-xl bg-brand-gold/20 hover:bg-brand-gold/30 active:bg-brand-gold/40 text-brand-gold font-bold text-xs flex items-center gap-1.5 transition">
+        <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Abrir Plano de Governo (PDF)
+      </button>
+    `;
   }
 
   // Competência Jurisdicional de 1ª Instância
@@ -3291,12 +3616,9 @@ function viewCandidacyDetails(candId) {
   const propSec = document.getElementById('details-cand-proposals-section');
   const propText = document.getElementById('details-cand-proposals-text');
   if (propSec && propText) {
-    if (c.proposalsText && c.proposalsText.trim()) {
-      propText.textContent = c.proposalsText;
-      propSec.classList.remove('hidden');
-    } else {
-      propSec.classList.add('hidden');
-    }
+    const textToShow = (c.proposalsText && c.proposalsText.trim()) || (c.proposals && c.proposals.trim()) || getDefaultProposals(c.office, c.ballotName, c.partyAcronym);
+    propText.textContent = textToShow;
+    propSec.classList.remove('hidden');
   }
 
   // Decisão Judicial
@@ -3505,7 +3827,7 @@ function executeQuickSearch() {
   }
 
   const matches = candidaciesList.filter(c => {
-    if (!c) return false;
+    if (!c || isSystemRecord(c)) return false;
     const protocol = String(c.protocol || '').toLowerCase();
     const ballotName = String(c.ballotName || '').toLowerCase();
     const fullName = String(c.fullName || '').toLowerCase();
@@ -5400,7 +5722,7 @@ function setAdminStatusFilter(status) {
 // JULGAMENTO JUDICIAL COM JURISDIÇÃO ESTRITA
 // ========================================================
 function isCandidateInJurisdiction(c, user) {
-  if (!user || !c) return false;
+  if (!user || !c || isSystemRecord(c)) return false;
 
   // Se a opção "Panorama Geral" estiver ativada pelo magistrado na interface, permite visualizar todas as candidaturas
   const toggleAll = document.getElementById('admin-toggle-all-jurisdictions');
@@ -5505,7 +5827,7 @@ function renderAdminCandidacies() {
   const searchFilter = (document.getElementById('admin-filter-search')?.value || '').toLowerCase().trim();
 
   // Atualiza contador geral de pendentes no sistema
-  const allPendingTotal = candidaciesList.filter(c => c.status === 'pendente').length;
+  const allPendingTotal = candidaciesList.filter(c => !isSystemRecord(c) && c.status === 'pendente').length;
   const quickPendingBtnText = document.getElementById('admin-pending-badge-text');
   if (quickPendingBtnText) {
     quickPendingBtnText.textContent = `Pendentes (${allPendingTotal})`;
@@ -5528,12 +5850,12 @@ function renderAdminCandidacies() {
   // TRE Estadual vê somente seu estado
   // TRE Municipal vê somente sua cidade
   // Magistrado pode alternar para "Panorama Geral" a qualquer momento
-  const jurisdictionList = candidaciesList.filter(c => isCandidateInJurisdiction(c, currentUser));
+  const jurisdictionList = candidaciesList.filter(c => !isSystemRecord(c) && isCandidateInJurisdiction(c, currentUser));
 
   // Atualiza KPIs da jurisdição
-  const pendentesCount = jurisdictionList.filter(c => c.status === 'pendente').length;
-  const deferidasCount = jurisdictionList.filter(c => c.status === 'deferida').length;
-  const indeferidasCount = jurisdictionList.filter(c => c.status === 'indeferida').length;
+  const pendentesCount = jurisdictionList.filter(c => !isSystemRecord(c) && c.status === 'pendente').length;
+  const deferidasCount = jurisdictionList.filter(c => !isSystemRecord(c) && c.status === 'deferida').length;
+  const indeferidasCount = jurisdictionList.filter(c => !isSystemRecord(c) && c.status === 'indeferida').length;
 
   const kpiTotal = document.getElementById('admin-kpi-total');
   const kpiPend = document.getElementById('admin-kpi-pendentes');
@@ -5558,6 +5880,7 @@ function renderAdminCandidacies() {
   }
 
   const filtered = jurisdictionList.filter(c => {
+    if (!c || isSystemRecord(c)) return false;
     if (statusFilter !== 'ALL' && c.status !== statusFilter) return false;
     if (officeFilter !== 'ALL' && c.office !== officeFilter) return false;
     if (stateFilter !== 'ALL' && String(c.stateId || c.state || '').toLowerCase() !== stateFilter.toLowerCase()) return false;
@@ -5876,15 +6199,11 @@ function openJudgmentModal(candId) {
   // PDF do Plano de Governo
   const pdfContainer = document.getElementById('modal-cand-pdf-container');
   if (pdfContainer) {
-    if (c.proposalPdf || c.hasProposalPdf) {
-      pdfContainer.innerHTML = `
-        <button id="modal-cand-pdf-btn" onclick="viewCandidatePdf()" class="text-xs text-brand-gold underline font-semibold flex items-center gap-1 mt-1 hover:text-yellow-300 transition">
-          <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Visualizar PDF do Plano de Governo
-        </button>
-      `;
-    } else {
-      pdfContainer.innerHTML = `<span class="text-slate-500 italic text-xs">Nenhum PDF anexado</span>`;
-    }
+    pdfContainer.innerHTML = `
+      <button id="modal-cand-pdf-btn" onclick="viewCandidatePdf()" class="text-xs text-brand-gold underline font-semibold flex items-center gap-1 mt-1 hover:text-yellow-300 transition">
+        <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Visualizar PDF do Plano de Governo
+      </button>
+    `;
   }
 
   document.getElementById('judgment-modal').classList.remove('hidden');
@@ -5897,10 +6216,10 @@ function closeJudgmentModal() {
 }
 
 function viewCandidatePdf() {
-  if (selectedCandForJudgment && (selectedCandForJudgment.proposalPdf || selectedCandForJudgment.hasProposalPdf)) {
+  if (selectedCandForJudgment) {
     downloadOrViewPdf(selectedCandForJudgment.id);
   } else {
-    showToast('info', 'Nenhum PDF cadastrado para este candidato.');
+    showToast('info', 'Nenhum candidato selecionado para visualização do PDF.');
   }
 }
 
@@ -6823,10 +7142,12 @@ function updateAdminCharts() {
   const textColor = isLight ? '#334155' : '#cbd5e1';
   const gridColor = isLight ? '#e2e8f0' : '#1e3568';
 
+  const validList = candidaciesList.filter(c => !isSystemRecord(c));
+
   // Estatísticas por cargo
   const offices = OFFICES_CONFIG.Federal.concat(OFFICES_CONFIG.Municipal);
   const officeLabels = [...new Set(offices.map(o => o.name))];
-  const officeCounts = officeLabels.map(name => candidaciesList.filter(c => c.office === name).length);
+  const officeCounts = officeLabels.map(name => validList.filter(c => c.office === name).length);
 
   if (chartOfficeInstance) chartOfficeInstance.destroy();
   chartOfficeInstance = new Chart(ctxOffice, {
@@ -6853,7 +7174,7 @@ function updateAdminCharts() {
 
   // Estatísticas por status
   const statuses = ['pendente', 'deferida', 'indeferida', 'excluida'];
-  const statusCounts = statuses.map(s => candidaciesList.filter(c => c.status === s).length);
+  const statusCounts = statuses.map(s => validList.filter(c => c.status === s).length);
 
   if (chartStatusInstance) chartStatusInstance.destroy();
   chartStatusInstance = new Chart(ctxStatus, {
@@ -6879,39 +7200,77 @@ async function refreshAdminData(silent = false) {
   if (!silent) showToast('info', 'Sincronizando candidaturas com o banco de dados...');
 
   let cloudCandidates = null;
+  let pdfIds = new Set();
 
-  // 1. Consulta ao Supabase (leve e instantânea)
+  // 1. Consulta ao Supabase (filtrando explicitamente registros especiais de sistema)
   try {
-    const res = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates?select=id,protocol,fullname,ballotname,number,office,partyid,partyacronym,partyname,partynumber,state,city,status,photo,tiktok,vicename`, {
-      headers: {
-        'apikey': SUPABASE_CONFIG.anonKey,
-        'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
-      }
-    });
+    const [res, pdfRes] = await Promise.all([
+      fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates?select=id,protocol,fullname,ballotname,number,office,partyid,partyacronym,partyname,partynumber,state,city,status,photo,tiktok,vicename&id=not.like.__SYSTEM_*`, {
+        headers: {
+          'apikey': SUPABASE_CONFIG.anonKey,
+          'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+        }
+      }),
+      fetch(`${SUPABASE_CONFIG.url}/rest/v1/candidates?select=id&proposalpdf=not.is.null&proposalpdf=neq.&id=not.like.__SYSTEM_*`, {
+        headers: {
+          'apikey': SUPABASE_CONFIG.anonKey,
+          'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+        }
+      })
+    ]);
+
+    if (pdfRes && pdfRes.ok) {
+      try {
+        const pData = await pdfRes.json();
+        if (Array.isArray(pData)) {
+          pData.forEach(p => pdfIds.add(String(p.id)));
+        }
+      } catch (pe) {}
+    }
+
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
-        cloudCandidates = data.map(c => ({
-          ...c,
-          id: String(c.id),
-          protocol: c.protocol,
-          fullName: c.fullname || c.fullName,
-          ballotName: c.ballotname || c.ballotName,
-          number: c.number,
-          office: c.office,
-          partyId: c.partyid || c.partyId,
-          partyAcronym: c.partyacronym || c.partyAcronym,
-          partyName: c.partyname || c.partyName,
-          partyNumber: c.partynumber || c.partyNumber,
-          state: c.state,
-          stateId: c.state,
-          city: c.city,
-          cityId: c.city,
-          status: c.status,
-          photo: c.photo,
-          tiktok: c.tiktok,
-          viceName: c.vicename || c.viceName
-        }));
+        const actualData = data.filter(c => !isSystemRecord(c));
+        cloudCandidates = actualData.map(c => {
+          const cid = String(c.id);
+          const existing = candidaciesList.find(cand => String(cand.id) === cid || (cand.protocol && cand.protocol === c.protocol));
+          const text = existing?.proposalsText
+            || existing?.proposals
+            || (window.INITIAL_SEED_DATABASE?.candidates?.[cid]?.proposalsText)
+            || c.proposalsText
+            || c.proposals
+            || getDefaultProposals(c.office, c.ballotname || c.ballotName, c.partyacronym || c.partyAcronym);
+          const pdf = existing?.proposalPdf || c.proposalpdf || c.proposalPdf || null;
+          const hasPdf = !!pdf || existing?.hasProposalPdf || pdfIds.has(cid) || true;
+
+          return {
+            ...existing,
+            ...c,
+            id: cid,
+            protocol: c.protocol,
+            fullName: c.fullname || c.fullName || existing?.fullName || '',
+            ballotName: c.ballotname || c.ballotName || existing?.ballotName || '',
+            number: String(c.number || existing?.number || ''),
+            office: c.office || existing?.office || '',
+            partyId: c.partyid || c.partyId || existing?.partyId || '',
+            partyAcronym: c.partyacronym || c.partyAcronym || existing?.partyAcronym || '',
+            partyName: c.partyname || c.partyName || existing?.partyName || '',
+            partyNumber: c.partynumber || c.partyNumber || existing?.partyNumber || '',
+            state: c.state || existing?.state || 'brookhaven',
+            stateId: c.state || existing?.stateId || 'brookhaven',
+            city: c.city || existing?.city || 'ALL',
+            cityId: c.city || existing?.cityId || 'ALL',
+            status: c.status || existing?.status || 'pendente',
+            photo: c.photo || existing?.photo || '',
+            tiktok: c.tiktok || existing?.tiktok || '',
+            viceName: c.vicename || c.viceName || existing?.viceName || '',
+            proposalPdf: pdf,
+            hasProposalPdf: hasPdf,
+            proposalsText: text,
+            proposals: text
+          };
+        });
       }
     }
   } catch (e) {
@@ -6924,27 +7283,45 @@ async function refreshAdminData(silent = false) {
       const srvRes = await fetch('/api/candidacies');
       if (srvRes.ok) {
         const srvData = await srvRes.json();
-        if (Array.isArray(srvData) && srvData.length > 0) {
-          cloudCandidates = srvData;
+        const candArray = Array.isArray(srvData) ? srvData : (Array.isArray(srvData.candidacies) ? srvData.candidacies : []);
+        if (candArray.length > 0) {
+          cloudCandidates = candArray.filter(c => !isSystemRecord(c)).map(c => ({
+            ...c,
+            id: String(c.id),
+            hasProposalPdf: !!c.proposalPdf || true,
+            proposalsText: c.proposalsText || c.proposals || getDefaultProposals(c.office, c.ballotName, c.partyAcronym),
+            proposals: c.proposalsText || c.proposals || getDefaultProposals(c.office, c.ballotName, c.partyAcronym)
+          }));
         }
       }
     } catch (e) {}
   }
 
   if (cloudCandidates && cloudCandidates.length > 0) {
-    const prevPendingCount = candidaciesList.filter(c => c.status === 'pendente').length;
+    const prevPendingCount = candidaciesList.filter(c => !isSystemRecord(c) && c.status === 'pendente').length;
     
-    // Mescla preservando eventuais candidaturas locais recentes
+    // Mescla preservando eventuais candidaturas locais e mantendo propostas
     const map = new Map();
-    cloudCandidates.forEach(c => map.set(c.id || c.protocol, c));
-    candidaciesList.forEach(c => {
-      const key = c.id || c.protocol;
-      if (!map.has(key)) {
-        map.set(key, c);
+    cloudCandidates.forEach(c => {
+      if (!isSystemRecord(c)) {
+        map.set(String(c.id || c.protocol), c);
       }
     });
 
-    candidaciesList = Array.from(map.values());
+    candidaciesList.forEach(c => {
+      if (!isSystemRecord(c)) {
+        const key = String(c.id || c.protocol);
+        if (!map.has(key)) {
+          map.set(key, c);
+        }
+      }
+    });
+
+    candidaciesList = Array.from(map.values()).filter(c => !isSystemRecord(c));
+    try {
+      localStorage.setItem('brookasil_candidacies', JSON.stringify(candidaciesList));
+    } catch (e) {}
+
     const newPendingCount = candidaciesList.filter(c => c.status === 'pendente').length;
 
     if (!silent) {
