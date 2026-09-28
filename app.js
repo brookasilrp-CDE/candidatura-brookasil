@@ -496,6 +496,17 @@ function isElectionOpen(election) {
   return true;
 }
 
+// Helpers fundamentais para validação de competência eleitoral (Federal vs Municipal)
+function isFederalElection() {
+  const t = String(currentElection?.type || '').toLowerCase().trim();
+  return t === 'federal' || t === 'geral' || t === 'gerais';
+}
+
+function isMunicipalElection() {
+  const t = String(currentElection?.type || '').toLowerCase().trim();
+  return t === 'municipal' || t === 'municipais';
+}
+
 // Filtro central inviolável: identifica registros especiais de configuração do sistema
 // para que NUNCA apareçam como candidatos em nenhuma tela, lista, busca, kpi ou julgamento
 function isSystemRecord(c) {
@@ -1708,45 +1719,135 @@ function onElectionChange() {
   const officeSelect = document.getElementById('form-office-select');
   if (!officeSelect) return;
 
-  const type = currentElection ? currentElection.type : 'Federal';
+  const isFed = isFederalElection();
+  const type = isFed ? 'Federal' : 'Municipal';
   const offices = OFFICES_CONFIG[type] || OFFICES_CONFIG.Federal;
 
   officeSelect.innerHTML = offices.map(o => `<option value="${o.id}">${o.name} (${o.digits} dígitos)</option>`).join('');
+
+  // Atualiza banner explicativo de regras de circunscrição
+  const ruleBadgeText = document.getElementById('form-circ-rule-text');
+  const ruleTitle = document.getElementById('form-election-rule-title');
+  const ruleDesc = document.getElementById('form-election-rule-desc');
+
+  if (isFed) {
+    if (ruleBadgeText) ruleBadgeText.textContent = 'Pleito Federal (Por Estado & TSE)';
+    if (ruleTitle) ruleTitle.textContent = 'Eleições Federais: Registro por Estado e TSE Nacional';
+    if (ruleDesc) {
+      ruleDesc.innerHTML = 'Nas eleições federais, os TREs da cidade <strong>não funcionarão</strong>. Somente os estados se registram (cada TRE Estadual só registra candidatos do próprio estado) e o <strong>TSE Nacional</strong> (Presidente e competência sobre todos os candidatos). Não há circunscrição municipal neste pleito.';
+    }
+  } else {
+    if (ruleBadgeText) ruleBadgeText.textContent = 'Pleito Municipal (Por Cidade)';
+    if (ruleTitle) ruleTitle.textContent = 'Eleições Municipais: Prefeito e Vereador de Cidade';
+    if (ruleDesc) {
+      ruleDesc.innerHTML = 'Na eleição municipal, a disputa é para <strong>Prefeito e Vereador de CIDADE</strong>! O candidato deve selecionar Estado e Município perante o TRE Municipal competente. O <strong>TSE Nacional</strong> continua com a função de conseguir registrar todos os candidatos.';
+    }
+  }
+
   onOfficeChange();
 }
 
 function onOfficeChange() {
   const officeId = document.getElementById('form-office-select').value;
-  const type = currentElection ? currentElection.type : 'Federal';
+  const isFed = isFederalElection();
+  const type = isFed ? 'Federal' : 'Municipal';
   const office = (OFFICES_CONFIG[type] || []).find(o => o.id === officeId) || OFFICES_CONFIG.Federal[0];
 
-  // Regra de Cidades (Municipal exige Cidade, Estadual exige Estado)
   const cityCont = document.getElementById('form-city-container');
-  if (type === 'Municipal' || officeId === 'Prefeito' || officeId === 'Vereador') {
-    cityCont.classList.remove('hidden');
-    document.getElementById('form-city-select').setAttribute('required', 'true');
+  const citySelect = document.getElementById('form-city-select');
+  const stateSelect = document.getElementById('form-state-select');
+  const submitBtn = document.getElementById('btn-submit-candidacy');
+
+  // Regra de Cidades:
+  // No pleito Federal, TREs da cidade NÃO funcionam e municípios não são selecionados!
+  if (isFed) {
+    if (cityCont) cityCont.classList.add('hidden');
+    if (citySelect) {
+      citySelect.removeAttribute('required');
+      citySelect.value = 'ALL';
+    }
+
+    if (currentUser) {
+      if (currentUser.role === 'tre_estadual') {
+        // "so registram candidatos do próprio estado"
+        if (stateSelect) {
+          stateSelect.value = currentUser.state;
+          stateSelect.disabled = true;
+        }
+        if (submitBtn) {
+          submitBtn.disabled = false;
+        }
+      } else if (currentUser.role === 'tre_municipal') {
+        showToast('warning', 'Atenção: Os TREs municipais não funcionam em Eleições Federais.');
+        if (submitBtn) {
+          submitBtn.disabled = true;
+          submitBtn.title = 'Os TREs municipais não funcionam em Eleições Federais';
+        }
+      } else if (currentUser.role === 'tse') {
+        if (stateSelect) stateSelect.disabled = false;
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    } else {
+      if (stateSelect) stateSelect.disabled = false;
+      if (submitBtn) submitBtn.disabled = false;
+    }
   } else {
-    cityCont.classList.add('hidden');
-    document.getElementById('form-city-select').removeAttribute('required');
+    // Pleito Municipal: Prefeito e Vereador de CIDADE! ("pois é prefeito e vereador de CIDADE!")
+    if (cityCont) cityCont.classList.remove('hidden');
+    if (citySelect) citySelect.setAttribute('required', 'true');
+
+    if (currentUser) {
+      if (currentUser.role === 'tre_municipal') {
+        if (stateSelect) {
+          stateSelect.value = currentUser.state;
+          stateSelect.disabled = true;
+        }
+        if (citySelect) {
+          onStateChange();
+          citySelect.value = currentUser.city;
+          citySelect.disabled = true;
+        }
+        if (submitBtn) submitBtn.disabled = false;
+      } else if (currentUser.role === 'tre_estadual') {
+        if (stateSelect) {
+          stateSelect.value = currentUser.state;
+          stateSelect.disabled = true;
+        }
+        onStateChange();
+        if (citySelect) citySelect.disabled = false;
+        if (submitBtn) submitBtn.disabled = false;
+      } else if (currentUser.role === 'tse') {
+        if (stateSelect) stateSelect.disabled = false;
+        if (citySelect) citySelect.disabled = false;
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    } else {
+      if (stateSelect) stateSelect.disabled = false;
+      if (citySelect) citySelect.disabled = false;
+      if (submitBtn) submitBtn.disabled = false;
+    }
   }
 
   // Majoritário precisa de Vice e PDF
   const viceCont = document.getElementById('form-vice-container');
   const pdfInput = document.getElementById('form-pdf-input');
   const pdfLabel = document.getElementById('form-proposal-label');
-
   if (office.needsVice) {
-    viceCont.classList.remove('hidden');
-    document.getElementById('form-vice-name').setAttribute('required', 'true');
+    if (viceCont) {
+      viceCont.classList.remove('hidden');
+      document.getElementById('form-vice-name')?.setAttribute('required', 'true');
+    }
   } else {
-    viceCont.classList.add('hidden');
-    document.getElementById('form-vice-name').removeAttribute('required');
+    if (viceCont) {
+      viceCont.classList.add('hidden');
+      document.getElementById('form-vice-name')?.removeAttribute('required');
+    }
   }
 
   if (office.needsPdf) {
-    pdfLabel.innerHTML = 'Plano de Governo em PDF * <span class="text-brand-gold font-normal">(Obrigatório para cargos Executivos)</span>';
+    if (pdfLabel) pdfLabel.innerHTML = 'Plano de Governo em PDF * <span class="text-brand-gold font-normal">(Obrigatório para cargos Executivos)</span>';
   } else {
-    pdfLabel.innerHTML = 'Proposta em PDF (Opcional)';
+    if (pdfLabel) pdfLabel.innerHTML = 'Proposta em PDF (Opcional)';
   }
 
   updateNumberPrefixAndSuffixConfig();
@@ -2438,15 +2539,78 @@ async function handleCandidacySubmit(e) {
 
     const officeId = document.getElementById('form-office-select').value;
     const office = getOfficeConfig(officeId);
-    const stateId = document.getElementById('form-state-select').value;
-    const cityId = document.getElementById('form-city-select').value || 'ALL';
+    let stateId = document.getElementById('form-state-select').value;
+    let cityId = document.getElementById('form-city-select')?.value || 'ALL';
 
-    if (isMunicipalOffice(officeId) && (!stateId || !cityId || cityId === 'ALL')) {
-      showToast('error', 'Selecione o Estado e a Cidade para candidaturas municipais.');
-      submitBtn.disabled = false;
-      submitBtn.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i> Submeter Candidatura Oficial';
-      initIcons();
-      return;
+    const isFed = isFederalElection();
+    if (isFed) {
+      cityId = 'ALL';
+      if (isMunicipalOffice(officeId)) {
+        showToast('error', 'Nas Eleições Federais, não há cargos municipais. Os cargos são Presidente, Governador, Senador e Deputados.');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i> Submeter Candidatura Oficial';
+        initIcons();
+        return;
+      }
+      if (currentUser) {
+        if (currentUser.role === 'tre_municipal') {
+          showToast('error', 'Nas eleições federais, os TREs da cidade não funcionam. Somente os TREs Estaduais e o TSE Nacional possuem competência ativa.');
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i> Submeter Candidatura Oficial';
+          initIcons();
+          return;
+        }
+        if (currentUser.role === 'tre_estadual') {
+          if (officeId === 'Presidente') {
+            showToast('error', 'Candidaturas à Presidência da República só podem ser registradas perante o TSE Nacional.');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i> Submeter Candidatura Oficial';
+            initIcons();
+            return;
+          }
+          if (stateId.toLowerCase() !== currentUser.state.toLowerCase()) {
+            showToast('error', `O ${currentUser.name} só pode registrar candidatos do próprio estado (${getStateDisplayName(currentUser.state)}).`);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i> Submeter Candidatura Oficial';
+            initIcons();
+            return;
+          }
+        }
+      }
+    } else {
+      if (!isMunicipalOffice(officeId)) {
+        showToast('error', 'Na eleição municipal, a disputa é exclusiva para Prefeito e Vereador de CIDADE!');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i> Submeter Candidatura Oficial';
+        initIcons();
+        return;
+      }
+      if (!stateId || !cityId || cityId === 'ALL') {
+        showToast('error', 'Selecione o Estado e o Município/Cidade para candidaturas municipais.');
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i> Submeter Candidatura Oficial';
+        initIcons();
+        return;
+      }
+      if (currentUser) {
+        if (currentUser.role === 'tre_municipal') {
+          if (stateId.toLowerCase() !== currentUser.state.toLowerCase() || cityId.toLowerCase() !== currentUser.city.toLowerCase()) {
+            showToast('error', `O ${currentUser.name} só pode registrar candidatos da sua própria comarca (${getCityDisplayName(currentUser.state, currentUser.city)}).`);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i> Submeter Candidatura Oficial';
+            initIcons();
+            return;
+          }
+        } else if (currentUser.role === 'tre_estadual') {
+          if (stateId.toLowerCase() !== currentUser.state.toLowerCase()) {
+            showToast('error', `O ${currentUser.name} só pode registrar candidatos de cidades do estado de ${getStateDisplayName(currentUser.state)}.`);
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i data-lucide="send" class="w-5 h-5"></i> Submeter Candidatura Oficial';
+            initIcons();
+            return;
+          }
+        }
+      }
     }
 
     if (!validateNumberSuffix()) {
@@ -3343,12 +3507,12 @@ function getCompetentCourtInfo(c) {
   if (c.office === 'Presidente') {
     return {
       courtId: 'tse',
-      courtName: 'Tribunal Superior Eleitoral (TSE)',
-      level: 'Federal (TSE Nacional)',
+      courtName: 'Tribunal Superior Eleitoral (TSE Nacional)',
+      level: 'Instância Soberana Nacional',
       levelCode: 'tse',
       stateName: 'Nacional',
       cityName: 'Nacional',
-      jurisdictionDesc: 'Todo o Território Nacional'
+      jurisdictionDesc: 'Todo o Território Nacional (Competência TSE)'
     };
   }
 
@@ -3356,8 +3520,27 @@ function getCompetentCourtInfo(c) {
   const stateConfig = BROOKASIL_GEO[stateKey];
   const stateName = stateConfig ? stateConfig.name : (getStateDisplayName(stateKey) || stateKey);
 
-  // 2. Cargos Municipais (Prefeito e Vereador): Competência originária do respectivo TRE Municipal
-  if (isMunicipalOffice(c.office)) {
+  // 2. Eleições Federais: Os TREs da cidade não funcionam. Somente os estados se registram (cargos vinculados ao próprio estado) e TSE Nacional
+  if (isFederalElection()) {
+    const cred = (activeCourtCredentials || []).find(cr => 
+      cr.role === 'tre_estadual' &&
+      String(cr.state).toLowerCase().trim() === stateKey
+    );
+    const officialName = cred ? cred.name : `TRE ${stateName}`;
+    return {
+      courtId: cred ? cred.id : `tre_${stateKey}`,
+      courtName: officialName,
+      level: '1ª Instância Estadual',
+      levelCode: 'tre_estadual',
+      stateKey,
+      stateName,
+      cityName: 'Estado Inteiro',
+      jurisdictionDesc: `Estado de ${stateName} (TRE Estadual Federal)`
+    };
+  }
+
+  // 3. Eleições Municipais (Prefeito e Vereador): Disputa por CIDADE! Competência originária do TRE Municipal daquela comarca
+  if (isMunicipalOffice(c.office) || isMunicipalElection()) {
     const cityKey = String(c.cityId || c.city || '').toLowerCase().trim();
     const cityName = stateConfig?.cities?.[cityKey] || getCityDisplayName(stateKey, cityKey) || cityKey;
 
@@ -3366,7 +3549,6 @@ function getCompetentCourtInfo(c) {
       String(cr.state).toLowerCase().trim() === stateKey &&
       String(cr.city).toLowerCase().trim() === cityKey
     );
-
     const officialName = cred ? cred.name : `TRE ${cityName}`;
     return {
       courtId: cred ? cred.id : `tre_${cityKey}`,
@@ -3381,8 +3563,7 @@ function getCompetentCourtInfo(c) {
     };
   }
 
-  // 3. Cargos Estaduais / Federais Proporcionais (Governador, Senador, Dep. Federal, Dep. Estadual):
-  // Competência privativa do TRE Estadual
+  // Fallback padrão para cargos estaduais
   const cred = (activeCourtCredentials || []).find(cr => 
     cr.role === 'tre_estadual' &&
     String(cr.state).toLowerCase().trim() === stateKey
@@ -3419,7 +3600,7 @@ function canUserJudgeCandidate(c, user) {
   const comp = getCompetentCourtInfo(c);
 
   // 1. O TSE TEM COMPETÊNCIA SOBERANA NACIONAL (SOMENTE O TSE):
-  // O TSE pode deferir, indeferir e excluir candidaturas de QUALQUER estado e cidade!
+  // "O TSE continua com a função de conseguir registrar todos os candidatos."
   if (user.role === 'tse' || user.id === 'tse' || user.state === 'ALL') {
     return {
       allowed: true,
@@ -3430,67 +3611,104 @@ function canUserJudgeCandidate(c, user) {
     };
   }
 
-  // 2. Cargo de Presidente: Exclusividade do TSE Nacional (nenhum TRE pode julgar)
-  if (c.office === 'Presidente') {
+  // 2. NAS ELEIÇÕES FEDERAIS: OS TRES DA CIDADE NÃO FUNCIONARÃO!
+  // "Nas eleições federais, os TREs da cidade não funcionarão. Somente aqueles que se registram são os estados (so registram candidatos do próprio estado) e o TSE Nacional."
+  if (isFederalElection()) {
+    if (user.role === 'tre_municipal') {
+      return {
+        allowed: false,
+        competentCourtName: comp.courtName,
+        level: comp.level,
+        reason: 'Incompetência Jurisdicional: Nas Eleições Federais, os TREs da cidade não funcionam. Somente os TREs Estaduais (que registram candidatos do próprio estado) e o TSE Nacional possuem competência ativa.'
+      };
+    }
+
+    // Cargo de Presidente da República: Exclusividade privativa do TSE Nacional
+    if (c.office === 'Presidente') {
+      return {
+        allowed: false,
+        competentCourtName: 'Tribunal Superior Eleitoral (TSE Nacional)',
+        level: 'Instância Soberana Nacional',
+        reason: 'Incompetência Originária: O julgamento e registro de candidatura a Presidente da República é de competência originária exclusiva do Tribunal Superior Eleitoral (TSE Nacional).'
+      };
+    }
+
+    // TREs Estaduais no pleito Federal: SÓ REGISTRAM E JULGAM CANDIDATOS DO PRÓPRIO ESTADO!
+    if (user.role === 'tre_estadual') {
+      const candState = String(c.stateId || c.state || '').toLowerCase().trim();
+      const userState = String(user.state || '').toLowerCase().trim();
+      if (userState === candState) {
+        return {
+          allowed: true,
+          competentCourtName: comp.courtName,
+          level: comp.level,
+          isOriginatingCourt: true
+        };
+      }
+      return {
+        allowed: false,
+        competentCourtName: comp.courtName,
+        level: comp.level,
+        reason: `Incompetência Territorial: O ${user.name} só possui competência para registrar e julgar candidatos do próprio estado (${getStateDisplayName(user.state)}). Esta candidatura pertence ao ${comp.courtName}.`
+      };
+    }
+
     return {
       allowed: false,
       competentCourtName: comp.courtName,
       level: comp.level,
-      reason: `Incompetência Jurisdicional: O julgamento de candidatura a Presidente da República é de competência originária exclusiva do Tribunal Superior Eleitoral (TSE). O tribunal "${user.name}" não possui jurisdição eleitoral federal.`
+      reason: 'Incompetência Jurisdicional no pleito Federal.'
     };
   }
 
-  // 3. Cargos Municipais (Prefeito e Vereador): Exclusividade do TRE Municipal daquela comarca (SOMENTE O TSE PODE INTERVIR DE FORA)
-  if (isMunicipalOffice(c.office)) {
+  // 3. NAS ELEIÇÕES MUNICIPAIS: PREFEITO E VEREADOR DE CIDADE!
+  // "Na eleição municipal, é diferente, pois é prefeito e vereador de CIDADE! O TSE continua com a função de conseguir registrar todos os candidatos."
+  if (isMunicipalElection() || isMunicipalOffice(c.office)) {
     const candState = String(c.stateId || c.state || '').toLowerCase().trim();
     const candCity = String(c.cityId || c.city || '').toLowerCase().trim();
     const userState = String(user.state || '').toLowerCase().trim();
     const userCity = String(user.city || '').toLowerCase().trim();
 
-    if (user.role === 'tre_municipal' && userState === candState && userCity === candCity) {
-      return {
-        allowed: true,
-        competentCourtName: comp.courtName,
-        level: comp.level,
-        isOriginatingCourt: true
-      };
-    }
-
-    if (user.role === 'tre_estadual') {
+    if (user.role === 'tre_municipal') {
+      if (userState === candState && userCity === candCity) {
+        return {
+          allowed: true,
+          competentCourtName: comp.courtName,
+          level: comp.level,
+          isOriginatingCourt: true
+        };
+      }
       return {
         allowed: false,
         competentCourtName: comp.courtName,
         level: comp.level,
-        reason: `Incompetência de Grau: Candidaturas municipais de ${comp.cityName} devem ser homologadas pelo ${comp.courtName} ou diretamente pelo Tribunal Superior Eleitoral (TSE).`
+        reason: `Incompetência Territorial: Candidatura da cidade de ${comp.cityName}. O tribunal "${user.name}" só possui competência na sua própria cidade (${getCityDisplayName(user.state, user.city)}).`
       };
     }
 
-    return {
-      allowed: false,
-      competentCourtName: comp.courtName,
-      level: comp.level,
-      reason: `Incompetência Territorial: Esta candidatura pertence à jurisdição exclusiva do ${comp.courtName}. Apenas o ${comp.courtName} ou o TSE possuem competência para deferir, indeferir ou excluir este registro.`
-    };
-  }
-
-  // 4. Cargos Estaduais (Governador, Senador, Deputado Federal, Deputado Estadual): Competência do TRE Estadual (SOMENTE O TSE PODE INTERVIR DE FORA)
-  const candState = String(c.stateId || c.state || '').toLowerCase().trim();
-  const userState = String(user.state || '').toLowerCase().trim();
-
-  if (user.role === 'tre_estadual' && userState === candState) {
-    return {
-      allowed: true,
-      competentCourtName: comp.courtName,
-      level: comp.level,
-      isOriginatingCourt: true
-    };
+    if (user.role === 'tre_estadual') {
+      if (userState === candState) {
+        return {
+          allowed: true,
+          competentCourtName: comp.courtName,
+          level: '2ª Instância Recursal Estadual',
+          isOriginatingCourt: false
+        };
+      }
+      return {
+        allowed: false,
+        competentCourtName: comp.courtName,
+        level: comp.level,
+        reason: `Incompetência Territorial: Esta candidatura pertence à circunscrição de ${comp.cityName} (${comp.stateName}).`
+      };
+    }
   }
 
   return {
     allowed: false,
     competentCourtName: comp.courtName,
     level: comp.level,
-    reason: `Incompetência Territorial: Esta candidatura tramita perante o ${comp.courtName}. O tribunal "${user.name}" não possui jurisdição sobre o estado de ${comp.stateName}. Apenas o ${comp.courtName} ou o TSE podem deferir, indeferir ou excluir.`
+    reason: `Incompetência Jurisdicional: O tribunal "${user.name}" não possui jurisdição eleitoral sobre esta candidatura.`
   };
 }
 
@@ -4016,8 +4234,40 @@ function openLoginModal(courtId = 'auto') {
   if (!modal) return;
   modal.classList.remove('hidden');
 
+  const isFed = isFederalElection();
+  const noticeEl = document.getElementById('login-federal-election-notice');
+  if (noticeEl) {
+    if (isFed) {
+      noticeEl.classList.remove('hidden');
+    } else {
+      noticeEl.classList.add('hidden');
+    }
+  }
+
+  // Desativa ou reativa os TREs Municipais conforme o tipo de eleição ativa
+  const optgroupMun = document.getElementById('login-optgroup-municipais');
+  if (optgroupMun) {
+    const opts = optgroupMun.querySelectorAll('option');
+    opts.forEach(opt => {
+      const court = activeCourtCredentials.find(c => c.id === opt.value) || DEFAULT_COURT_CREDENTIALS.find(c => c.id === opt.value);
+      const courtName = court ? court.name : opt.value;
+      if (isFed) {
+        opt.disabled = true;
+        opt.textContent = `🏙️ [INATIVO NO PLEITO FEDERAL] ${courtName}`;
+        opt.className = 'text-slate-500 bg-brand-navy';
+      } else {
+        opt.disabled = false;
+        opt.textContent = `🏙️ ${courtName} (Municipal)`;
+        opt.className = 'text-white bg-brand-navy';
+      }
+    });
+  }
+
   const courtSelect = document.getElementById('login-court-select');
   if (courtSelect) {
+    if (isFed && courtId && courtId.startsWith('tre_') && courtId !== 'tre_brookhaven' && courtId !== 'tre_floremix' && courtId !== 'tre_fortemega' && courtId !== 'tre_novacore') {
+      courtId = 'auto';
+    }
     courtSelect.value = courtId;
     onCourtSelectChange(courtId);
   }
@@ -4089,6 +4339,14 @@ function onCourtSelectChange(courtId) {
 
   const court = activeCourtCredentials.find(c => c.id === courtId);
   if (court) {
+    if (court.role === 'tre_municipal' && isFederalElection()) {
+      showToast('warning', 'Nas eleições federais, os TREs da cidade não funcionam. Somente os TREs Estaduais e o TSE Nacional possuem competência ativa.');
+      usernameInput.value = '';
+      if (badgeEl) {
+        badgeEl.innerHTML = `<span class="text-amber-400 font-bold">⚠️ Inativo no Pleito Federal</span> • Selecione um TRE Estadual ou o TSE`;
+      }
+      return;
+    }
     usernameInput.value = court.login || '';
     if (badgeEl) {
       const typeLabel = court.role === 'tse' ? '🏛️ Instância Superior' : (court.role === 'tre_estadual' ? '⚖️ 2ª Instância Estadual' : '🏙️ 1ª Instância Municipal');
@@ -4366,6 +4624,14 @@ async function handleLoginSubmit(e) {
   }
 
   if (matched) {
+    if (matched.role === 'tre_municipal' && isFederalElection()) {
+      showToast('error', 'Nas eleições federais, os TREs da cidade não funcionam. Somente os TREs Estaduais (que só registram candidatos do próprio estado) e o TSE Nacional possuem competência ativa.');
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalBtnText;
+      }
+      return false;
+    }
     currentUser = {
       id: matched.id,
       name: matched.name,
@@ -4487,6 +4753,23 @@ function setupAdminView() {
       cityFilter.classList.add('hidden');
       cityFilter.innerHTML = '<option value="ALL">Todas as Cidades</option>';
       cityFilter.value = 'ALL';
+    }
+  }
+
+  const munNoticeEl = document.getElementById('admin-municipal-inactive-notice');
+  const courtRegBtn = document.getElementById('admin-btn-court-register');
+  if (munNoticeEl) {
+    if (isTreMunicipal && isFederalElection()) {
+      munNoticeEl.classList.remove('hidden');
+    } else {
+      munNoticeEl.classList.add('hidden');
+    }
+  }
+  if (courtRegBtn) {
+    if (isTreMunicipal && isFederalElection()) {
+      courtRegBtn.style.display = 'none';
+    } else {
+      courtRegBtn.style.display = 'inline-flex';
     }
   }
 
@@ -5001,6 +5284,7 @@ function openElectionModal() {
     const resetCandsEl = document.getElementById('modal-election-reset-cands');
     if (resetCandsEl) resetCandsEl.checked = false;
   }
+  onModalElectionTypeChange();
   modal.classList.remove('hidden');
   initIcons();
 }
@@ -5724,17 +6008,40 @@ function setAdminStatusFilter(status) {
 function isCandidateInJurisdiction(c, user) {
   if (!user || !c || isSystemRecord(c)) return false;
 
-  // Se a opção "Panorama Geral" estiver ativada pelo magistrado na interface, permite visualizar todas as candidaturas
+  // 1. TSE NACIONAL: Vê e julga rigorosamente TODOS os candidatos de qualquer eleição/estado/cidade
+  // "O TSE continua com a função de conseguir registrar todos os candidatos."
+  if (user.role === 'tse' || user.state === 'ALL') {
+    return true;
+  }
+
+  // 2. NAS ELEIÇÕES FEDERAIS: OS TRES DA CIDADE NÃO FUNCIONARÃO!
+  // "Nas eleições federais, os TREs da cidade não funcionarão. Somente aqueles que se registram são os estados (so registram candidatos do próprio estado) e o TSE Nacional."
+  if (isFederalElection()) {
+    if (user.role === 'tre_municipal') {
+      return false; // TREs municipais não funcionam em Eleições Federais
+    }
+
+    // TRE Estadual no pleito Federal: SÓ REGISTRA E JULGA CANDIDATOS DO PRÓPRIO ESTADO!
+    if (user.role === 'tre_estadual') {
+      if (c.office === 'Presidente') return false; // Presidente é exclusivo do TSE Nacional
+      const candState = String(c.stateId || c.state || '').toLowerCase().trim();
+      const userState = String(user.state || '').toLowerCase().trim();
+      const userStateConfig = BROOKASIL_GEO[userState];
+      const userStateName = userStateConfig?.name ? String(userStateConfig.name).toLowerCase().trim() : '';
+      return candState === userState || (userStateName && candState === userStateName);
+    }
+
+    return false;
+  }
+
+  // Se a opção "Panorama Geral" estiver ativada pelo magistrado na interface durante eleição municipal
   const toggleAll = document.getElementById('admin-toggle-all-jurisdictions');
   if (toggleAll && toggleAll.checked) {
     return true;
   }
 
-  // 1. TSE NACIONAL: Vê rigorosamente TODOS os candidatos de todo o país
-  if (user.role === 'tse' || user.state === 'ALL') {
-    return true;
-  }
-
+  // 3. NAS ELEIÇÕES MUNICIPAIS: PREFEITO E VEREADOR DE CIDADE!
+  // "Na eleição municipal, é diferente, pois é prefeito e vereador de CIDADE! O TSE continua com a função de conseguir registrar todos os candidatos."
   const candState = String(c.stateId || c.state || '').toLowerCase().trim();
   const candCity = String(c.cityId || c.city || '').toLowerCase().trim();
   const userState = String(user.state || '').toLowerCase().trim();
@@ -5759,37 +6066,26 @@ function isCandidateInJurisdiction(c, user) {
     return lower === userCity || (userCityName && lower === userCityName);
   };
 
-  // 2. TRE ESTADUAL: Vê somente candidaturas do seu estado (estaduais e municipais do estado)
+  // TRE Estadual em eleição municipal: Vê candidatos das cidades do seu estado
   if (user.role === 'tre_estadual') {
-    // Não julga Presidente (âmbito federal/TSE Nacional)
-    if (c.office === 'Presidente') return false;
-
-    // Se o estado do candidato bater com o estado do TRE Estadual
     if (matchesState(candState)) {
       return true;
     }
-
-    // Se a cidade do candidato pertencer a este estado
     const stateCities = userStateConfig?.cities || {};
     const cityKeys = Object.keys(stateCities).map(k => k.toLowerCase());
     const cityNames = Object.values(stateCities).map(n => String(n).toLowerCase());
     if (candCity && (cityKeys.includes(candCity) || cityNames.includes(candCity))) {
       return true;
     }
-
     return false;
   }
 
-  // 3. TRE MUNICIPAL: Vê estritamente as candidaturas da sua cidade/município
+  // TRE Municipal: Vê estritamente as candidaturas da sua cidade/município
   if (user.role === 'tre_municipal') {
-    // Só vê cargos municipais (Prefeito e Vereador)
     if (!isMunicipalOffice(c.office)) return false;
-
-    // A cidade do candidato deve corresponder à cidade do TRE Municipal
     if (matchesCity(candCity)) {
       return true;
     }
-
     return false;
   }
 
@@ -7376,7 +7672,670 @@ function showToast(type, message) {
   }, 4000);
 }
 
+// ========================================================
+// REGRAS DE ELEIÇÃO & INSTRUÇÕES INSTITUCIONAIS
+// ========================================================
+function onModalElectionTypeChange() {
+  const typeSelect = document.getElementById('modal-election-type');
+  const titleInput = document.getElementById('modal-election-title');
+  const hintEl = document.getElementById('modal-election-type-hint');
+  if (!typeSelect) return;
+  const val = typeSelect.value;
+  const isFed = val === 'Federal';
+
+  if (hintEl) {
+    if (isFed) {
+      hintEl.innerHTML = `
+        <div class="flex items-center gap-2 font-bold text-amber-300">
+          <i data-lucide="info" class="w-4 h-4"></i>
+          <span>Regras Constitucionais do Pleito Federal:</span>
+        </div>
+        <p>• Cargos: <strong>Presidente da República</strong> (TSE Nacional), <strong>Governador, Senador, Deputado Federal e Deputado Estadual</strong> (TREs Estaduais).</p>
+        <p>• <strong>Os TREs da cidade não funcionarão:</strong> Ficam inativos durante eleições federais.</p>
+        <p>• <strong>Competência de Registro:</strong> Somente os estados (cada TRE Estadual só registra candidatos do próprio estado) e o <strong>TSE Nacional</strong> (registra e julga todos os candidatos de todo o país).</p>
+      `;
+    } else {
+      hintEl.innerHTML = `
+        <div class="flex items-center gap-2 font-bold text-emerald-300">
+          <i data-lucide="info" class="w-4 h-4"></i>
+          <span>Regras Constitucionais do Pleito Municipal:</span>
+        </div>
+        <p>• Cargos: <strong>Prefeito e Vereador de CIDADE!</strong> Disputa estritamente municipal.</p>
+        <p>• <strong>TREs Municipais:</strong> Ativos e responsáveis pelo registro e julgamento das candidaturas da sua própria cidade.</p>
+        <p>• <strong>Competência TSE:</strong> O TSE Nacional continua com a função de conseguir registrar todos os candidatos de qualquer comarca.</p>
+      `;
+    }
+    initIcons();
+  }
+
+  if (titleInput) {
+    const curVal = (titleInput.value || '').trim();
+    if (!curVal || curVal.includes('Eleições')) {
+      titleInput.value = isFed ? 'Eleições Gerais de Brookasil 2026' : 'Eleições Municipais de Brookasil 2026';
+    }
+  }
+}
+
+// ========================================================
+// REGISTRO OFICIAL DE CANDIDATURA PELO TRIBUNAL (TSE / TRE)
+// ========================================================
+function updateCourtRegCityOptions() {
+  const stateSelect = document.getElementById('court-reg-state');
+  const citySelect = document.getElementById('court-reg-city');
+  if (!stateSelect || !citySelect) return;
+
+  const stKey = (stateSelect.value || '').toLowerCase().trim();
+  const geo = BROOKASIL_GEO[stKey];
+  const isTreMunicipal = currentUser && currentUser.role === 'tre_municipal';
+
+  if (isTreMunicipal) {
+    const userCityKey = String(currentUser.city || '').toLowerCase();
+    const userCityName = getCityDisplayName(currentUser.state, currentUser.city);
+    citySelect.innerHTML = `<option value="${userCityKey}">${userCityName}</option>`;
+    citySelect.value = userCityKey;
+    citySelect.disabled = true;
+  } else {
+    citySelect.disabled = false;
+    if (geo && geo.cities) {
+      citySelect.innerHTML = Object.entries(geo.cities).map(([k, name]) => `<option value="${k}">${name}</option>`).join('');
+    } else {
+      citySelect.innerHTML = '<option value="ALL">Todas as Cidades</option>';
+    }
+  }
+}
+
+function openCourtRegisterModal() {
+  if (!currentUser) {
+    showToast('warning', 'Acesso restrito: Faça login como magistrado de um Tribunal (TRE ou TSE) para registrar candidaturas.');
+    openLoginModal('auto');
+    return;
+  }
+
+  const isFed = isFederalElection();
+  if (isFed && currentUser.role === 'tre_municipal') {
+    showToast('error', 'Nas eleições federais, os TREs da cidade não funcionam. Somente os TREs Estaduais e o TSE Nacional possuem competência ativa.');
+    return;
+  }
+
+  const modal = document.getElementById('court-register-candidate-modal');
+  if (!modal) return;
+
+  const isTse = currentUser.role === 'tse' || currentUser.state === 'ALL';
+  const isTreEstadual = currentUser.role === 'tre_estadual';
+  const isTreMunicipal = currentUser.role === 'tre_municipal';
+
+  // Badge, Título e Subtítulo
+  const badgeEl = document.getElementById('court-reg-badge');
+  const titleEl = document.getElementById('court-reg-title');
+  const subtitleEl = document.getElementById('court-reg-subtitle');
+
+  if (isTse) {
+    if (badgeEl) badgeEl.textContent = '🏛️ TSE NACIONAL — REGISTRO PLENO';
+    if (titleEl) titleEl.textContent = 'Registrar Candidatura Oficial (TSE Nacional)';
+    if (subtitleEl) subtitleEl.textContent = isFed 
+      ? 'Tribunal Superior Eleitoral • Competência originária e soberana sobre todos os cargos federais e estaduais'
+      : 'Tribunal Superior Eleitoral • Prerrogativa plena de registrar candidatos em qualquer cidade do país';
+  } else if (isTreEstadual) {
+    const stName = getStateDisplayName(currentUser.state);
+    if (badgeEl) badgeEl.textContent = `⚖️ TRE ESTADUAL — ${String(currentUser.state).toUpperCase()}`;
+    if (titleEl) titleEl.textContent = `Registrar Candidatura Oficial (${currentUser.name})`;
+    if (subtitleEl) subtitleEl.textContent = isFed
+      ? `Tribunal Regional Eleitoral de ${stName} • Competência estrita para registrar candidatos do próprio estado`
+      : `Tribunal Regional Eleitoral de ${stName} • Candidaturas do Estado de ${stName}`;
+  } else {
+    const ctName = getCityDisplayName(currentUser.state, currentUser.city);
+    const stName = getStateDisplayName(currentUser.state);
+    if (badgeEl) badgeEl.textContent = `🏙️ TRE MUNICIPAL — ${String(currentUser.city).toUpperCase()}`;
+    if (titleEl) titleEl.textContent = `Registrar Candidatura Oficial (${currentUser.name})`;
+    if (subtitleEl) subtitleEl.textContent = `Comarca de ${ctName} (${stName}) • Prefeito e Vereador de CIDADE`;
+  }
+
+  // Caixa Institucional de Jurisdição
+  const boxEl = document.getElementById('court-reg-jurisdiction-box');
+  if (boxEl) {
+    if (isFed) {
+      if (isTse) {
+        boxEl.innerHTML = `
+          <div class="flex items-center gap-2 font-bold text-brand-gold">
+            <i data-lucide="shield-check" class="w-4 h-4"></i>
+            <span>Pleito Federal Ativo: Prerrogativa Plena do TSE Nacional</span>
+          </div>
+          <p class="text-slate-300">Como autoridade máxima do Tribunal Superior Eleitoral, você pode registrar candidatos à Presidência da República e em qualquer estado da Federação. Os TREs de cidades não funcionam neste pleito.</p>
+        `;
+      } else {
+        boxEl.innerHTML = `
+          <div class="flex items-center gap-2 font-bold text-brand-electric">
+            <i data-lucide="scale" class="w-4 h-4"></i>
+            <span>Pleito Federal Ativo: Competência Estadual do ${currentUser.name}</span>
+          </div>
+          <p class="text-slate-300">Nas eleições federais, os estados só registram candidatos do próprio estado (${getStateDisplayName(currentUser.state)}). Não há circunscrição de cidade neste pleito.</p>
+        `;
+      }
+    } else {
+      if (isTse) {
+        boxEl.innerHTML = `
+          <div class="flex items-center gap-2 font-bold text-brand-gold">
+            <i data-lucide="shield-check" class="w-4 h-4"></i>
+            <span>Pleito Municipal Ativo: Prerrogativa Soberana do TSE</span>
+          </div>
+          <p class="text-slate-300">Na eleição municipal (Prefeito e Vereador de CIDADE), o TSE continua com a função de conseguir registrar todos os candidatos de qualquer comarca do país.</p>
+        `;
+      } else if (isTreMunicipal) {
+        boxEl.innerHTML = `
+          <div class="flex items-center gap-2 font-bold text-emerald-400">
+            <i data-lucide="building" class="w-4 h-4"></i>
+            <span>Pleito Municipal: Comarca de ${getCityDisplayName(currentUser.state, currentUser.city)}</span>
+          </div>
+          <p class="text-slate-300">Registro oficial direto de candidaturas a Prefeito e Vereador para a comarca de ${getCityDisplayName(currentUser.state, currentUser.city)} (${getStateDisplayName(currentUser.state)}).</p>
+        `;
+      } else {
+        boxEl.innerHTML = `
+          <div class="flex items-center gap-2 font-bold text-brand-electric">
+            <i data-lucide="scale" class="w-4 h-4"></i>
+            <span>Pleito Municipal: TRE Estadual (${getStateDisplayName(currentUser.state)})</span>
+          </div>
+          <p class="text-slate-300">Registro oficial de candidaturas municipais nas cidades do estado de ${getStateDisplayName(currentUser.state)}.</p>
+        `;
+      }
+    }
+  }
+
+  // Preenche Cargos (court-reg-office)
+  const officeSelect = document.getElementById('court-reg-office');
+  if (officeSelect) {
+    if (isFed) {
+      let fedOffices = OFFICES_CONFIG.Federal || [];
+      if (!isTse) {
+        fedOffices = fedOffices.filter(o => o.id !== 'Presidente');
+      }
+      officeSelect.innerHTML = fedOffices.map(o => `<option value="${o.id}">${o.name} (${o.digits} dígitos)</option>`).join('');
+    } else {
+      const munOffices = OFFICES_CONFIG.Municipal || [
+        { id: "Prefeito", name: "Prefeito", digits: 2 },
+        { id: "Vereador", name: "Vereador", digits: 5 }
+      ];
+      officeSelect.innerHTML = munOffices.map(o => `<option value="${o.id}">${o.name} (${o.digits} dígitos)</option>`).join('');
+    }
+  }
+
+  // Preenche Partidos (court-reg-party)
+  const partySelect = document.getElementById('court-reg-party');
+  if (partySelect) {
+    partySelect.innerHTML = partiesList.map(p => `<option value="${p.id}">${p.number} - ${p.acronym} (${p.name})</option>`).join('');
+    if (partiesList.length > 0) {
+      partySelect.value = partiesList[0].id;
+    }
+  }
+
+  // Preenche Estados (court-reg-state) e Cidades (court-reg-city)
+  const cityContainer = document.getElementById('court-reg-city-container');
+  const stateSelect = document.getElementById('court-reg-state');
+
+  if (isFed) {
+    if (cityContainer) cityContainer.classList.add('hidden');
+    if (stateSelect) {
+      if (isTreEstadual) {
+        const stKey = currentUser.state.toLowerCase();
+        const stName = getStateDisplayName(stKey);
+        stateSelect.innerHTML = `<option value="${stKey}">${stName}</option>`;
+        stateSelect.value = stKey;
+        stateSelect.disabled = true;
+      } else {
+        stateSelect.disabled = false;
+        let statesHtml = Object.entries(BROOKASIL_GEO).map(([k, v]) => `<option value="${k}">${v.name}</option>`).join('');
+        stateSelect.innerHTML = statesHtml;
+      }
+    }
+  } else {
+    if (cityContainer) cityContainer.classList.remove('hidden');
+    if (stateSelect) {
+      if (isTreMunicipal || isTreEstadual) {
+        const stKey = currentUser.state.toLowerCase();
+        const stName = getStateDisplayName(stKey);
+        stateSelect.innerHTML = `<option value="${stKey}">${stName}</option>`;
+        stateSelect.value = stKey;
+        stateSelect.disabled = true;
+      } else {
+        stateSelect.disabled = false;
+        let statesHtml = Object.entries(BROOKASIL_GEO).map(([k, v]) => `<option value="${k}">${v.name}</option>`).join('');
+        stateSelect.innerHTML = statesHtml;
+      }
+    }
+    updateCourtRegCityOptions();
+  }
+
+  // Limpa campos
+  const fnInput = document.getElementById('court-reg-fullname');
+  const bnInput = document.getElementById('court-reg-ballotname');
+  const bdInput = document.getElementById('court-reg-birthdate');
+  const tkInput = document.getElementById('court-reg-tiktok');
+  const vnInput = document.getElementById('court-reg-vicename');
+  const phInput = document.getElementById('court-reg-photo');
+  const sxInput = document.getElementById('court-reg-suffix');
+  const prInput = document.getElementById('court-reg-proposals');
+
+  if (fnInput) fnInput.value = '';
+  if (bnInput) bnInput.value = '';
+  if (bdInput) bdInput.value = '1985-05-15';
+  if (tkInput) tkInput.value = '';
+  if (vnInput) vnInput.value = '';
+  if (phInput) phInput.value = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80';
+  if (sxInput) sxInput.value = '';
+  if (prInput) prInput.value = '';
+
+  onCourtRegPartyChange();
+  onCourtRegOfficeChange();
+  autoGenerateCourtRegNumber();
+
+  modal.classList.remove('hidden');
+  initIcons();
+}
+
+function closeCourtRegisterModal() {
+  const modal = document.getElementById('court-register-candidate-modal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function onCourtRegOfficeChange() {
+  const officeId = document.getElementById('court-reg-office')?.value || 'Prefeito';
+  const isFed = isFederalElection();
+  const type = isFed ? 'Federal' : 'Municipal';
+  const office = (OFFICES_CONFIG[type] || []).find(o => o.id === officeId) || OFFICES_CONFIG.Federal[0];
+
+  const viceCont = document.getElementById('court-reg-vice-container');
+  const viceInput = document.getElementById('court-reg-vicename');
+  if (office && office.needsVice) {
+    if (viceCont) viceCont.classList.remove('hidden');
+    if (viceInput) viceInput.setAttribute('required', 'true');
+  } else {
+    if (viceCont) viceCont.classList.add('hidden');
+    if (viceInput) viceInput.removeAttribute('required');
+  }
+
+  const propEl = document.getElementById('court-reg-proposals');
+  const ballotName = document.getElementById('court-reg-ballotname')?.value || 'Candidato';
+  const partyId = document.getElementById('court-reg-party')?.value;
+  const party = partiesList.find(p => String(p.id) === String(partyId));
+  if (propEl && (!propEl.value || propEl.value.includes('Plano de Gestão') || propEl.value.includes('Diretrizes') || propEl.value.includes('Compromissos'))) {
+    propEl.value = getDefaultProposals(officeId, ballotName, party ? party.acronym : 'TSE');
+  }
+
+  validateCourtRegNumber();
+}
+
+function onCourtRegPartyChange() {
+  const partyId = document.getElementById('court-reg-party')?.value;
+  const party = partiesList.find(p => String(p.id) === String(partyId));
+  const prefixEl = document.getElementById('court-reg-prefix');
+  if (prefixEl) {
+    prefixEl.textContent = party ? String(party.number).padStart(2, '0') : '--';
+  }
+  validateCourtRegNumber();
+}
+
+function onCourtRegStateChange() {
+  if (!isFederalElection()) {
+    updateCourtRegCityOptions();
+  }
+  validateCourtRegNumber();
+}
+
+function onCourtRegCityChange() {
+  validateCourtRegNumber();
+}
+
+function autoGenerateCourtRegNumber() {
+  const partyId = document.getElementById('court-reg-party')?.value;
+  const party = partiesList.find(p => String(p.id) === String(partyId));
+  if (!party) return;
+
+  const partyPrefix = String(party.number).padStart(2, '0');
+  const officeId = document.getElementById('court-reg-office')?.value || 'Prefeito';
+  const isFed = isFederalElection();
+  const type = isFed ? 'Federal' : 'Municipal';
+  const office = (OFFICES_CONFIG[type] || []).find(o => o.id === officeId) || OFFICES_CONFIG.Federal[0];
+  const totalDigits = office ? office.digits : 2;
+  const suffixDigits = totalDigits - 2;
+
+  const suffixInput = document.getElementById('court-reg-suffix');
+  if (!suffixInput) return;
+
+  if (suffixDigits <= 0) {
+    suffixInput.value = '';
+    validateCourtRegNumber();
+    return;
+  }
+
+  const stateId = (document.getElementById('court-reg-state')?.value || 'SP').toLowerCase();
+  const cityId = isFed ? 'ALL' : (document.getElementById('court-reg-city')?.value || 'ALL').toLowerCase();
+  const activeElecId = (currentElection && currentElection.id) || 'elec_2026';
+
+  const maxVal = Math.pow(10, suffixDigits) - 1;
+  const startVal = suffixDigits === 1 ? 1 : (suffixDigits === 2 ? 10 : 100);
+
+  for (let s = startVal; s <= maxVal; s++) {
+    const candidateSuffix = String(s).padStart(suffixDigits, '0');
+    const fullNum = Number(partyPrefix + candidateSuffix);
+
+    const taken = candidaciesList.some(c => {
+      if (c.status === 'excluida') return false;
+      if (c.electionId && c.electionId !== activeElecId) return false;
+      if (Number(c.number) !== fullNum) return false;
+      if (c.office !== officeId) return false;
+
+      if (officeId === 'Presidente') return true;
+      if (isFed) {
+        return String(c.stateId || c.state || '').toLowerCase() === stateId;
+      } else {
+        return String(c.stateId || c.state || '').toLowerCase() === stateId &&
+               String(c.cityId || c.city || '').toLowerCase() === cityId;
+      }
+    });
+
+    if (!taken) {
+      suffixInput.value = candidateSuffix;
+      validateCourtRegNumber();
+      return;
+    }
+  }
+
+  suffixInput.value = String(startVal).padStart(suffixDigits, '0');
+  validateCourtRegNumber();
+}
+
+function validateCourtRegNumber() {
+  const partyId = document.getElementById('court-reg-party')?.value;
+  const party = partiesList.find(p => String(p.id) === String(partyId));
+  const statusEl = document.getElementById('court-reg-number-status');
+  const submitBtn = document.getElementById('court-reg-submit-btn');
+  const suffixInput = document.getElementById('court-reg-suffix');
+
+  if (!party || !statusEl) return false;
+
+  const partyPrefix = String(party.number).padStart(2, '0');
+  const officeId = document.getElementById('court-reg-office')?.value || 'Prefeito';
+  const isFed = isFederalElection();
+  const type = isFed ? 'Federal' : 'Municipal';
+  const office = (OFFICES_CONFIG[type] || []).find(o => o.id === officeId) || OFFICES_CONFIG.Federal[0];
+  const totalDigits = office ? office.digits : 2;
+  const suffixDigits = totalDigits - 2;
+
+  const suffix = (suffixInput ? suffixInput.value : '').trim();
+
+  if (suffixDigits === 0) {
+    if (suffix.length > 0) {
+      statusEl.innerHTML = `<span class="text-red-400 font-semibold">❌ Para ${office.name}, o número deve ter exatamente 2 dígitos (${partyPrefix}). Remova o sufixo.</span>`;
+      if (submitBtn) submitBtn.disabled = true;
+      return false;
+    }
+  } else {
+    if (suffix.length !== suffixDigits) {
+      statusEl.innerHTML = `<span class="text-amber-400 font-semibold">⚠️ O cargo ${office.name} exige ${totalDigits} dígitos (${partyPrefix} + ${suffixDigits} dígitos). Atual: ${partyPrefix}${suffix}</span>`;
+      if (submitBtn) submitBtn.disabled = true;
+      return false;
+    }
+    if (!/^\d+$/.test(suffix)) {
+      statusEl.innerHTML = `<span class="text-red-400 font-semibold">❌ O sufixo deve conter apenas dígitos numéricos.</span>`;
+      if (submitBtn) submitBtn.disabled = true;
+      return false;
+    }
+  }
+
+  const fullNumber = Number(partyPrefix + suffix);
+  const stateId = (document.getElementById('court-reg-state')?.value || 'SP').toLowerCase();
+  const cityId = isFed ? 'ALL' : (document.getElementById('court-reg-city')?.value || 'ALL').toLowerCase();
+  const activeElecId = (currentElection && currentElection.id) || 'elec_2026';
+
+  const conflict = candidaciesList.find(c => {
+    if (c.status === 'excluida') return false;
+    if (c.electionId && c.electionId !== activeElecId) return false;
+    if (Number(c.number) !== fullNumber) return false;
+    if (c.office !== officeId) return false;
+
+    if (officeId === 'Presidente') return true;
+    if (isFed) {
+      return String(c.stateId || c.state || '').toLowerCase() === stateId;
+    } else {
+      return String(c.stateId || c.state || '').toLowerCase() === stateId &&
+             String(c.cityId || c.city || '').toLowerCase() === cityId;
+    }
+  });
+
+  if (conflict) {
+    statusEl.innerHTML = `<span class="text-red-400 font-semibold">❌ O número ${fullNumber} já está em uso por "${conflict.ballotName}" (${conflict.partyAcronym || ''}) para este cargo e circunscrição.</span>`;
+    if (submitBtn) submitBtn.disabled = true;
+    return false;
+  }
+
+  statusEl.innerHTML = `<span class="text-emerald-400 font-semibold">✓ Número ${fullNumber} disponível para ${office.name}!</span>`;
+  if (submitBtn) submitBtn.disabled = false;
+  return true;
+}
+
+function useDefaultCourtRegPhoto() {
+  const photoInput = document.getElementById('court-reg-photo');
+  if (photoInput) {
+    photoInput.value = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80';
+    showToast('info', 'Foto padrão oficial atribuída.');
+  }
+}
+
+async function handleCourtRegisterSubmit(e) {
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  if (!currentUser) {
+    showToast('error', 'Acesso negado: Nenhuma sessão judicial ativa.');
+    return false;
+  }
+
+  const isFed = isFederalElection();
+  const isTse = currentUser.role === 'tse' || currentUser.state === 'ALL';
+  const isTreEstadual = currentUser.role === 'tre_estadual';
+  const isTreMunicipal = currentUser.role === 'tre_municipal';
+
+  // 1. ELEIÇÕES FEDERAIS: OS TRES DA CIDADE NÃO FUNCIONARÃO!
+  // "Nas eleições federais, os TREs da cidade não funcionarão. Somente aqueles que se registram são os estados (so registram candidatos do próprio estado) e o TSE Nacional."
+  if (isFed) {
+    if (isTreMunicipal) {
+      showToast('error', 'Nas eleições federais, os TREs da cidade não funcionam. Somente os TREs Estaduais e o TSE Nacional possuem competência ativa.');
+      return false;
+    }
+  }
+
+  const officeId = document.getElementById('court-reg-office').value;
+  const partyId = document.getElementById('court-reg-party').value;
+  const party = partiesList.find(p => String(p.id) === String(partyId));
+  if (!party) {
+    showToast('error', 'Selecione uma legenda partidária oficial válida.');
+    return false;
+  }
+
+  let stateId = document.getElementById('court-reg-state')?.value || 'SP';
+  let cityId = isFed ? 'ALL' : (document.getElementById('court-reg-city')?.value || 'ALL');
+
+  if (isFed) {
+    cityId = 'ALL';
+    // Cargo de Presidente é privativo do TSE Nacional
+    if (officeId === 'Presidente' && !isTse) {
+      showToast('error', 'O registro de candidatura à Presidência da República é de competência originária exclusiva do TSE Nacional.');
+      return false;
+    }
+    // TRE Estadual só registra candidatos do próprio estado
+    if (isTreEstadual) {
+      if (String(stateId).toLowerCase() !== String(currentUser.state).toLowerCase()) {
+        showToast('error', `O ${currentUser.name} só possui competência para registrar candidatos do próprio estado (${getStateDisplayName(currentUser.state)}).`);
+        return false;
+      }
+    }
+  } else {
+    // Pleito Municipal: Prefeito e Vereador de CIDADE!
+    if (!isMunicipalOffice(officeId)) {
+      showToast('error', 'Na eleição municipal, a disputa é exclusiva para Prefeito e Vereador de CIDADE!');
+      return false;
+    }
+    if (!cityId || cityId === 'ALL') {
+      showToast('error', 'Selecione a Cidade / Município para registro de candidatura municipal.');
+      return false;
+    }
+    if (isTreMunicipal) {
+      if (String(stateId).toLowerCase() !== String(currentUser.state).toLowerCase() ||
+          String(cityId).toLowerCase() !== String(currentUser.city).toLowerCase()) {
+        showToast('error', `O ${currentUser.name} só pode registrar candidatos da sua própria comarca (${getCityDisplayName(currentUser.state, currentUser.city)}).`);
+        return false;
+      }
+    } else if (isTreEstadual) {
+      if (String(stateId).toLowerCase() !== String(currentUser.state).toLowerCase()) {
+        showToast('error', `O ${currentUser.name} só pode registrar candidatos pertencentes ao estado de ${getStateDisplayName(currentUser.state)}.`);
+        return false;
+      }
+    }
+    // TSE pode registrar em qualquer cidade de qualquer estado ("O TSE continua com a função de conseguir registrar todos os candidatos.")
+  }
+
+  if (!validateCourtRegNumber()) {
+    showToast('error', 'Verifique o número de urna da candidatura antes de confirmar.');
+    return false;
+  }
+
+  const fullName = (document.getElementById('court-reg-fullname')?.value || '').trim();
+  const ballotName = (document.getElementById('court-reg-ballotname')?.value || '').trim();
+  if (!fullName || !ballotName) {
+    showToast('error', 'Preencha o Nome Completo e o Nome de Urna do candidato.');
+    return false;
+  }
+
+  const type = isFed ? 'Federal' : 'Municipal';
+  const office = (OFFICES_CONFIG[type] || []).find(o => o.id === officeId) || OFFICES_CONFIG.Federal[0];
+  const partyPrefix = String(party.number).padStart(2, '0');
+  const suffix = (document.getElementById('court-reg-suffix')?.value || '').trim();
+  const fullNumber = Number(partyPrefix + suffix);
+
+  const viceName = office.needsVice ? (document.getElementById('court-reg-vicename')?.value || '').trim() : '';
+  const birthDate = document.getElementById('court-reg-birthdate')?.value || '1985-05-15';
+  const tiktok = document.getElementById('court-reg-tiktok')?.value || '';
+  const photo = document.getElementById('court-reg-photo')?.value || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80';
+  const proposals = document.getElementById('court-reg-proposals')?.value || getDefaultProposals(officeId, ballotName, party.acronym);
+
+  const deferImmediate = document.getElementById('court-reg-defer-immediate')?.checked;
+  const initialStatus = deferImmediate ? 'deferida' : 'pendente';
+
+  const stateName = getStateDisplayName(stateId);
+  const cityName = isFed ? 'Estado Inteiro' : getCityDisplayName(stateId, cityId);
+  const activeElecId = (currentElection && currentElection.id) || 'elec_2026';
+  const activeElecTitle = (currentElection && currentElection.title) || (isFed ? 'Eleições Gerais de Brookasil 2026' : 'Eleições Municipais de Brookasil 2026');
+
+  const newCand = {
+    id: `cand_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`,
+    electionId: activeElecId,
+    electionTitle: activeElecTitle,
+    fullName,
+    ballotName,
+    number: fullNumber,
+    office: officeId,
+    partyId: String(party.id),
+    partyName: party.name,
+    partyAcronym: party.acronym,
+    partyNumber: party.number,
+    stateId: stateId,
+    state: stateName,
+    cityId: cityId,
+    city: cityName,
+    birthDate,
+    tiktok,
+    viceName,
+    photo,
+    proposals,
+    proposalUrl: '',
+    status: initialStatus,
+    protocol: `PROT-${Date.now().toString().slice(-6)}-${stateId.toUpperCase()}`,
+    createdAt: new Date().toISOString(),
+    registrationOrigin: 'tribunal_judicial',
+    courtJudgedBy: currentUser.name,
+    courtJudgedId: currentUser.id,
+    courtJudgedRole: currentUser.role,
+    history: [
+      {
+        status: initialStatus,
+        date: new Date().toISOString(),
+        note: deferImmediate 
+          ? `Registro e deferimento imediato com fé pública realizado pelo ${currentUser.name} (${currentUser.role.toUpperCase()})`
+          : `Registro formal de candidatura realizado pelo ${currentUser.name} (${currentUser.role.toUpperCase()}) - Aguardando publicação em pauta`
+      }
+    ]
+  };
+
+  const submitBtn = document.getElementById('court-reg-submit-btn');
+  const origText = submitBtn ? submitBtn.innerHTML : '';
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 animate-spin inline mr-1"></i> Registrando...';
+    initIcons();
+  }
+
+  try {
+    candidaciesList.unshift(newCand);
+    try {
+      localStorage.setItem('brookasil_candidacies', JSON.stringify(candidaciesList));
+    } catch (e) {}
+
+    // Sincroniza com servidor e Supabase
+    fetch('/api/candidacies', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newCand)
+    }).catch(err => console.warn('[Candidatura Judicial] Erro sincronizando API:', err));
+
+    saveCandidateToSupabase(newCand).catch(err => console.warn('[Candidatura Judicial] Erro salvando Supabase:', err));
+
+    // Auditoria Oficial
+    saveAuditLog({
+      action: 'CANDIDACY_DIRECT_REGISTRATION',
+      candId: newCand.id,
+      ballotName: newCand.ballotName,
+      office: newCand.office,
+      party: newCand.partyAcronym,
+      status: initialStatus,
+      reason: `Registro direto de candidatura realizado com autoridade judicial pelo ${currentUser.name}`,
+      adminUser: currentUser.login || currentUser.id || 'magistrado',
+      adminName: currentUser.name,
+      adminRole: currentUser.role
+    });
+
+    closeCourtRegisterModal();
+    renderAdminCandidacies();
+    renderCandidatos();
+    renderHomeTopCandidates();
+    updateElectionUI();
+
+    showToast('success', `Candidatura de "${newCand.ballotName}" (${newCand.number}) registrada com sucesso pelo ${currentUser.name}! Status: ${initialStatus.toUpperCase()}`);
+    return false;
+  } catch (err) {
+    console.error("Erro no registro oficial:", err);
+    showToast('error', `Falha ao registrar candidatura: ${err.message || err}`);
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = origText;
+    }
+    return false;
+  }
+}
+
 // Exportações globais de funções interativas para a interface HTML
+window.openCourtRegisterModal = openCourtRegisterModal;
+window.closeCourtRegisterModal = closeCourtRegisterModal;
+window.handleCourtRegisterSubmit = handleCourtRegisterSubmit;
+window.onCourtRegOfficeChange = onCourtRegOfficeChange;
+window.onCourtRegPartyChange = onCourtRegPartyChange;
+window.onCourtRegStateChange = onCourtRegStateChange;
+window.onCourtRegCityChange = onCourtRegCityChange;
+window.autoGenerateCourtRegNumber = autoGenerateCourtRegNumber;
+window.validateCourtRegNumber = validateCourtRegNumber;
+window.useDefaultCourtRegPhoto = useDefaultCourtRegPhoto;
+window.onModalElectionTypeChange = onModalElectionTypeChange;
+
 window.openPhotoCropperModal = openPhotoCropperModal;
 window.closePhotoCropperModal = closePhotoCropperModal;
 window.setCropperZoom = setCropperZoom;

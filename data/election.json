@@ -7,11 +7,8 @@
   "applicationEnd": "2026-09-27T02:59:00.000Z",
   "electionDate": "2026-09-27T15:00:00.000Z",
   "vagas": {
-    "Presidente": 8,
-    "Governador": 8,
-    "Senador": 16,
-    "Deputado Federal": 16,
-    "Deputado Estadual": 16
+    "Prefeito": 10,
+    "Vereador": 20
   },
   "updatedAt": "2026-09-24T22:43:06.069Z"
 }
